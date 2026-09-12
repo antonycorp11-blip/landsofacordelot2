@@ -12,6 +12,8 @@ html, body, #root {
   height: 100%;
   margin: 0;
   overflow: hidden;
+  /* Sem o efeito elástico do iOS quando o arrasto chega à borda do mapa. */
+  overscroll-behavior: none;
   background: #24303a;
   font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   color: var(--ink);
@@ -20,6 +22,8 @@ html, body, #root {
 
 .map-root {
   position: relative;
+  /* Contém a mistura da camada de luz: ela tinge o mapa, não a página. */
+  isolation: isolate;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -146,3 +150,8 @@ html, body, #root {
 .atmosphere-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:hidden; }
 
 .scenery-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; image-rendering:pixelated; }
+
+/* Luz do dia/noite. `multiply` sobre uma cor sólida dá o mesmo resultado da
+   matriz de cor que havia antes, mas é composto pela GPU: o mapa não precisa
+   ser rasterizado de novo a cada frame de arrasto. */
+.lighting-tint { position:absolute; inset:0; pointer-events:none; mix-blend-mode:multiply; }

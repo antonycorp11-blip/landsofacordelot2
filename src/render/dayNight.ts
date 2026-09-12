@@ -16,6 +16,13 @@ export function lightingAt(worldHours: number, mode: LightingMode = 'cycle') {
   const a = KEYS[i], b = KEYS[i + 1];
   const x = (hour - a.hour) / (b.hour - a.hour), t = x*x*(3-2*x);
   const rgb = a.rgb.map((v, j) => v + (b.rgb[j] - v)*t);
-  return { hour, night: a.night + (b.night-a.night)*t, name: a.name,
-    matrix: `${rgb[0]} 0 0 0 0 0 ${rgb[1]} 0 0 0 0 0 ${rgb[2]} 0 0 0 0 0 1 0` };
+  // A luz é uma multiplicação por canal, então vira um `mix-blend-mode:
+  // multiply` sobre uma cor sólida — uma camada composta pela GPU, em vez de
+  // um filtro SVG que obriga o navegador a rasterizar o mapa inteiro por
+  // frame. Canais acima de 1 (o leve realce do meio-dia) são normalizados
+  // pelo maior deles, o que preserva a cor da luz e só abre mão do ganho de
+  // brilho de ~4%.
+  const peak = Math.max(1, ...rgb);
+  const tint = `rgb(${rgb.map(v => Math.round(Math.max(0, v / peak) * 255)).join(' ')})`;
+  return { hour, night: a.night + (b.night-a.night)*t, name: a.name, tint };
 }

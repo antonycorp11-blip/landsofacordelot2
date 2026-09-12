@@ -100,7 +100,18 @@ export function useCamera({ world, focus, maxZoom }: CameraLimits) {
     return () => subscribers.current.delete(fn);
   }, []);
 
-  const apply = useCallback(() => {
+  /**
+   * Um `pointermove` pode chegar 120 vezes por segundo em telas ProMotion.
+   * Redesenhar os canvas do chão e do cenário a cada evento é o que travava o
+   * mapa no celular: o trabalho é feito várias vezes para o mesmo frame. Aqui
+   * os eventos são agrupados e a transformação é aplicada uma vez por frame.
+   */
+  const applyPending = useRef(0);
+  const applyNow = useCallback(() => {
+    if (applyPending.current) {
+      cancelAnimationFrame(applyPending.current);
+      applyPending.current = 0;
+    }
     const { w, h } = viewport.current;
     const s = baseScale() * cam.current.zoom;
     const g = layerRef.current;
@@ -116,6 +127,15 @@ export function useCamera({ world, focus, maxZoom }: CameraLimits) {
     }
   }, [baseScale]);
 
+  /** Versão agrupada por frame — usada pelo pan, que vem de eventos de ponteiro. */
+  const apply = useCallback(() => {
+    if (applyPending.current) return;
+    applyPending.current = requestAnimationFrame(() => {
+      applyPending.current = 0;
+      applyNow();
+    });
+  }, [applyNow]);
+
   /** Loop de suavização: a câmera persegue o alvo, dando inércia ao zoom. */
   const tick = useCallback(() => {
     const c = cam.current;
@@ -127,17 +147,17 @@ export function useCamera({ world, focus, maxZoom }: CameraLimits) {
     const settled = Math.abs(dz) < 1e-4 && Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2;
     if (settled) {
       cam.current = { ...t };
-      apply();
+      applyNow();
       raf.current = 0;
       setZoom((z) => (Math.abs(z - t.zoom) > 0.01 ? t.zoom : z));
       setSettle((s) => s + 1);
       return;
     }
     cam.current = { cx: c.cx + dx * k, cy: c.cy + dy * k, zoom: c.zoom + dz * k };
-    apply();
+    applyNow();
     setZoom((z) => (Math.abs(z - cam.current.zoom) > 0.05 ? cam.current.zoom : z));
     raf.current = requestAnimationFrame(tick);
-  }, [apply]);
+  }, [applyNow]);
 
   const kick = useCallback(() => {
     // Sempre reagenda: guardar só o id deixaria o loop preso se o frame tivesse
@@ -178,14 +198,14 @@ export function useCamera({ world, focus, maxZoom }: CameraLimits) {
       }
       target.current = clamp(target.current);
       cam.current = clamp(cam.current);
-      apply();
+      applyNow();
       setZoom(cam.current.zoom);
       setReady(true);
       setSettle((s) => s + 1);
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [apply, clamp, containZoom, coverZoom, focusCenter.x, focusCenter.y]);
+  }, [applyNow, clamp, containZoom, coverZoom, focusCenter.x, focusCenter.y]);
 
   /* ------------------------- conversões de espaço ---------------------- */
 
@@ -347,7 +367,9 @@ export function useCamera({ world, focus, maxZoom }: CameraLimits) {
   useEffect(
     () => () => {
       cancelAnimationFrame(raf.current);
+      cancelAnimationFrame(applyPending.current);
       raf.current = 0;
+      applyPending.current = 0;
     },
     [],
   );

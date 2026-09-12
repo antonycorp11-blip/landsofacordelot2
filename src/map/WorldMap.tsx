@@ -136,14 +136,13 @@ export function WorldMap() {
 
   return (
     <div className="map-root" ref={camera.containerRef}>
-      <div className="ground-art" style={{ filter: debug ? undefined : "url(#world-lighting)" }}>
+      <div className="ground-art">
         <TerrainTiles subscribe={camera.subscribe} opacity={tileOpacity} />
         <SceneryCanvas subscribe={camera.subscribe} enabled={!debug} />
       </div>
 
-      <svg className="map-svg" style={{filter: debug ? undefined : "url(#world-lighting)"}} {...camera.handlers}>
+      <svg className="map-svg" {...camera.handlers}>
         <defs>
-          <filter id="world-lighting" colorInterpolationFilters="sRGB" x="0" y="0" width="100%" height="100%"><feColorMatrix type="matrix" values={lighting.matrix} /></filter>
           <linearGradient id="seaGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#367e87" />
             <stop offset="100%" stopColor="#173c58" />
@@ -206,6 +205,10 @@ export function WorldMap() {
           {debug && <DebugLayer zoom={zoom} />}
         </g>
       </svg>
+
+      {/* Luz do dia: uma camada sólida multiplicada sobre o mapa. Fica abaixo
+          do brilho das lanternas, que é luz somada e não pode ser tingida. */}
+      {!debug && <div className="lighting-tint" style={{ background: lighting.tint }} aria-hidden="true" />}
 
       <AtmosphereOverlay subscribe={camera.subscribe} night={debug ? 0 : lighting.night} view={view} zoom={zoom} />
 

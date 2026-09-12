@@ -4,6 +4,7 @@ import { allPois } from '../../world/valdoria';
 import { getAsset } from '../mapAssets';
 import type { ViewRect } from './NatureLayer';
 import { natureObjects } from '../../world/nature';
+import { ANIMATED_DECOR } from '../quality';
 const UNLIT = new Set(['lake','bay','mountain_pass','ruins','sacred_grove','quarry']);
 const lights = allPois.filter(p => !UNLIT.has(p.assetKey));
 const fireflies = natureObjects.filter((p,i) => i % 19 === 0 && (p.assetKey === 'forest_cluster' || p.assetKey === 'oak_tree'));
@@ -20,7 +21,7 @@ export const AtmosphereLayer = memo(function AtmosphereLayer({night,view,zoom}:{
         {[-.18,0,.18].map((offset,i)=><rect key={i} x={p.x+size*offset} y={p.y-size*(i===1?.45:.27)} width={size*.027} height={size*.045} fill="#ffe6a0"/>)}
       </g>;
     })}
-    {zoom>2 && fireflies.filter(visible).map((p,i)=><rect className="firefly" key={p.id} x={p.x+20} y={p.y-35} width={6} height={6} fill="#d9ed9c" style={{animationDelay:`${-(i%9)}s`}}/>)}
+    {ANIMATED_DECOR && zoom>2 && fireflies.filter(visible).map((p,i)=><rect className="firefly" key={p.id} x={p.x+20} y={p.y-35} width={6} height={6} fill="#d9ed9c" style={{animationDelay:`${-(i%9)}s`}}/>)}
   </g>;
 });
 
