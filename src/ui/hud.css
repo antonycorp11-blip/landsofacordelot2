@@ -111,6 +111,34 @@
 }
 .hud-purse .glyph { color: #d3ad4b; }
 
+/* Ficha do personagem: o nível como porta de entrada. */
+.hud-hero {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  height: 30px;
+  font: inherit;
+  color: #f1e7cc;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hud-hero:hover { background: #1b2423c4; }
+.hud-level {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 2px;
+  background: #c9a84c2b;
+  border: 1px solid #d8b85c5c;
+  color: #f3dc9b;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  display: grid;
+  place-items: center;
+}
+.hud-hero-label { font-size: 12px; color: #cbbf9d; }
+
 /* --------------------------------- doca --------------------------------- */
 
 .hud-dock { display: flex; align-items: center; gap: 3px; padding: 3px 4px; }
@@ -213,6 +241,7 @@
   .hud-btn { height: 30px; padding: 0 9px; font-size: 12px; }
   .hud-btn.icon { padding: 0 9px; }
   .hud-btn .label-long { display: none; }
+  .hud-hero-label { display: none; }
 
   .hud-journal { align-self: stretch; width: auto; max-height: 26vh; }
 

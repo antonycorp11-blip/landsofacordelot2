@@ -39,8 +39,8 @@ export const RouteHighlight = memo(function RouteHighlight({ path, zoom }: { pat
  * a viagem.
  */
 export const TravelerMarker = memo(
-  forwardRef<SVGGElement, { pxPerUnit: number; moving: boolean; headingRef: RefObject<number>; colors?: AgentColors }>(
-    function TravelerMarker({ pxPerUnit, moving, headingRef, colors }, ref) {
+  forwardRef<SVGGElement, { pxPerUnit: number; moving: boolean; headingRef: RefObject<number>; colors?: AgentColors; partySize?: number }>(
+    function TravelerMarker({ pxPerUnit, moving, headingRef, colors, partySize }, ref) {
       return (
         <MapAgentSprite
           ref={ref}
@@ -49,6 +49,7 @@ export const TravelerMarker = memo(
           moving={moving}
           headingRef={headingRef}
           colors={colors}
+          partySize={partySize}
         />
       );
     },

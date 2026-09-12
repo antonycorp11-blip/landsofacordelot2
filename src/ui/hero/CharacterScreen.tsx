@@ -1,0 +1,339 @@
+import { useState } from "react";
+import { heroById, ATTRIBUTE_EFFECT, ATTRIBUTE_LABEL, type Attributes } from "../../data/heroes";
+import { heroPortraitUrl } from "../../data/heroAssets";
+import { FAMILY_LABEL, skillsByFamily, type SkillId } from "../../data/skills";
+import { perksOfSkill } from "../../data/perks";
+import { troopById, troops as troopTypes, troopTotal } from "../../data/troops";
+import { CAREERS, CAREER_LABEL, rankName, rankProgress, passiveInfluencePerDay } from "../../game/careers";
+import { cargoCapacity, dailyCost, maxTroops, morale, partySpeed, partyStrength, xpToNextLevel } from "../../game/progression";
+import { derivedInput } from "../../game/experience";
+import { spendAttributePoint, spendSkillPoint } from "../../game/experience";
+import { setCompanionStatus, useGame, type CompanionState } from "../../game/store";
+import { poiById } from "../../world/valdoria";
+import "./hero.css";
+
+/**
+ * A FICHA DO PERSONAGEM.
+ *
+ * Quatro abas, e nenhuma vazia: só existe aba onde já existe conteúdo de
+ * verdade. Toda estatística derivada vem de `game/progression.ts` — a tela
+ * lê, nunca calcula, porque no dia em que a fórmula do limite de tropas mudar
+ * ela tem de mudar num lugar só.
+ */
+type Tab = "visao" | "habilidades" | "companheiros" | "grupo";
+
+const TAB_LABEL: Record<Tab, string> = {
+  visao: "Visão geral",
+  habilidades: "Habilidades",
+  companheiros: "Companheiros",
+  grupo: "Grupo",
+};
+
+const STATUS_LABEL: Record<CompanionState["status"], string> = {
+  IN_PARTY: "No grupo",
+  AVAILABLE: "Disponível",
+  TRAVELING: "Viajando",
+  CAPTURED: "Capturado",
+  WOUNDED: "Ferido",
+};
+
+/** Relação mínima para alguém aceitar seguir você. */
+export const RECRUIT_RELATION = 10;
+
+function Meter({ label, value, max, tone }: { label: string; value: number; max: number; tone?: "xp" }) {
+  return (
+    <div className="meter">
+      <div className="meter-head">
+        <span>{label}</span>
+        <b>
+          {Math.round(value)}
+          {max === Infinity ? "" : ` / ${Math.round(max)}`}
+        </b>
+      </div>
+      <div className={`meter-bar ${tone ?? ""}`}>
+        <i style={{ width: `${max === Infinity ? 100 : Math.max(0, Math.min(100, (value / max) * 100))}%` }} />
+      </div>
+    </div>
+  );
+}
+
+export function CharacterScreen({ onClose }: { onClose: () => void }) {
+  const game = useGame();
+  const [tab, setTab] = useState<Tab>("visao");
+  const hero = game.heroId ? heroById.get(game.heroId) : null;
+  if (!hero) return null;
+
+  const input = derivedInput(game);
+  const limit = maxTroops(input);
+  const total = troopTotal(game.troops);
+  const speed = partySpeed(input);
+  const speedWord = speed >= 1.0 ? "Ótima" : speed >= 0.85 ? "Boa" : speed >= 0.7 ? "Moderada" : "Lenta";
+  const portrait = heroPortraitUrl(hero.portraitAssetKey);
+  const companions = Object.values(game.companions);
+
+  return (
+    <div className="sheet">
+      <div className="sheet-bar">
+        {(Object.keys(TAB_LABEL) as Tab[]).map((t) => (
+          <button key={t} className="sheet-tab" aria-selected={tab === t} onClick={() => setTab(t)}>
+            {TAB_LABEL[t]}
+          </button>
+        ))}
+        <button className="sheet-close" onClick={onClose} aria-label="Fechar a ficha">
+          ×
+        </button>
+      </div>
+
+      <div className="sheet-body">
+        {tab === "visao" && (
+          <div className="sheet-inner cols">
+            {/* ------------------------- identidade ------------------------- */}
+            <div className="panel">
+              <div className="id-portrait">
+                {portrait ? <img src={portrait} alt={hero.name} /> : <span className="hs-portrait-note">retrato a caminho</span>}
+              </div>
+              <div>
+                <div className="id-name">{hero.name}</div>
+                <div className="id-line">
+                  Nível <b>{game.level}</b> · {hero.age} anos
+                </div>
+                <div className="id-line">Origem: <b>{CAREER_LABEL[hero.archetype]}</b></div>
+                <div className="id-line">Título: <b>Nenhum</b></div>
+                <div className="id-line">Casa: <b>Nenhuma</b></div>
+              </div>
+            </div>
+
+            {/* --------------------------- números --------------------------- */}
+            <div style={{ display: "grid", gap: 14 }}>
+              <div className="panel">
+                <Meter label="Experiência" value={game.xp} max={xpToNextLevel(game.level)} tone="xp" />
+                <div className="pair">
+                  <span>Influência</span>
+                  <b className="big">{game.influence.toFixed(1)}</b>
+                </div>
+                <div className="pair">
+                  <span>Ouro</span>
+                  <b className="big">{game.gold}</b>
+                </div>
+                <div className="pair">
+                  <span>Influência passiva</span>
+                  <b>{passiveInfluencePerDay(game.careerXp).toFixed(1)} / dia</b>
+                </div>
+              </div>
+
+              <div className="panel">
+                <div className="panel-title">
+                  Atributos
+                  {game.attributePoints > 0 && ` · ${game.attributePoints} ponto${game.attributePoints > 1 ? "s" : ""} a distribuir`}
+                </div>
+                {(Object.keys(ATTRIBUTE_LABEL) as (keyof Attributes)[]).map((k) => (
+                  <div className="attr-row" key={k}>
+                    <span className="attr-val">{game.attributes[k]}</span>
+                    <span className="attr-body">
+                      <span className="attr-name">{ATTRIBUTE_LABEL[k]}</span>
+                      <span className="attr-eff">{ATTRIBUTE_EFFECT[k]}</span>
+                    </span>
+                    <button
+                      className="attr-plus"
+                      disabled={game.attributePoints <= 0 || game.attributes[k] >= 10}
+                      onClick={() => spendAttributePoint(k)}
+                      aria-label={`Aumentar ${ATTRIBUTE_LABEL[k]}`}
+                    >
+                      +
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* -------------------------- carreiras -------------------------- */}
+            <div className="panel">
+              <div className="panel-title">Carreiras</div>
+              {CAREERS.map((c) => {
+                const xp = game.careerXp[c];
+                const p = rankProgress(xp);
+                return (
+                  <div className="career" key={c}>
+                    <div className="career-head">
+                      <span className="career-name">{CAREER_LABEL[c]}</span>
+                      <span className="career-rank">{rankName(c, xp)}</span>
+                    </div>
+                    <div className="meter-bar">
+                      <i style={{ width: `${Math.round(p.ratio * 100)}%` }} />
+                    </div>
+                    <div className="meter-head">
+                      <span />
+                      <b>{p.needed === p.current ? "máximo" : `${p.current} / ${p.needed}`}</b>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === "habilidades" && (
+          <div className="sheet-inner">
+            {game.skillPoints > 0 && (
+              <div className="panel">
+                <div className="panel-title">
+                  {game.skillPoints} ponto{game.skillPoints > 1 ? "s" : ""} de habilidade · cada um vale +5
+                </div>
+              </div>
+            )}
+            <div className="skill-groups">
+              {CAREERS.map((family) => (
+                <div className="panel" key={family}>
+                  <div className="panel-title">{FAMILY_LABEL[family]}</div>
+                  {skillsByFamily(family).map((skill) => {
+                    const value = game.skills[skill.id as SkillId] ?? 0;
+                    return (
+                      <div className="skill" key={skill.id}>
+                        <div className="skill-head">
+                          <span className="skill-name">{skill.name}</span>
+                          <span className="skill-val">{value} / 100</span>
+                          <button
+                            className="skill-up"
+                            disabled={game.skillPoints <= 0 || value >= 100}
+                            onClick={() => spendSkillPoint(skill.id)}
+                            aria-label={`Treinar ${skill.name}`}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <div className="meter-bar">
+                          <i style={{ width: `${value}%` }} />
+                        </div>
+                        <span className="skill-eff">{skill.effect}</span>
+                        {perksOfSkill(skill.id).length > 0 && (
+                          <div className="skill-perks">
+                            {perksOfSkill(skill.id).map((perk) => (
+                              <span className={`perk ${value >= perk.at ? "on" : ""}`} key={perk.id} title={perk.effect}>
+                                {perk.at} · {perk.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === "companheiros" && (
+          <div className="sheet-inner">
+            <div className="panel">
+              <div className="panel-title">Companheiros</div>
+              {companions.length === 0 && <span className="empty">Ninguém ainda.</span>}
+              {companions.map((c) => {
+                const def = heroById.get(c.id);
+                const at = poiById.get(c.locationPoiId);
+                const canRecruit = c.status === "AVAILABLE" && c.relation >= RECRUIT_RELATION;
+                return (
+                  <div className="comp" key={c.id}>
+                    <div className="comp-portrait">{def?.name[0]}</div>
+                    <div className="comp-body">
+                      <span className="comp-name">{def?.name}</span>
+                      <span className="comp-line">
+                        Nível {c.level} · {def ? CAREER_LABEL[def.archetype] : ""}
+                      </span>
+                      <span className="comp-line">
+                        {at?.name ?? "paradeiro incerto"} · relação {c.relation > 0 ? "+" : ""}
+                        {c.relation}
+                      </span>
+                      <span className="comp-state">{STATUS_LABEL[c.status]}</span>
+                    </div>
+                    <div className="comp-actions">
+                      {c.status === "IN_PARTY" ? (
+                        <button className="btn" onClick={() => setCompanionStatus(c.id, "AVAILABLE")}>
+                          Dispensar
+                        </button>
+                      ) : (
+                        <button
+                          className="btn"
+                          disabled={!canRecruit}
+                          title={canRecruit ? undefined : `Precisa de relação ${RECRUIT_RELATION}`}
+                          onClick={() => setCompanionStatus(c.id, "IN_PARTY")}
+                        >
+                          Recrutar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="empty">
+              Companheiro é gente, tropa é unidade — os dois nunca se somam. Cada um destes
+              tem nível, atributos e habilidades próprios, e continua evoluindo onde está.
+            </p>
+          </div>
+        )}
+
+        {tab === "grupo" && (
+          <div className="sheet-inner">
+            <div className="panel">
+              <div className="panel-title">Grupo</div>
+              <Meter label="Tropas" value={total} max={limit} />
+              <Meter label="Moral" value={morale(input)} max={100} />
+              <div className="pair">
+                <span>Velocidade</span>
+                <b>{speedWord} ({Math.round(speed * 100)}%)</b>
+              </div>
+              <div className="pair">
+                <span>Custo diário</span>
+                <b>{dailyCost(input)} moedas</b>
+              </div>
+              <div className="pair">
+                <span>Capacidade de carga</span>
+                <b>{cargoCapacity(input)}</b>
+              </div>
+              <div className="pair">
+                <span>Força estimada</span>
+                <b>{Math.round(partyStrength(input))}</b>
+              </div>
+            </div>
+
+            <div className="panel">
+              <div className="panel-title">Contingente</div>
+              {total === 0 && <span className="empty">Você viaja sozinho. Recrute numa cidade ou castelo.</span>}
+              {troopTypes.map((t) => {
+                const n = game.troops[t.id] ?? 0;
+                if (!n) return null;
+                return (
+                  <div className="troop-row" key={t.id}>
+                    <span className="troop-n">{n}</span>
+                    <span>{n === 1 ? t.singular : t.name}</span>
+                    <span className="troop-str">força {(n * t.strength).toFixed(1)}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="panel">
+              <div className="panel-title">Companheiros no grupo</div>
+              {companions.filter((c) => c.status === "IN_PARTY").length === 0 ? (
+                <span className="empty">Nenhum.</span>
+              ) : (
+                companions
+                  .filter((c) => c.status === "IN_PARTY")
+                  .map((c) => (
+                    <div className="troop-row" key={c.id}>
+                      <span className="troop-n">1</span>
+                      <span>{heroById.get(c.id)?.name}</span>
+                      <span className="troop-str">nível {c.level}</span>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export { troopById };

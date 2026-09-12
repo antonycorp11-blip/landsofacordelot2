@@ -61,8 +61,11 @@ type Props = {
   debug: boolean;
   onToggleDebug: () => void;
   journal: JournalEntry[];
-  /** Bolsa do jogador. Provisória: ainda não há economia por trás. */
+  /** Bolsa do jogador. */
   coins: number;
+  /** Nível do personagem — abre a ficha. */
+  level: number;
+  onOpenSheet: () => void;
   /** Região tocada no mapa, quando houver. Leitura pura dos dados do mundo. */
   selected: { name: string; biome: string; pois: number; settlements: number } | null;
 };
@@ -81,7 +84,7 @@ export function Hud({
   paused, onTogglePause, speed, onSpeed,
   follow, onToggleFollow, onFit,
   lightingName, lightingNight, lightingMode, onCycleLighting,
-  debug, onToggleDebug, journal, selected, coins,
+  debug, onToggleDebug, journal, selected, coins, level, onOpenSheet,
 }: Props) {
   // No desktop há espaço de sobra para o diário; no celular ele é uma gaveta.
   const [journalOpen, setJournalOpen] = useState(
@@ -133,7 +136,13 @@ export function Hud({
 
         <div className="spacer" />
 
-        {/* O lugar da bolsa já fica reservado; o número ainda é de mentira. */}
+        {/* A ficha do personagem fica atrás do nível: é o número que o jogador
+            olha com mais frequência, e serve de porta para o resto. */}
+        <button className="hud-panel hud-hero" onClick={onOpenSheet} title="Ficha do personagem">
+          <span className="hud-level">{level}</span>
+          <span className="hud-hero-label">Ficha</span>
+        </button>
+
         <div className="hud-panel hud-purse" title="Moedas">
           <Icon name="coin" />
           {coins}

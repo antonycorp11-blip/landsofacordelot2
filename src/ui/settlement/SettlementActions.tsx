@@ -13,6 +13,9 @@ import { ownsHolding } from "../../data/player";
  */
 type Action = { id: string; label: string; enabled: boolean; primary?: boolean };
 
+/** Onde faz sentido levantar homens. Um templo não arma ninguém. */
+const RECRUITS: string[] = ["castle", "city", "town", "village", "military", "market", "port", "mine", "estate"];
+
 function actionsFor(holding: Holding, present: Character[]): Action[] {
   const list: Action[] = [];
   const leader = present[0];
@@ -27,8 +30,8 @@ function actionsFor(holding: Holding, present: Character[]): Action[] {
   if (holding.kind === "market" || holding.kind === "city" || holding.kind === "port") {
     list.push({ id: "market", label: "Mercado", enabled: false });
   }
-  if (holding.kind === "castle" || holding.kind === "military") {
-    list.push({ id: "recruit", label: "Recrutar", enabled: false });
+  if (RECRUITS.includes(holding.kind)) {
+    list.push({ id: "recruit", label: "Recrutar", enabled: true });
   }
   if (holding.kind === "temple") {
     list.push({ id: "temple", label: "Templo", enabled: false });
@@ -53,9 +56,11 @@ function actionsFor(holding: Holding, present: Character[]): Action[] {
 export const SettlementActions = memo(function SettlementActions({
   holding,
   present,
+  onAction,
 }: {
   holding: Holding;
   present: Character[];
+  onAction: (id: string) => void;
 }) {
   const actions = actionsFor(holding, present);
   return (
@@ -66,6 +71,7 @@ export const SettlementActions = memo(function SettlementActions({
           className={`sp-action ${a.primary ? "primary" : ""}`}
           disabled={!a.enabled}
           title={a.enabled ? undefined : "Ainda não disponível"}
+          onClick={() => onAction(a.id)}
         >
           {a.label}
         </button>

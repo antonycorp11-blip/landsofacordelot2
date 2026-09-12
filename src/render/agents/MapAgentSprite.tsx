@@ -72,10 +72,20 @@ type Props = {
   colors?: AgentColors;
   /** Anel de localização quando a figura fica pequena. Só o jogador precisa. */
   locator?: boolean;
+  /**
+   * Quanta gente vai com este agente.
+   *
+   * É a leitura estratégica do mapa: olhar e saber se ali vão dois mensageiros
+   * ou sessenta homens, sem abrir menu nenhum. `undefined` não desenha nada —
+   * um agente que não representa um grupo não ganha crachá.
+   */
+  partySize?: number;
+  /** Torna o agente clicável. Sem isto ele continua sem receber toque. */
+  onSelect?: () => void;
 };
 
 export const MapAgentSprite = memo(
-  forwardRef<SVGGElement, Props>(function MapAgentSprite({ sheet, pxPerUnit, moving, headingRef, colors, locator = true }, ref) {
+  forwardRef<SVGGElement, Props>(function MapAgentSprite({ sheet, pxPerUnit, moving, headingRef, colors, locator = true, partySize, onSelect }, ref) {
     const imageRef = useRef<SVGImageElement>(null);
     const bobRef = useRef<SVGGElement>(null);
     const directionRef = useRef<AgentDirection>("SE");
@@ -144,8 +154,16 @@ export const MapAgentSprite = memo(
     // só poderá ser recolorido quando a arte trouxer máscaras por parte.
     const houseColor = colors?.primary ?? "#f2d98a";
 
+    // O crachá é medido em pixels de tela, como a própria figura: precisa ficar
+    // legível de longe sem virar um balão em cima do sprite de perto.
+    const badgeFont = Math.max(8.5, Math.min(12, screenPx * 0.34)) / pxPerUnit;
+    const badgeY = -height - badgeFont * 0.55;
+
     return (
-      <g ref={ref} pointerEvents="none">
+      <g ref={ref} pointerEvents={onSelect ? "auto" : "none"} style={onSelect ? { cursor: "pointer" } : undefined} onClick={onSelect}>
+        {onSelect && (
+          <circle r={Math.max(height * 0.5, 20 / pxPerUnit)} cy={-height * 0.45} fill="transparent" />
+        )}
         <defs>
           <clipPath id={clipId}>
             <rect
@@ -162,6 +180,25 @@ export const MapAgentSprite = memo(
         )}
 
         <ellipse rx={shadow * 0.5} ry={shadow * 0.19} fill="#241d10" opacity={0.34} />
+
+        {partySize !== undefined && partySize > 0 && (
+          <g pointerEvents="none">
+            <text
+              x={0}
+              y={badgeY}
+              textAnchor="middle"
+              fontSize={badgeFont}
+              fontWeight={600}
+              fill="#f6ecc8"
+              stroke="#1b2320"
+              strokeWidth={badgeFont * 0.26}
+              paintOrder="stroke"
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            >
+              {partySize}
+            </text>
+          </g>
+        )}
 
         <g transform={`scale(${k})`}>
           <g ref={bobRef}>

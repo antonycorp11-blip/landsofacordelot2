@@ -1,0 +1,44 @@
+/** Painel de leitura de um grupo no mapa. Mesma linguagem do painel de estrutura. */
+.agent-panel {
+  position: absolute;
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  width: 288px;
+  max-width: calc(100vw - 16px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  color: #f1e7cc;
+  background: #161d1cdb;
+  border: 1px solid #c8af6e3d;
+  border-left: 3px solid #7f8b84;
+  border-radius: 4px;
+  box-shadow: 0 2px 20px #00000055;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: inherit;
+  overflow: hidden;
+}
+.agent-panel.hostile { border-left-color: #a3453a; }
+
+.agent-head { display: flex; gap: 10px; align-items: flex-start; padding: 10px 11px; border-bottom: 1px solid #c8af6e2b; }
+.agent-head h2 { margin: 0; font-size: 15.5px; font-weight: 600; line-height: 1.2; }
+.agent-sub { font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #b6a97a; margin-top: 2px; }
+
+.agent-body { padding: 9px 11px; display: flex; flex-direction: column; gap: 1px; }
+.agent-body .pair { font-size: 12.5px; color: #cbbf9d; }
+.agent-body .pair b { color: #f4ecd2; text-align: right; }
+.risk.baixo { color: #a9cf8e; }
+.risk.moderado { color: #dcc478; }
+.risk.alto { color: #e0a08c; }
+.risk\.temerário, .risk.temerário { color: #e08477; }
+
+.agent-breakdown { margin-top: 7px; padding-top: 7px; border-top: 1px solid #c8af6e1f; }
+.agent-hint { margin: 8px 0 0; font-size: 11.5px; color: #9d947c; }
+
+.agent-actions { display: flex; gap: 5px; padding: 9px 11px; border-top: 1px solid #c8af6e2b; background: #0f1514a6; }
+.agent-actions .btn { height: 30px; font-size: 12px; padding: 0 11px; flex: 1; }
+
+@media (max-width: 720px) {
+  .agent-panel { left: max(8px, env(safe-area-inset-left)); width: auto; }
+}

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { charactersAt, characterById } from "../../data/characters";
 import { holdingFor } from "../../data/holdings";
 import { houseById } from "../../data/houses";
@@ -8,6 +8,7 @@ import { CharacterMiniCard } from "../characters/CharacterMiniCard";
 import { SettlementActions } from "./SettlementActions";
 import { SettlementHeader } from "./SettlementHeader";
 import { SettlementStats } from "./SettlementStats";
+import { RecruitPanel } from "./RecruitPanel";
 import "./panel.css";
 
 /**
@@ -21,11 +22,14 @@ import "./panel.css";
  */
 export const SettlementPanel = memo(function SettlementPanel({
   poi,
+  worldHours,
   onClose,
 }: {
   poi: PointOfInterest | null;
+  worldHours: number;
   onClose: () => void;
 }) {
+  const [recruiting, setRecruiting] = useState(false);
   if (!poi) return null;
 
   const holding = holdingFor(poi);
@@ -62,10 +66,18 @@ export const SettlementPanel = memo(function SettlementPanel({
           );
         })}
 
-        <SettlementStats holding={holding} />
+        {recruiting ? (
+          <RecruitPanel poi={poi} worldHours={worldHours} onClose={() => setRecruiting(false)} />
+        ) : (
+          <SettlementStats holding={holding} />
+        )}
       </div>
 
-      <SettlementActions holding={holding} present={present} />
+      <SettlementActions
+        holding={holding}
+        present={present}
+        onAction={(id) => id === "recruit" && setRecruiting(true)}
+      />
     </aside>
   );
 });

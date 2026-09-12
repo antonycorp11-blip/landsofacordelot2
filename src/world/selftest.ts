@@ -15,6 +15,15 @@ import { characters, characterById } from "../data/characters";
 import { controllerOf, setController, territoryColor } from "../data/territories";
 import { holdingFor } from "../data/holdings";
 import { crestUrl } from "../data/houseAssets";
+import { heroes, ATTRIBUTE_MAX, ATTRIBUTE_MIN } from "../data/heroes";
+import { skills as allSkills, SKILL_MAX } from "../data/skills";
+import { troops as troopTypes, troopTotal } from "../data/troops";
+import { MISSING_HERO_PORTRAITS, heroPortraitUrl } from "../data/heroAssets";
+import { getState } from "../game/store";
+import { xpToNextLevel, maxTroops, MAX_LEVEL } from "../game/progression";
+import { derivedInput } from "../game/experience";
+import { rankIndex, RANK_THRESHOLDS } from "../game/careers";
+import { partyOf, wanderers } from "./wanderers";
 
 export type Check = { name: string; ok: boolean; detail: string };
 
@@ -169,6 +178,76 @@ export function runSelfTest(): Check[] {
     "Casas menores possuem estruturas em domínio alheio",
     minorHoldings.length >= 3,
     minorHoldings.map((p) => `${p.name} (${houseById.get(holdingFor(p).ownerHouseId)?.shortName})`).join(" · "),
+  );
+
+  /* ------------------------- personagem e grupo ------------------------- */
+
+  add("quatro inícios existem", heroes.length === 4, heroes.map((h) => h.name).join(", "));
+
+  const g = getState();
+  add(
+    "no máximo um deles é o jogador",
+    !g.started || (!!g.heroId && !g.companions[g.heroId]),
+    g.started ? `jogador: ${g.heroId} · companheiros: ${Object.keys(g.companions).length}` : "campanha não iniciada",
+  );
+  add(
+    "os outros três continuam no mundo",
+    !g.started || Object.keys(g.companions).length === heroes.length - 1,
+    Object.values(g.companions).map((c) => c.id).join(", ") || "—",
+  );
+
+  add("nível nunca abaixo de 1", g.level >= 1 && g.level <= MAX_LEVEL, `nível ${g.level}`);
+
+  const attrOk = Object.values(g.attributes).every((v) => v >= ATTRIBUTE_MIN && v <= ATTRIBUTE_MAX);
+  add("atributos entre 1 e 10", attrOk, Object.values(g.attributes).join(" / "));
+
+  const badSkill = allSkills.find((sk) => {
+    const v = g.skills[sk.id] ?? 0;
+    return v < 0 || v > SKILL_MAX;
+  });
+  add("habilidades entre 0 e 100", !badSkill, badSkill?.name ?? `${allSkills.length} habilidades`);
+
+  /* A curva de nível precisa crescer sempre: uma inversão faria um nível
+     custar menos que o anterior e quebraria a progressão em silêncio. */
+  let curveOk = true;
+  for (let l = 1; l < MAX_LEVEL - 1; l++) if (xpToNextLevel(l + 1) <= xpToNextLevel(l)) curveOk = false;
+  add(
+    "curva de nível sempre crescente",
+    curveOk,
+    `1→2: ${xpToNextLevel(1)} · 2→3: ${xpToNextLevel(2)} · 10→11: ${xpToNextLevel(10)} · 29→30: ${xpToNextLevel(29)}`,
+  );
+
+  let rankOk = true;
+  for (let i = 0; i < RANK_THRESHOLDS.length; i++) if (rankIndex(RANK_THRESHOLDS[i]) !== i) rankOk = false;
+  add("postos de carreira em ordem", rankOk, RANK_THRESHOLDS.join(" · "));
+
+  add(
+    "contingente respeita o limite de comando",
+    troopTotal(g.troops) <= maxTroops(derivedInput(g)),
+    `${troopTotal(g.troops)} / ${maxTroops(derivedInput(g))}`,
+  );
+
+  /* Cada agente do mapa precisa de contingente, senão o crachá some e a
+     leitura estratégica deixa de existir para aquele grupo. */
+  const noParty = wanderers.filter((w) => troopTotal(partyOf(w)) <= 0);
+  add(
+    "todo agente do mapa tem contingente",
+    noParty.length === 0,
+    noParty.map((w) => w.name).join(", ") ||
+      wanderers.map((w) => `${w.name}:${troopTotal(partyOf(w))}`).slice(0, 4).join(" · ") + " …",
+  );
+
+  add(
+    "toda tropa tem custo e força",
+    troopTypes.every((t) => t.recruitCost > 0 && t.strength > 0 && t.dailyWage > 0),
+    troopTypes.map((t) => `${t.name} ${t.recruitCost}/${t.strength}`).join(" · "),
+  );
+
+  const missingPortraits = MISSING_HERO_PORTRAITS.filter((k) => !heroPortraitUrl(k));
+  add(
+    "retratos dos quatro inícios",
+    missingPortraits.length === 0,
+    missingPortraits.length ? `faltam: ${missingPortraits.join(", ")}` : "4 retratos",
   );
 
   return checks;

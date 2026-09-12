@@ -28,19 +28,18 @@ import { useWanderers } from "../travel/useWanderers";
 import { WanderersLayer } from "../render/layers/WanderersLayer";
 import { PoliticalLayer } from "../render/layers/PoliticalLayer";
 import { SettlementPanel } from "../ui/settlement/SettlementPanel";
+import { CharacterScreen } from "../ui/hero/CharacterScreen";
+import { AgentPanel } from "../ui/agent/AgentPanel";
+import { useGame } from "../game/store";
+import { heroById } from "../data/heroes";
+import { troopTotal } from "../data/troops";
+import type { Wanderer } from "../world/wanderers";
 import { useCamera } from "./useCamera";
 import { Hud, LIGHTING_ORDER } from "../ui/Hud";
 import type { JournalEntry, JournalKind } from "../ui/journal";
 
-const START_NODE = "castelo_real";
-
-/**
- * Bolsa inicial do jogador.
- *
- * Provisória: não existe economia ainda — nada gasta nem ganha moeda. O campo
- * está no HUD para o lugar já estar reservado quando existir.
- */
-const PURSE_PLACEHOLDER = 120;
+/** Onde a campanha começa, quando o herói escolhido não disser outra coisa. */
+const FALLBACK_START = "castelo_real";
 
 /** Rótulos das regiões — some quando o jogador se aproxima do terreno. */
 /** Enquadramento inicial: a massa territorial, não o viewBox inteiro. */
@@ -49,6 +48,9 @@ const KINGDOM_BOUNDS = bounds(valdoria.outline);
 const REGION_LABELS = regions.map((r) => ({ id: r.id, name: r.name, at: centroid(r.polygon) }));
 
 export function WorldMap() {
+  const game = useGame();
+  const startNode = (game.heroId && heroById.get(game.heroId)?.startPoiId) || FALLBACK_START;
+
   const [debug, setDebug] = useState(false);
   const [lightingMode, setLightingMode] = useState<LightingMode>("cycle");
   const [tilesReady, setTilesReady] = useState(anyTilesetLoaded());
@@ -59,6 +61,9 @@ export function WorldMap() {
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
   /** POI cujo painel político está aberto. `null` = só o mapa na tela. */
   const [panelPoiId, setPanelPoiId] = useState<string | null>(null);
+  /** Ficha do personagem e leitura de um grupo no mapa — ambas contextuais. */
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [readAgent, setReadAgent] = useState<Wanderer | null>(null);
   const [journal, setJournal] = useState<JournalEntry[]>([]);
 
   const followRef = useRef(follow);
@@ -102,7 +107,7 @@ export function WorldMap() {
   );
 
   const travel = useTravel({
-    startNodeId: START_NODE,
+    startNodeId: startNode,
     events,
     onFrame: useCallback(
       (pos: Point) => {
@@ -245,12 +250,22 @@ export function WorldMap() {
             </g>
           )}
 
-          {!debug && <WanderersLayer agents={wanderers} pxPerUnit={camera.baseScale() * zoom} />}
+          {!debug && (
+            <WanderersLayer
+              agents={wanderers}
+              pxPerUnit={camera.baseScale() * zoom}
+              onSelect={(w) => {
+                if (camera.wasDragged()) return;
+                setReadAgent(w);
+              }}
+            />
+          )}
           <TravelerMarker
             ref={travel.markerRef}
             pxPerUnit={camera.baseScale() * zoom}
             moving={travel.state === "traveling" && !travel.paused}
             headingRef={travel.headingRef}
+            partySize={troopTotal(game.troops)}
           />
           {debug && <DebugLayer zoom={zoom} />}
         </g>
@@ -285,14 +300,20 @@ export function WorldMap() {
         debug={debug}
         onToggleDebug={() => setDebug((d) => !d)}
         journal={journal}
-        coins={PURSE_PLACEHOLDER}
+        coins={game.gold}
+        level={game.level}
+        onOpenSheet={() => setSheetOpen(true)}
         selected={region ? { name: region.name, biome: region.biome, pois: region.pointsOfInterest.length, settlements: region.settlements.length } : null}
       />
 
       <SettlementPanel
         poi={panelPoiId ? poiById.get(panelPoiId) ?? null : null}
+        worldHours={travel.worldHours}
         onClose={() => setPanelPoiId(null)}
       />
+
+      {readAgent && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
+      {sheetOpen && <CharacterScreen onClose={() => setSheetOpen(false)} />}
     </div>
   );
 }

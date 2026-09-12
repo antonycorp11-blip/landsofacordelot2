@@ -2,6 +2,9 @@ import { memo } from "react";
 import { MapAgentSprite } from "../agents/MapAgentSprite";
 import { agentSheets } from "../agents/agentSheets";
 import type { WandererRuntime } from "../../travel/useWanderers";
+import { partyOf } from "../../world/wanderers";
+import { troopTotal } from "../../data/troops";
+import type { Wanderer } from "../../world/wanderers";
 
 /**
  * A gente que anda pelo reino sem o jogador mandar.
@@ -13,12 +16,14 @@ import type { WandererRuntime } from "../../travel/useWanderers";
 export const WanderersLayer = memo(function WanderersLayer({
   agents,
   pxPerUnit,
+  onSelect,
 }: {
   agents: WandererRuntime[];
   pxPerUnit: number;
+  onSelect: (w: Wanderer) => void;
 }) {
   return (
-    <g pointerEvents="none">
+    <g>
       {agents.map((a) => (
         <MapAgentSprite
           key={a.wanderer.id}
@@ -28,6 +33,8 @@ export const WanderersLayer = memo(function WanderersLayer({
           moving={a.moving}
           headingRef={a.headingRef}
           locator={false}
+          partySize={troopTotal(partyOf(a.wanderer))}
+          onSelect={() => onSelect(a.wanderer)}
         />
       ))}
     </g>
