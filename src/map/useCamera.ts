@@ -377,6 +377,8 @@ export function useCamera({ world, focus, maxZoom }: CameraLimits) {
   return {
     settle,
     subscribe,
+    /** Pixels de tela por unidade de mundo quando zoom = 1. */
+    baseScale,
     getVisibleRect,
     containerRef,
     layerRef,

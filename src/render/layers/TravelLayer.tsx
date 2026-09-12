@@ -1,7 +1,9 @@
-import { forwardRef, memo } from "react";
+import { forwardRef, memo, type RefObject } from "react";
+import { MapAgentSprite } from "../agents/MapAgentSprite";
+import { agentSheets, type AgentColors } from "../agents/agentSheets";
 import { pathFromPoints } from "../../world/geo";
 import { WORLD_SCALE as S } from "../../world/layout";
-import { featureWidth, LOD_SCALE } from "../../world/scale";
+import { featureWidth } from "../../world/scale";
 import type { TravelPath } from "../../world/types";
 
 /** Rota destacada — mesma polilinha que o personagem vai percorrer. */
@@ -28,25 +30,27 @@ export const RouteHighlight = memo(function RouteHighlight({ path, zoom }: { pat
 });
 
 /**
- * Marcador provisório do personagem.
- * A posição é escrita imperativamente pelo `useTravel` — este componente nunca
- * re-renderiza durante a viagem.
+ * O viajante do jogador.
+ *
+ * É só uma instância do agente genérico do mapa, com a folha do cavaleiro
+ * montado: os lordes, mensageiros e caravanas que vierem depois usam o mesmo
+ * componente com outra folha e outras cores. A posição continua sendo escrita
+ * imperativamente pelo `useTravel` — este componente não re-renderiza durante
+ * a viagem.
  */
 export const TravelerMarker = memo(
-  forwardRef<SVGGElement, { zoom: number }>(function TravelerMarker({ zoom }, ref) {
-    // Encolhe junto com os castelos quando o mundo cresce (daí o LOD_SCALE),
-    // mas mantém tamanho quase constante na tela ao longo do zoom, para o
-    // jogador ser sempre localizável.
-    const k = ((S / LOD_SCALE) * 0.65) / Math.max(0.55, Math.min(2.2, zoom * 0.55));
-    return (
-      <g ref={ref} pointerEvents="none">
-        <g transform={`scale(${k})`}>
-          <ellipse cx={0} cy={6} rx={17} ry={6} fill="#2f2617" opacity={0.3} />
-          <path d="M-16 -44 h32 a4 4 0 0 1 4 4 v34 a4 4 0 0 1 -4 4 h-11 l-5 8 -5 -8 h-11 a4 4 0 0 1 -4 -4 v-34 a4 4 0 0 1 4 -4 z" fill="#f6eed5" stroke="#3a3128" strokeWidth={2.4} />
-          <circle cx={0} cy={-28} r={7} fill="#c2a06a" stroke="#3a3128" strokeWidth={2} />
-          <path d="M-9 -6 q9 -14 18 0 z" fill="#8f3f34" stroke="#3a3128" strokeWidth={2} />
-        </g>
-      </g>
-    );
-  }),
+  forwardRef<SVGGElement, { pxPerUnit: number; moving: boolean; headingRef: RefObject<number>; colors?: AgentColors }>(
+    function TravelerMarker({ pxPerUnit, moving, headingRef, colors }, ref) {
+      return (
+        <MapAgentSprite
+          ref={ref}
+          sheet={agentSheets.knight_rider}
+          pxPerUnit={pxPerUnit}
+          moving={moving}
+          headingRef={headingRef}
+          colors={colors}
+        />
+      );
+    },
+  ),
 );

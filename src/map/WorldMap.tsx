@@ -227,7 +227,12 @@ export function WorldMap() {
             </g>
           )}
 
-          <TravelerMarker ref={travel.markerRef} zoom={zoom} />
+          <TravelerMarker
+            ref={travel.markerRef}
+            pxPerUnit={camera.baseScale() * zoom}
+            moving={travel.state === "traveling" && !travel.paused}
+            headingRef={travel.headingRef}
+          />
           {debug && <DebugLayer zoom={zoom} />}
         </g>
       </svg>

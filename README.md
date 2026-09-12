@@ -108,9 +108,60 @@ src/
   ui/
     Hud.tsx               HUD provisório: lugar, relógio, viagem, tempo
     journal.ts            diário de viagem (tipo, hora do mundo, texto)
+  render/agents/
+    agentSheets.ts        folhas direcionais + direção pelo vetor de movimento
+    MapAgentSprite.tsx    figura de um agente do mapa (folha, direção, animação)
   travel/
     useTravel.ts          pathfinding, animação, tempo do mundo, event hooks
 ```
+
+## Agentes do mapa
+
+Um **agente** é qualquer figura que anda pelas estradas. Hoje existe um — o
+viajante do jogador, um cavaleiro montado — mas o componente não sabe disso:
+recebe uma folha de sprites, um rumo e se está andando. Lordes, mensageiros,
+caravanas, patrulhas e exércitos pequenos usam o mesmo componente com outra
+folha e outras cores.
+
+A folha tem uma linha por direção (`NW`, `NE`, `SW`, `SE`) e uma coluna por
+quadro da cavalgada. A direção sai do vetor entre a posição atual e a anterior
+na rota, com o rumo filtrado: as estradas são sinuosas de propósito, e seguir
+cada serpenteado faria a figura alternar entre "de costas" e "de frente" o
+tempo todo.
+
+### Preparar uma folha nova
+
+O gerador entrega os quadros soltos: cada um numa posição diferente dentro da
+sua célula, com a bandeira puxando o recorte para um lado e os cascos em
+alturas diferentes. Desenhado assim, o agente escorrega de lado e sobe e desce
+a cada quadro.
+
+```bash
+python3 tools/pack-agent-sheet.py entrada.png src/assets/agents/nome.png --scale 0.5
+```
+
+A ferramenta acha cada sprite pelo alfa, mede onde ficam os **cascos** e
+reempacota numa grade regular com o ponto de apoio sempre no mesmo lugar da
+célula. Depois disso a âncora é (0.5, 1.0) e o agente pisa certo na estrada. A
+arte original fica em `src/assets/source-art/`, intocada.
+
+Registre o resultado em `agentSheets.ts` com o tamanho da célula que a
+ferramenta imprimiu.
+
+### Tamanho na tela
+
+A figura é medida em **pixels de tela**, não em unidades de mundo. Em unidades,
+o mesmo zoom daria um cavaleiro de 30 px no desktop e de 11 px no celular,
+porque a tela estreita mostra o reino numa escala bem menor. Na vista do reino
+ele fica pequeno mas legível (e ganha um anel), e cresce devagar até um teto.
+
+### Cores da Casa
+
+`AgentColors` (`primary`, `secondary`, `bannerColor`, `houseStyle`) já atravessa
+o componente, e `primary` já pinta o anel no mapa. Recolorir **estandarte e
+traje separadamente** exige que a arte venha com máscaras por parte, e esta
+folha é uma imagem achatada — quando a arte tiver as máscaras, só a pintura
+muda.
 
 ## HUD provisório
 
