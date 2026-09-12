@@ -12,7 +12,13 @@ grade regular com o ponto de apoio sempre no MESMO lugar da célula: centro
 horizontal, base vertical. Depois disso o mapa só precisa saber a âncora
 (0.5, 1.0) — e a arte original não é tocada.
 
-    python3 tools/pack-agent-sheet.py entrada.png saida.png [--cols 4] [--rows 4] [--scale 0.5]
+Com `--pixel N` a folha ainda sai convertida em pixel art de verdade: média de
+área para N pixels de altura por célula (não vizinho mais próximo, que joga
+fora quinze de cada dezesseis pixels de uma arte pintada), paleta reduzida e
+alfa binário, para não sobrar meia-transparência de contorno.
+
+    python3 tools/pack-agent-sheet.py entrada.png saida.png [--cols 4] [--rows 4]
+                                      [--scale 0.5] [--pixel 48] [--colors 28]
 """
 import argparse
 from PIL import Image
@@ -43,6 +49,31 @@ def measure(mask, x0, x1, y0, y1, foot_fraction=0.10):
     return bx0, by0, bx1, by1, ((min(feet) + max(feet)) // 2 if feet else (bx0 + bx1) // 2)
 
 
+def pixelize(sheet, cols, rows, cell_px, colors):
+    """
+    Arte pintada → pixel art, sem perder o alinhamento da grade.
+
+    A redução é por MÉDIA DE ÁREA: vizinho mais próximo descartaria quinze de
+    cada dezesseis pixels e devolveria um borrão com serrilha. Depois a paleta
+    é reduzida e o alfa vira binário — meia-transparência de contorno, numa
+    arte pintada, aparece como uma auréola cinza em cima do mapa.
+
+    Como a folha já está empacotada numa grade regular, reduzir a folha inteira
+    reduz cada célula igualmente: o ponto de apoio continua no mesmo lugar.
+    """
+    cell_h = sheet.height // rows
+    cell_w = sheet.width // cols
+    target_h = cell_px
+    target_w = max(1, round(cell_w * cell_px / cell_h))
+    small = sheet.resize((target_w * cols, target_h * rows), Image.BOX)
+
+    alpha = small.getchannel("A").point(lambda v: 255 if v >= 128 else 0)
+    flat = small.convert("RGB").quantize(colors=colors, method=Image.MEDIANCUT, dither=Image.NONE)
+    out = flat.convert("RGBA")
+    out.putalpha(alpha)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("source")
@@ -51,6 +82,8 @@ def main():
     ap.add_argument("--rows", type=int, default=4)
     ap.add_argument("--scale", type=float, default=0.5, help="redução final; 1 mantém o tamanho")
     ap.add_argument("--alpha", type=int, default=16, help="limiar de alfa para considerar pixel")
+    ap.add_argument("--pixel", type=int, default=0, help="altura da célula em pixels; converte em pixel art")
+    ap.add_argument("--colors", type=int, default=28, help="cores da paleta quando --pixel é usado")
     args = ap.parse_args()
 
     src = Image.open(args.source).convert("RGBA")
@@ -84,7 +117,9 @@ def main():
         # apoio no centro horizontal da célula, cascos na base
         sheet.paste(sprite, (c * cell_w + side - (foot - x0), (r + 1) * cell_h - (y1 - y0 + 1)), sprite)
 
-    if args.scale != 1:
+    if args.pixel:
+        sheet = pixelize(sheet, args.cols, args.rows, args.pixel, args.colors)
+    elif args.scale != 1:
         sheet = sheet.resize(
             (round(sheet.width * args.scale), round(sheet.height * args.scale)), Image.LANCZOS
         )

@@ -16,6 +16,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  /* Barra no topo, diário no rodapé: é onde um registro de eventos se lê sem
+     tapar o mapa, e no celular fica ao alcance do polegar. */
+  justify-content: space-between;
   gap: 6px;
   padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
            max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
@@ -143,7 +146,7 @@
 .hud-journal {
   align-self: flex-end;
   width: 248px;
-  max-height: 30vh;
+  max-height: 28vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

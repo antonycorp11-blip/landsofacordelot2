@@ -27,13 +27,10 @@ export type AgentSheet = {
   cellHeight: number;
   /** Quadros por segundo da cavalgada. */
   fps: number;
-  /**
-   * Altura do agente em unidades de mundo no zoom de referência. É o único
-   * número que muda o tamanho na tela — ver `MapAgentSprite`.
-   */
-  worldHeight: number;
   /** Largura da sombra, como fração da altura. */
   shadowWidth: number;
+  /** Arte em pixel art não pode ser suavizada na ampliação. */
+  pixelArt?: boolean;
 };
 
 /**
@@ -57,11 +54,11 @@ export const agentSheets = {
     url: knightRider,
     rows: 4,
     cols: 4,
-    cellWidth: 152,
-    cellHeight: 152,
+    cellWidth: 64,
+    cellHeight: 64,
     fps: 8,
-    worldHeight: 152,
     shadowWidth: 0.34,
+    pixelArt: true,
   },
 } satisfies Record<string, AgentSheet>;
 

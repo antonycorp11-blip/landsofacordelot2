@@ -171,6 +171,7 @@ export const MapAgentSprite = memo(
                 y={-sheet.cellHeight}
                 width={sheet.cellWidth * sheet.cols}
                 height={sheet.cellHeight * sheet.rows}
+                style={sheet.pixelArt ? { imageRendering: "pixelated" } : undefined}
               />
             </g>
           </g>
