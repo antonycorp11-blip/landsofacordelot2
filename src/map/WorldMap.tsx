@@ -25,9 +25,10 @@ import { borderCrossingById } from "../world/borderCrossings";
 import { poiById, regionById, regions, valdoria } from "../world/valdoria";
 import { useTravel } from "../travel/useTravel";
 import { useCamera } from "./useCamera";
+import { Hud, LIGHTING_ORDER } from "../ui/Hud";
+import type { JournalEntry, JournalKind } from "../ui/journal";
 
 const START_NODE = "castelo_real";
-const SPEEDS = [1, 2, 4];
 
 /** Rótulos das regiões — some quando o jogador se aproxima do terreno. */
 /** Enquadramento inicial: a massa territorial, não o viewBox inteiro. */
@@ -44,7 +45,7 @@ export function WorldMap() {
   const [selectedRegion, setSelectedRegion] = useState<RegionId | null>(null);
   const [hoveredRegion, setHoveredRegion] = useState<RegionId | null>(null);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
-  const [log, setLog] = useState<string[]>([]);
+  const [journal, setJournal] = useState<JournalEntry[]>([]);
 
   const followRef = useRef(follow);
   followRef.current = follow;
@@ -52,25 +53,32 @@ export function WorldMap() {
   const camera = useCamera({ world: WORLD, focus: KINGDOM_BOUNDS, maxZoom: 7 * LOD_SCALE });
   const { centerOn } = camera;
 
-  const pushLog = useCallback((line: string) => {
-    setLog((l) => [line, ...l].slice(0, 6));
+  /**
+   * O diário guarda a hora do mundo de cada acontecimento. Como as horas são
+   * escritas a cada frame pela viagem, a leitura vem de uma ref — o callback
+   * de evento não pode depender do valor capturado no render.
+   */
+  const hoursRef = useRef(0);
+  const entryId = useRef(0);
+  const pushLog = useCallback((kind: JournalKind, text: string) => {
+    setJournal((l) => [{ id: entryId.current++, kind, text, hours: hoursRef.current }, ...l].slice(0, 60));
   }, []);
 
   /** Hooks de viagem — pontos de entrada para eventos aleatórios no futuro. */
   const events: TravelEvents = useMemo(
     () => ({
       onTravelStart: (p) =>
-        pushLog(`Partida — ${formatDuration(p.travelHours)} de viagem`),
-      onRegionEntered: (id) => pushLog(`Entrou em ${regionById.get(id)?.name ?? id}`),
-      onBorderCrossed: (c) => pushLog(`Travessia: ${c.name}`),
+        pushLog("partida", `Partida — ${formatDuration(p.travelHours)} de viagem`),
+      onRegionEntered: (id) => pushLog("regiao", `Entrou em ${regionById.get(id)?.name ?? id}`),
+      onBorderCrossed: (c) => pushLog("fronteira", `Travessia: ${c.name}`),
       onRouteNodeReached: (id) => {
         const poi = poiById.get(id);
-        if (poi) pushLog(`Passou por ${poi.name}`);
+        if (poi) pushLog("marco", `Passou por ${poi.name}`);
       },
       onRandomEventCheck: (edge, roll) => {
-        if (roll < edge.eventChance * 0.35) pushLog(`Algo se move na estrada… (${edge.terrain})`);
+        if (roll < edge.eventChance * 0.35) pushLog("evento", `Algo se move na estrada… (${edge.terrain})`);
       },
-      onDestinationReached: (id) => pushLog(`Chegou a ${poiById.get(id)?.name ?? id}`),
+      onDestinationReached: (id) => pushLog("chegada", `Chegou a ${poiById.get(id)?.name ?? id}`),
     }),
     [pushLog],
   );
@@ -98,7 +106,7 @@ export function WorldMap() {
       setSelectedPoiId(poi.id);
       setSelectedRegion(poi.regionId);
       if (poi.id === travel.currentNodeId) return;
-      if (!travel.travelTo(poi.id)) pushLog(`Sem rota por estrada até ${poi.name}`);
+      if (!travel.travelTo(poi.id)) pushLog("evento", `Sem rota por estrada até ${poi.name}`);
     },
     [camera, pushLog, travel],
   );
@@ -117,7 +125,7 @@ export function WorldMap() {
       if (camera.wasDragged()) return;
       const c = borderCrossingById.get(id);
       if (!c) return;
-      pushLog(`${c.name} — ${c.connects.map((r) => regionById.get(r)?.name).join(" ↔ ")}`);
+      pushLog("fronteira", `${c.name} — ${c.connects.map((r) => regionById.get(r)?.name).join(" ↔ ")}`);
       if (id !== travel.currentNodeId) travel.travelTo(id);
     },
     [camera, pushLog, travel],
@@ -126,6 +134,16 @@ export function WorldMap() {
   const region = selectedRegion ? regionById.get(selectedRegion) : null;
   const zoom = camera.zoom;
   const lighting = lightingAt(travel.worldHours, lightingMode);
+  hoursRef.current = travel.worldHours;
+
+  const destinationId = travel.path?.nodeIds[travel.path.nodeIds.length - 1] ?? null;
+  const destinationName = destinationId
+    ? poiById.get(destinationId)?.name ?? borderCrossingById.get(destinationId)?.name ?? null
+    : null;
+  const progress =
+    travel.path && travel.path.totalDistance > 0
+      ? travel.progressRef.current / travel.path.totalDistance
+      : 0;
 
   // Desvanece entre o chão vetorial (cor chapada) e o chão ladrilhado. Sem
   // tileset carregado o vetorial fica sempre em 1 — nada muda no visual.
@@ -212,62 +230,31 @@ export function WorldMap() {
 
       <AtmosphereOverlay subscribe={camera.subscribe} night={debug ? 0 : lighting.night} view={view} zoom={zoom} />
 
-      <div className="lighting-control">
-        <span className="lighting-icon" aria-hidden="true">{lighting.night > .6 ? '☾' : '☀'}</span>
-        <div><span className="lighting-caption">LUZ DE VALDÓRIA</span><strong>{lighting.name}</strong></div>
-        <select aria-label="Iluminação do mapa" value={lightingMode} onChange={e => setLightingMode(e.target.value as LightingMode)}>
-          <option value="cycle">Ciclo da viagem</option><option value="day">Prévia: dia</option><option value="dusk">Prévia: crepúsculo</option><option value="night">Prévia: noite</option>
-        </select>
-      </div>
-
-      {/* Controles mínimos de debug — não é o HUD do jogo. */}
-      <div className="hud">
-        <div className="hud-row">
-          <strong>Valdória</strong>
-          <span className="dim">zoom {zoom.toFixed(2)}×</span>
-        </div>
-        <div className="hud-row">
-          <button onClick={() => camera.fitWorld()}>Reino inteiro</button>
-          <button onClick={() => camera.zoomBy(1.45)}>+</button>
-          <button onClick={() => camera.zoomBy(1 / 1.45)}>−</button>
-          <button className={follow ? "on" : ""} onClick={() => setFollow((f) => !f)}>
-            Seguir
-          </button>
-        </div>
-        <div className="hud-row">
-          <span className="dim">velocidade</span>
-          {SPEEDS.map((s) => (
-            <button key={s} className={travel.speed === s ? "on" : ""} onClick={() => travel.setSpeed(s)}>
-              {s}×
-            </button>
-          ))}
-          <button className={debug ? "on" : ""} onClick={() => setDebug((d) => !d)}>
-            Debug
-          </button>
-        </div>
-        <div className="hud-row dim">
-          {regionById.get(travel.regionId)?.name} · dia {Math.floor(travel.worldHours / 24) + 1},{" "}
-          {String(Math.floor(travel.worldHours % 24)).padStart(2, "0")}h
-          {travel.state === "traveling" ? " · viajando" : ""}
-        </div>
-        {region && (
-          <div className="hud-region">
-            <div className="hud-region-name">{region.name}</div>
-            <div className="dim">
-              {region.biome} · {region.pointsOfInterest.length} pontos · {region.settlements.length} assentamentos
-            </div>
-          </div>
-        )}
-        <div className="hud-log">
-          {log.map((l, i) => (
-            <div key={i} style={{ opacity: 1 - i * 0.14 }}>
-              {l}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="hint">Clique em uma cidade para viajar · arraste para mover · roda / pinça para zoom</div>
+      <Hud
+        placeName={regionById.get(travel.regionId)?.name ?? "Valdória"}
+        worldHours={travel.worldHours}
+        traveling={travel.state === "traveling"}
+        destinationName={destinationName}
+        travelHours={travel.path?.travelHours ?? 0}
+        progress={progress}
+        paused={travel.paused}
+        onTogglePause={travel.togglePause}
+        speed={travel.speed}
+        onSpeed={travel.setSpeed}
+        follow={follow}
+        onToggleFollow={() => setFollow((f) => !f)}
+        onFit={camera.fitWorld}
+        lightingName={lighting.name}
+        lightingNight={lighting.night}
+        lightingMode={lightingMode}
+        onCycleLighting={() =>
+          setLightingMode((m) => LIGHTING_ORDER[(LIGHTING_ORDER.indexOf(m) + 1) % LIGHTING_ORDER.length])
+        }
+        debug={debug}
+        onToggleDebug={() => setDebug((d) => !d)}
+        journal={journal}
+        selected={region ? { name: region.name, biome: region.biome, pois: region.pointsOfInterest.length, settlements: region.settlements.length } : null}
+      />
     </div>
   );
 }

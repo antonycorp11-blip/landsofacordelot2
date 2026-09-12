@@ -1,0 +1,200 @@
+/**
+ * HUD PROVISÓRIO.
+ *
+ * Não é a interface final do jogo — é o mínimo que já serve para jogar o mapa:
+ * onde estou, que horas são no mundo, o que aconteceu na estrada e o controle
+ * do tempo. Tudo em painéis soltos sobre o mapa, para que a área jogável
+ * continue sendo o mapa inteiro. O zoom saiu: pinça e roda dão conta.
+ */
+
+.hud-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+           max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  gap: 10px;
+  font-family: inherit;
+}
+/* Só os painéis recebem toque; o resto da tela continua sendo mapa. */
+.hud-layer > * { pointer-events: none; }
+.hud-panel { pointer-events: auto; }
+
+.hud-panel {
+  background: linear-gradient(#f6eed6f2, #e9dcb9f2);
+  border: 1px solid #8d7743;
+  border-radius: 4px;
+  box-shadow: 0 2px 0 #6b5a30, 0 10px 26px #00000045;
+  color: var(--ink);
+}
+
+/* ------------------------------- cartucho ------------------------------- */
+
+.hud-top { display: flex; align-items: flex-start; gap: 10px; }
+
+.hud-cartouche { padding: 9px 13px 10px; min-width: 216px; }
+
+.hud-kingdom {
+  font-size: 9.5px;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: #8a7134;
+}
+.hud-place {
+  font-size: 17px;
+  line-height: 1.25;
+  margin-top: 1px;
+}
+.hud-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: #6b5c41;
+}
+.hud-clock b { font-weight: 600; color: var(--ink); }
+
+.hud-journey { margin-top: 8px; border-top: 1px solid #b8a26a80; padding-top: 7px; }
+.hud-journey-line { font-size: 12.5px; display: flex; gap: 6px; align-items: baseline; }
+.hud-journey-line .to { font-weight: 600; }
+.hud-journey-line .eta { margin-left: auto; color: #6b5c41; font-size: 11.5px; }
+.hud-progress {
+  margin-top: 5px;
+  height: 4px;
+  border-radius: 2px;
+  background: #00000020;
+  overflow: hidden;
+}
+.hud-progress i { display: block; height: 100%; background: #9a7f30; }
+
+.hud-selected {
+  margin-top: 8px;
+  border-top: 1px solid #b8a26a80;
+  padding-top: 6px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.hud-selected span { color: #6b5c41; font-size: 11.5px; }
+
+/* -------------------------------- diário -------------------------------- */
+
+.hud-journal {
+  width: 252px;
+  max-height: 236px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.hud-journal-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  font-size: 9.5px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: #8a7134;
+  border-bottom: 1px solid #b8a26a80;
+}
+.hud-journal-head button {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  color: #8a7134;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.hud-journal-list {
+  overflow-y: auto;
+  padding: 6px 11px 9px;
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.hud-entry { display: flex; gap: 7px; padding: 1.5px 0; }
+.hud-entry .glyph { width: 12px; text-align: center; color: #947c39; flex: none; }
+.hud-entry .when { color: #8a7b5e; font-size: 11px; flex: none; font-variant-numeric: tabular-nums; }
+.hud-entry.kind-chegada .glyph, .hud-entry.kind-partida .glyph { color: #8a6a16; }
+.hud-entry.kind-evento { color: #6e3b26; }
+.hud-empty { color: #8a7b5e; font-size: 11.5px; padding: 2px 0 4px; }
+
+/* --------------------------------- doca --------------------------------- */
+
+.hud-bottom { display: flex; align-items: flex-end; gap: 10px; }
+
+.hud-dock {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  flex-wrap: wrap;
+}
+.hud-dock .sep { width: 1px; align-self: stretch; background: #b8a26a90; margin: 0 3px; }
+
+.hud-btn {
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1;
+  padding: 7px 10px;
+  min-height: 32px;
+  border-radius: 3px;
+  border: 1px solid #00000000;
+  background: #00000010;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.hud-btn:hover { background: #00000020; }
+.hud-btn.on { background: #c9a84c; border-color: #8a7233; }
+.hud-btn .glyph { display: block; flex: none; }
+.hud-btn.icon { padding: 7px 9px; }
+.hud-btn.quiet { color: #7b6b4e; font-size: 11.5px; }
+
+.hud-speed { display: inline-flex; gap: 2px; }
+.hud-speed .hud-btn { padding: 7px 8px; font-variant-numeric: tabular-nums; }
+
+/* ------------------------------ celular --------------------------------- */
+
+@media (max-width: 720px) {
+  .hud-layer { gap: 8px; padding-top: max(8px, env(safe-area-inset-top)); }
+
+  .hud-top { flex-direction: column; }
+  .hud-cartouche { width: 100%; padding: 7px 11px 8px; }
+  .hud-place { font-size: 15px; }
+  .hud-clock { font-size: 12px; }
+
+  /* O diário vira uma gaveta acima da doca, e só quando pedida. */
+  .hud-journal { width: 100%; max-height: 34vh; }
+
+  .hud-bottom { flex-direction: column; align-items: stretch; }
+  .hud-dock {
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .hud-dock::-webkit-scrollbar { display: none; }
+  /* Alvos de toque não encolhem junto com a fonte. */
+  .hud-btn { min-height: 38px; padding: 9px 10px; font-size: 13px; }
+  .hud-btn .label-long { display: none; }
+  /* Sem rótulos, os separadores só roubam largura da barra. */
+  .hud-dock .sep { display: none; }
+  .hud-dock { gap: 4px; padding: 6px; }
+}
+
+@media (max-width: 380px) {
+  .hud-btn { padding: 9px 9px; }
+  .hud-dock { gap: 3px; }
+}

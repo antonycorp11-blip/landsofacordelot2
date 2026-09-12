@@ -104,10 +104,34 @@ src/
     layers/*.tsx          Terrain, Rivers, Roads, Nature, Borders, POIs, Debug
   map/
     useCamera.ts          pan, zoom suave, roda, pinch, limites, LOD
-    WorldMap.tsx          composição das camadas + controles mínimos
+    WorldMap.tsx          composição das camadas + ligação com o HUD
+  ui/
+    Hud.tsx               HUD provisório: lugar, relógio, viagem, tempo
+    journal.ts            diário de viagem (tipo, hora do mundo, texto)
   travel/
     useTravel.ts          pathfinding, animação, tempo do mundo, event hooks
 ```
+
+## HUD provisório
+
+Não é a interface final — é o mínimo que já serve para jogar o mapa, e foi
+escrito para ser substituído inteiro sem tocar no jogo: o HUD só lê o que o
+mapa e a viagem já sabem.
+
+- **Cartucho** (topo): região atual, dia e hora do mundo, e a viagem em curso
+  com destino, duração e barra de progresso. Tocar numa região acrescenta os
+  dados dela.
+- **Diário de viagem**: histórico do caminho — partida, marcos, travessias de
+  fronteira, entrada em região, encontros e chegada. Cada entrada já guarda
+  tipo e hora do mundo, que é o formato de que um registro de verdade vai
+  precisar quando existirem emboscadas e pedágios. No desktop fica aberto; no
+  celular é uma gaveta.
+- **Doca** (base): pausa, velocidade 1× / 2× / 4×, seguir o viajante,
+  enquadrar o reino, diário, luz e depuração.
+
+Não há botões de zoom: pinça no celular e roda no desktop dão conta, e cada
+botão a menos é mais mapa visível. A pausa cancela o rAF da viagem — nada
+avança e nada é desenhado enquanto o jogador decide.
 
 ---
 

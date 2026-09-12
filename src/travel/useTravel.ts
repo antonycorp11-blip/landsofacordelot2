@@ -52,6 +52,9 @@ export function useTravel({ startNodeId, events, onFrame }: Options) {
   const [regionId, setRegionId] = useState<RegionId>(start.regionId);
   const [worldHours, setWorldHours] = useState(0);
   const [speed, setSpeedState] = useState(1);
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
   const regionRef = useRef<RegionId>(start.regionId);
 
   const writeMarker = useCallback(() => {
@@ -177,6 +180,7 @@ export function useTravel({ startNodeId, events, onFrame }: Options) {
       lastTimeRef.current = performance.now();
       setPath(found);
       setState("traveling");
+      setPaused(false);
       eventsRef.current?.onTravelStart?.(found);
       rafRef.current = requestAnimationFrame(frame);
       return found;
@@ -195,6 +199,34 @@ export function useTravel({ startNodeId, events, onFrame }: Options) {
     speedRef.current = value;
     setSpeedState(value);
   }, []);
+
+  /**
+   * Pausa o relógio do mundo.
+   *
+   * Parar é parar de verdade: o rAF é cancelado, então nada avança e nada é
+   * desenhado enquanto o jogador está decidindo. Ao voltar, o cronômetro é
+   * rearmado no instante atual — senão o primeiro frame depois da pausa
+   * receberia todo o tempo real parado de uma vez e o marcador saltaria.
+   */
+  const resume = useCallback(() => {
+    setPaused(false);
+    const p = pathRef.current;
+    if (!p || progressRef.current >= p.totalDistance || rafRef.current) return;
+    lastTimeRef.current = performance.now();
+    rafRef.current = requestAnimationFrame(frame);
+  }, [frame]);
+
+  const pause = useCallback(() => {
+    setPaused(true);
+    stop();
+  }, [stop]);
+
+  const togglePause = useCallback(() => {
+    if (pausedRef.current) resume();
+    else pause();
+  }, [pause, resume]);
+
+
 
   /** Teleporta o marcador (usado só por debug — nunca pelo jogo). */
   const placeAt = useCallback(
@@ -227,6 +259,10 @@ export function useTravel({ startNodeId, events, onFrame }: Options) {
     worldHours,
     speed,
     setSpeed,
+    paused,
+    togglePause,
+    /** Distância já percorrida na rota atual — lida por frame pelo HUD. */
+    progressRef,
     travelTo,
     cancel,
     placeAt,
