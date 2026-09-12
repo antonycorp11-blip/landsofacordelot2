@@ -1,0 +1,357 @@
+/**
+ * Lands of Acordelot — modelo de dados do mundo.
+ *
+ * Regra de ouro: NADA aqui conhece a aparência final.
+ * Todo objeto visual carrega apenas um `assetKey`; quem decide se aquilo vira
+ * um PNG real ou um desenho vetorial provisório é `render/mapAssets.ts`.
+ */
+
+export type Point = { x: number; y: number };
+
+/* ------------------------------------------------------------------ */
+/* Identificadores                                                     */
+/* ------------------------------------------------------------------ */
+
+export type RegionId =
+  | "heart_of_valdoria"
+  | "elmwood"
+  | "greystone"
+  | "karneth"
+  | "sacred_vale"
+  | "greenfields"
+  | "golden_coast";
+
+export type HouseId =
+  | "house_valdoria"
+  | "house_silvarden"
+  | "house_dravenor"
+  | "house_karneth"
+  | "house_caelmont"
+  | "house_elmwood"
+  | "house_aurenna";
+
+export type Biome =
+  | "temperate_valley"
+  | "dense_forest"
+  | "alpine"
+  | "steppe_march"
+  | "sacred_valley"
+  | "plains"
+  | "coastal";
+
+/* ------------------------------------------------------------------ */
+/* Objetos de mapa                                                     */
+/* ------------------------------------------------------------------ */
+
+export type MapObjectType =
+  | "castle"
+  | "fortress"
+  | "city"
+  | "town"
+  | "village"
+  | "market"
+  | "temple"
+  | "cathedral"
+  | "monastery"
+  | "shrine"
+  | "watchtower"
+  | "gate"
+  | "fort"
+  | "warcamp"
+  | "mine"
+  | "quarry"
+  | "foundry"
+  | "sawmill"
+  | "farm"
+  | "mill"
+  | "stud_farm"
+  | "port"
+  | "shipyard"
+  | "lighthouse"
+  | "bay"
+  | "lake"
+  | "grove"
+  | "ruins"
+  | "inn"
+  | "outpost"
+  | "pass"
+  | "peak"
+  | "bridge"
+  | "forest"
+  | "tree"
+  | "mountain"
+  | "hill"
+  | "ship"
+  | "landmark";
+
+/** Unidade mínima renderizável. Posição/lógica são independentes da arte. */
+export type MapObject = {
+  id: string;
+  type: MapObjectType;
+  x: number;
+  y: number;
+  /** Chave no registry de assets. Trocar o PNG não muda nada aqui. */
+  assetKey: string;
+  regionId: RegionId;
+  /** Escala relativa do placeholder/asset (1 = tamanho nominal). */
+  scale?: number;
+  /** Rotação em graus, usada por cenário (árvores, navios). */
+  rotation?: number;
+  /** Zoom mínimo em que o objeto aparece (LOD). */
+  minZoom?: number;
+};
+
+/** Ponto de interesse: MapObject + semântica de jogo. */
+export type PointOfInterest = MapObject & {
+  name: string;
+  /** Importância define LOD do rótulo e tamanho do ícone. */
+  tier: 1 | 2 | 3;
+  /** POIs navegáveis também são nós da malha de estradas. */
+  routeNode?: boolean;
+  ownerHouseId?: HouseId;
+  description?: string;
+};
+
+/* ------------------------------------------------------------------ */
+/* Assentamentos apenas em dados (tela "Assentamentos da Região")       */
+/* ------------------------------------------------------------------ */
+
+export type SettlementKind =
+  | "village"
+  | "hamlet"
+  | "farm"
+  | "outpost"
+  | "small_mine"
+  | "monastery"
+  | "fishing_village";
+
+export type Settlement = {
+  id: string;
+  name: string;
+  kind: SettlementKind;
+  regionId: RegionId;
+  population: number;
+  /** Ancorado a um POI para uso futuro (viagem, administração). */
+  nearPoiId?: string;
+};
+
+/* ------------------------------------------------------------------ */
+/* Malha de navegação                                                  */
+/* ------------------------------------------------------------------ */
+
+export type RoadType = "main" | "secondary" | "trail";
+
+export type TerrainType =
+  | "plain"
+  | "hill"
+  | "forest"
+  | "mountain"
+  | "marsh"
+  | "coast"
+  | "river_crossing";
+
+export type RouteNode = {
+  id: string;
+  x: number;
+  y: number;
+  regionId: RegionId;
+  /** POI correspondente, quando o nó é um lugar visitável. */
+  poiId?: string;
+  /** Travessia de fronteira correspondente, quando aplicável. */
+  borderCrossingId?: string;
+  kind: "poi" | "junction" | "crossing";
+};
+
+export type RouteEdge = {
+  id: string;
+  from: string;
+  to: string;
+  /** Distância no espaço do mundo (unidades de viewBox), já com sinuosidade. */
+  distance: number;
+  roadType: RoadType;
+  regionId: RegionId;
+  /** 0..1 — usado depois por emboscadas/eventos. */
+  danger: number;
+  terrain: TerrainType;
+  /** Multiplicador de custo de movimento (>1 = mais lento). */
+  movementModifier: number;
+  /** 0..1 — chance de disparar checagem de evento ao percorrer. */
+  eventChance: number;
+  /** Trecho fechado por guerra/ponte destruída (futuro). */
+  blocked?: boolean;
+  /** Pontos intermediários apenas para desenho (não afetam lógica). */
+  via?: Point[];
+};
+
+/** Estrada declarada em dados; as arestas do grafo são derivadas dela. */
+export type RoadDefinition = {
+  id: string;
+  name: string;
+  type: RoadType;
+  regionId: RegionId;
+  /** Sequência de ids de RouteNode. */
+  nodes: string[];
+  danger?: number;
+  terrain?: TerrainType;
+  movementModifier?: number;
+  /** Fator de sinuosidade aplicado à distância em linha reta. */
+  windiness?: number;
+};
+
+/* ------------------------------------------------------------------ */
+/* Hidrografia                                                          */
+/* ------------------------------------------------------------------ */
+
+export type River = {
+  id: string;
+  name: string;
+  /** Polilinha do leito, da nascente à foz. */
+  points: Point[];
+  /** Largura na nascente e na foz; interpolada ao longo do curso. */
+  widthStart: number;
+  widthEnd: number;
+  regionIds: RegionId[];
+  tributaryOf?: string;
+};
+
+/* ------------------------------------------------------------------ */
+/* Fronteiras                                                           */
+/* ------------------------------------------------------------------ */
+
+export type BorderKind = "kingdom" | "region";
+
+export type BorderCrossingType =
+  | "bridge"
+  | "mountain_pass"
+  | "gate"
+  | "road"
+  | "forest_path"
+  | "ford";
+
+export type BorderCrossing = {
+  id: string;
+  name: string;
+  type: BorderCrossingType;
+  x: number;
+  y: number;
+  /** Sempre exatamente duas regiões, na ordem [a, b]. */
+  connects: [RegionId, RegionId];
+  assetKey: string;
+  /** Base para pedágio/bloqueio/controle territorial no futuro. */
+  controlledBy?: HouseId;
+  tollable: boolean;
+  blocked?: boolean;
+};
+
+/* ------------------------------------------------------------------ */
+/* Economia (somente metadados por enquanto)                            */
+/* ------------------------------------------------------------------ */
+
+export type GoodId =
+  | "grain"
+  | "food"
+  | "fish"
+  | "salt"
+  | "wine"
+  | "herbs"
+  | "wood"
+  | "game"
+  | "iron"
+  | "stone"
+  | "ore"
+  | "horses"
+  | "weapons"
+  | "armor"
+  | "luxury"
+  | "religious_goods"
+  | "tools";
+
+export type RegionEconomy = {
+  produces: Partial<Record<GoodId, number>>;
+  consumes: Partial<Record<GoodId, number>>;
+  /** 0..1 — intensidade de comércio externo (portos altos). */
+  tradeActivity: number;
+  importExportHub?: boolean;
+};
+
+/* ------------------------------------------------------------------ */
+/* Região                                                               */
+/* ------------------------------------------------------------------ */
+
+export type Region = {
+  id: RegionId;
+  name: string;
+  houseId: HouseId;
+  biome: Biome;
+  /** Polígono fechado, em coordenadas do mundo. Compartilha vértices com vizinhos. */
+  polygon: Point[];
+  adjacentRegions: RegionId[];
+  /** Paleta usada pelos placeholders; arte final pode ignorar. */
+  palette: {
+    land: string;
+    landDebug: string;
+    accent: string;
+    forest: string;
+    rock: string;
+  };
+  economy: RegionEconomy;
+  settlements: Settlement[];
+  pointsOfInterest: PointOfInterest[];
+  roads: RoadDefinition[];
+  /** Nós de estrada que não são POIs (entroncamentos, curvas obrigatórias). */
+  junctions: RouteNode[];
+  riverIds: string[];
+  borderCrossingIds: string[];
+  /** Capital / sede da casa dominante. */
+  seatPoiId: string;
+};
+
+export type House = {
+  id: HouseId;
+  name: string;
+  /** Cor usada quando o mapa for pintado por casa (conquista futura). */
+  color: string;
+  seatRegionId: RegionId;
+};
+
+export type Kingdom = {
+  id: string;
+  name: string;
+  /** viewBox virtual do mundo. */
+  bounds: { x: number; y: number; width: number; height: number };
+  houses: House[];
+  regions: Region[];
+  rivers: River[];
+  borderCrossings: BorderCrossing[];
+  /** Estradas reais que cruzam mais de uma região. */
+  royalRoads: RoadDefinition[];
+  /** Contorno externo do reino (fronteira forte). */
+  outline: Point[];
+  /** Polígono do mar (Costa Dourada). */
+  sea: Point[];
+};
+
+/* ------------------------------------------------------------------ */
+/* Viagem                                                               */
+/* ------------------------------------------------------------------ */
+
+export type TravelPath = {
+  nodeIds: string[];
+  edgeIds: string[];
+  /** Polilinha densa já pronta para animar o marcador. */
+  points: Point[];
+  /** Distância acumulada em cada ponto de `points`. */
+  cumulative: number[];
+  totalDistance: number;
+  /** Custo em horas do mundo, considerando modificadores. */
+  travelHours: number;
+};
+
+export type TravelEvents = {
+  onTravelStart?: (path: TravelPath) => void;
+  onRouteNodeReached?: (nodeId: string, node: RouteNode) => void;
+  onRegionEntered?: (regionId: RegionId) => void;
+  onBorderCrossed?: (crossing: BorderCrossing) => void;
+  onRandomEventCheck?: (edge: RouteEdge, roll: number) => void;
+  onDestinationReached?: (nodeId: string) => void;
+};

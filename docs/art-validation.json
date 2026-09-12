@@ -1,0 +1,67 @@
+{
+  "checks": [
+    {
+      "name": "7 regiões",
+      "ok": true,
+      "detail": "7"
+    },
+    {
+      "name": "sem sobreposição entre regiões",
+      "ok": true,
+      "detail": "0 amostras em 2+ regiões"
+    },
+    {
+      "name": "sem buracos na massa territorial",
+      "ok": true,
+      "detail": "0 amostras órfãs (de 10533 em terra)"
+    },
+    {
+      "name": "Coração no centro",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Coração faz fronteira com as 6",
+      "ok": true,
+      "detail": "elmwood, greystone, karneth, sacred_vale, golden_coast, greenfields"
+    },
+    {
+      "name": "anel externo conectado",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "POIs dentro da própria região",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "malha de estradas conectada",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "toda região acessível por estrada",
+      "ok": true,
+      "detail": "elmwood:2d 8h · greystone:2d 2h · karneth:2d 8h · sacred_vale:2d 1h · golden_coast:1d 22h · greenfields:2d 6h"
+    },
+    {
+      "name": "existem rotas alternativas",
+      "ok": true,
+      "detail": "Elmwood→Karneth 4d 1h (pelo centro); rota norte 4d 23h"
+    },
+    {
+      "name": "distância importa (curta < média < longa)",
+      "ok": true,
+      "detail": "curta 9.5h · média 2d 8h · longa 2d 11h"
+    }
+  ],
+  "worldSourcesUnchanged": true,
+  "worldDimensions": [
+    24000,
+    16000
+  ],
+  "worldScale": 10,
+  "assetScale": 1.8,
+  "lighting": "4800 samples, midnight continuity and day/night endpoints passed"
+}
