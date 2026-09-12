@@ -91,8 +91,13 @@ Se vier errado, gere de novo — sai mais rápido que consertar.
 Um comando:
 
 ```bash
-python3 tools/pack-agent-sheet.py entrada.png src/assets/agents/nome.png --pixel 64 --colors 32
+python3 tools/pack-agent-sheet.py entrada.png src/assets/agents/nome.png --pixel 48 --colors 28
 ```
+
+**`--pixel 48` é o padrão do jogo.** A altura da célula é sempre 48; a largura
+sai do assunto (uma carroça ocupa mais lado a lado que um cavaleiro) e a
+ferramenta a imprime. Como nenhum agente passa de 48 px na tela, não adianta
+gerar com mais detalhe do que isso — some na redução.
 
 Ele acha cada sprite pelo alfa, mede onde ficam os **pés** e reempacota numa
 grade regular com o ponto de apoio sempre no mesmo lugar da célula — é isso que
@@ -111,8 +116,8 @@ mensageiro: {
   url: mensageiro,
   rows: 4,
   cols: 4,
-  cellWidth: 64,     // o que a ferramenta imprimiu
-  cellHeight: 64,
+  cellWidth: 58,     // o que a ferramenta imprimiu
+  cellHeight: 48,
   fps: 8,
   shadowWidth: 0.34,
   pixelArt: true,
@@ -123,7 +128,28 @@ A arte original vai para `src/assets/source-art/`, intocada.
 
 ---
 
-## 4. Ordem das linhas
+## 4. Pôr o agente para circular
+
+`src/world/wanderers.ts` é a escalação de quem anda pelo reino sem o jogador
+mandar. Uma linha por agente:
+
+```ts
+{ id: "correio_sul", name: "Correio do Sul", sheet: "messenger",
+  routine: "correio", home: "golden_coast", roams: true, pace: 1.3, dwell: [2, 7] },
+```
+
+- `home` — de onde parte, e onde fica quem não perambula.
+- `roams` — `true` percorre o reino inteiro; `false` fica na região natal e nas
+  vizinhas (a vizinhança sai das travessias de fronteira, não de uma lista à
+  parte).
+- `pace` — ritmo relativo ao do viajante.
+- `dwell` — horas paradas em cada destino, `[mínimo, máximo]`.
+
+Eles usam o **mesmo `findPath`** do jogador: nunca cortam mato, nunca
+atravessam rio fora da ponte, nunca teleportam. Seguem a velocidade e a pausa
+do HUD, mas **não escrevem no relógio do mundo** — é ambiente, não simulação.
+
+## 5. Ordem das linhas
 
 `NW, NE, SW, SE` — de cima para baixo, como o prompt pede. Se uma folha vier
 fora de ordem, não mexa na arte: reordene em `AGENT_DIRECTIONS`, que é de onde

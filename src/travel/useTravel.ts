@@ -8,6 +8,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { UNITS_PER_HOUR, findPath, nodeBoundaries, routeEdgeById } from "../world/navgraph";
+import { samplePath } from "./samplePath";
 
 import type { Point, RegionId, TravelEvents, TravelPath } from "../world/types";
 import { crossingByNodeId, routeNodeById } from "../world/valdoria";
@@ -67,24 +68,6 @@ export function useTravel({ startNodeId, events, onFrame }: Options) {
     writeMarker();
   }, [writeMarker]);
 
-  /** Interpola a posição ao longo de `points` conforme a distância percorrida. */
-  const sample = useCallback((p: TravelPath, distance: number) => {
-    const cum = p.cumulative;
-    let lo = 0;
-    let hi = cum.length - 1;
-    while (lo < hi - 1) {
-      const mid = (lo + hi) >> 1;
-      if (cum[mid] <= distance) lo = mid;
-      else hi = mid;
-    }
-    const segLen = cum[hi] - cum[lo] || 1;
-    const t = Math.max(0, Math.min(1, (distance - cum[lo]) / segLen));
-    const a = p.points[lo];
-    const b = p.points[hi];
-    headingRef.current = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
-    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-  }, []);
-
   const stop = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
     rafRef.current = 0;
@@ -113,7 +96,9 @@ export function useTravel({ startNodeId, events, onFrame }: Options) {
       const hours = WORLD_HOURS_PER_SECOND * speedRef.current * dt;
       const after = Math.min(p.totalDistance, before + (hours * UNITS_PER_HOUR) / modifier);
       progressRef.current = after;
-      posRef.current = sample(p, after);
+      const at = samplePath(p, after);
+      posRef.current = { x: at.x, y: at.y };
+      headingRef.current = at.heading;
       setWorldHours((h) => h + ((after - before) * modifier) / UNITS_PER_HOUR);
 
       // Nó alcançado?
@@ -164,7 +149,7 @@ export function useTravel({ startNodeId, events, onFrame }: Options) {
       }
       rafRef.current = requestAnimationFrame(frame);
     },
-    [edgeAtDistance, sample, stop, writeMarker],
+    [edgeAtDistance, stop, writeMarker],
   );
 
   const travelTo = useCallback(

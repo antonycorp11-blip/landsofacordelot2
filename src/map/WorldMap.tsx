@@ -24,6 +24,8 @@ import type { Point, PointOfInterest, RegionId, TravelEvents } from "../world/ty
 import { borderCrossingById } from "../world/borderCrossings";
 import { poiById, regionById, regions, valdoria } from "../world/valdoria";
 import { useTravel } from "../travel/useTravel";
+import { useWanderers } from "../travel/useWanderers";
+import { WanderersLayer } from "../render/layers/WanderersLayer";
 import { useCamera } from "./useCamera";
 import { Hud, LIGHTING_ORDER } from "../ui/Hud";
 import type { JournalEntry, JournalKind } from "../ui/journal";
@@ -139,6 +141,10 @@ export function WorldMap() {
     [camera, pushLog, travel],
   );
 
+  // Agentes de ambiente: seguem a mesma malha de estradas, a mesma velocidade
+  // e a mesma pausa do viajante, mas não escrevem no relógio do mundo.
+  const wanderers = useWanderers({ speed: travel.speed, paused: travel.paused });
+
   const region = selectedRegion ? regionById.get(selectedRegion) : null;
   const zoom = camera.zoom;
   const lighting = lightingAt(travel.worldHours, lightingMode);
@@ -227,6 +233,7 @@ export function WorldMap() {
             </g>
           )}
 
+          {!debug && <WanderersLayer agents={wanderers} pxPerUnit={camera.baseScale() * zoom} />}
           <TravelerMarker
             ref={travel.markerRef}
             pxPerUnit={camera.baseScale() * zoom}

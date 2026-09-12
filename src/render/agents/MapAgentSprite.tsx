@@ -33,13 +33,13 @@ import {
  *
  *   altura em px = SIZE_FACTOR × (px por unidade) ^ SIZE_EXPONENT
  */
-const SIZE_FACTOR = 122;
-const SIZE_EXPONENT = 0.463;
-const MIN_SCREEN_PX = 18;
-const MAX_SCREEN_PX = 78;
+const SIZE_FACTOR = 81;
+const SIZE_EXPONENT = 0.435;
+const MIN_SCREEN_PX = 12;
+const MAX_SCREEN_PX = 48;
 
 /** Abaixo desta altura na tela o agente ganha um anel, senão some no mapa. */
-const LOCATOR_BELOW_PX = 32;
+const LOCATOR_BELOW_PX = 22;
 
 /**
  * Oscilação da cavalgada, em pixels da folha, por quadro do ciclo.
@@ -70,10 +70,12 @@ type Props = {
   headingRef: RefObject<number>;
   /** Identidade da Casa. Ver a nota em `AgentColors`. */
   colors?: AgentColors;
+  /** Anel de localização quando a figura fica pequena. Só o jogador precisa. */
+  locator?: boolean;
 };
 
 export const MapAgentSprite = memo(
-  forwardRef<SVGGElement, Props>(function MapAgentSprite({ sheet, pxPerUnit, moving, headingRef, colors }, ref) {
+  forwardRef<SVGGElement, Props>(function MapAgentSprite({ sheet, pxPerUnit, moving, headingRef, colors, locator = true }, ref) {
     const imageRef = useRef<SVGImageElement>(null);
     const bobRef = useRef<SVGGElement>(null);
     const directionRef = useRef<AgentDirection>("SE");
@@ -155,7 +157,7 @@ export const MapAgentSprite = memo(
           </clipPath>
         </defs>
 
-        {screenPx <= LOCATOR_BELOW_PX && (
+        {locator && screenPx <= LOCATOR_BELOW_PX && (
           <circle r={shadow * 0.95} fill="none" stroke={houseColor} strokeWidth={height * 0.035} opacity={0.7} />
         )}
 

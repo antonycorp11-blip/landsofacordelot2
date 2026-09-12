@@ -111,14 +111,17 @@ src/
   render/agents/
     agentSheets.ts        folhas direcionais + direção pelo vetor de movimento
     MapAgentSprite.tsx    figura de um agente do mapa (folha, direção, animação)
+  world/
+    wanderers.ts          escalação de quem circula o reino + próximo destino
   travel/
     useTravel.ts          pathfinding, animação, tempo do mundo, event hooks
 ```
 
 ## Agentes do mapa
 
-Um **agente** é qualquer figura que anda pelas estradas. Hoje existe um — o
-viajante do jogador, um cavaleiro montado — mas o componente não sabe disso:
+Um **agente** é qualquer figura que anda pelas estradas: o viajante do jogador
+e mais dezesseis que circulam sozinhos — patrulhas, caravanas, mensageiros,
+peregrinos, bandos e cortejos. O componente não sabe de nenhum deles:
 recebe uma folha de sprites, um rumo e se está andando. Lordes, mensageiros,
 caravanas, patrulhas e exércitos pequenos usam o mesmo componente com outra
 folha e outras cores.
