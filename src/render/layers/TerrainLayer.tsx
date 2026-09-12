@@ -171,7 +171,9 @@ export const TerrainLayer = memo(function TerrainLayer({
             key={`hl-${region.id}`}
             d={pathFromPoints(region.polygon, true)}
             fill="#ffffff"
-            fillOpacity={selectedRegion === region.id ? 0.14 : 0.07}
+            /* Discreto: quem sinaliza a seleção agora é a cor da Casa, na
+               camada política. Um véu branco por cima só lavaria a cor. */
+            fillOpacity={selectedRegion === region.id ? 0.05 : 0.03}
             stroke="#fdf3d0"
             strokeOpacity={selectedRegion === region.id ? 0.75 : 0.35}
             strokeWidth={4 * S}

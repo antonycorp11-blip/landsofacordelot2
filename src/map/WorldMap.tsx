@@ -26,6 +26,8 @@ import { poiById, regionById, regions, valdoria } from "../world/valdoria";
 import { useTravel } from "../travel/useTravel";
 import { useWanderers } from "../travel/useWanderers";
 import { WanderersLayer } from "../render/layers/WanderersLayer";
+import { PoliticalLayer } from "../render/layers/PoliticalLayer";
+import { SettlementPanel } from "../ui/settlement/SettlementPanel";
 import { useCamera } from "./useCamera";
 import { Hud, LIGHTING_ORDER } from "../ui/Hud";
 import type { JournalEntry, JournalKind } from "../ui/journal";
@@ -55,6 +57,8 @@ export function WorldMap() {
   const [selectedRegion, setSelectedRegion] = useState<RegionId | null>(null);
   const [hoveredRegion, setHoveredRegion] = useState<RegionId | null>(null);
   const [selectedPoiId, setSelectedPoiId] = useState<string | null>(null);
+  /** POI cujo painel político está aberto. `null` = só o mapa na tela. */
+  const [panelPoiId, setPanelPoiId] = useState<string | null>(null);
   const [journal, setJournal] = useState<JournalEntry[]>([]);
 
   const followRef = useRef(follow);
@@ -88,7 +92,11 @@ export function WorldMap() {
       onRandomEventCheck: (edge, roll) => {
         if (roll < edge.eventChance * 0.35) pushLog("evento", `Algo se move na estrada… (${edge.terrain})`);
       },
-      onDestinationReached: (id) => pushLog("chegada", `Chegou a ${poiById.get(id)?.name ?? id}`),
+      onDestinationReached: (id) => {
+        pushLog("chegada", `Chegou a ${poiById.get(id)?.name ?? id}`);
+        // Chegar a um lugar É a maneira principal de abrir o painel dele.
+        if (poiById.has(id)) setPanelPoiId(id);
+      },
     }),
     [pushLog],
   );
@@ -115,6 +123,7 @@ export function WorldMap() {
       if (camera.wasDragged()) return;
       setSelectedPoiId(poi.id);
       setSelectedRegion(poi.regionId);
+      setPanelPoiId(poi.id);
       if (poi.id === travel.currentNodeId) return;
       if (!travel.travelTo(poi.id)) pushLog("evento", `Sem rota por estrada até ${poi.name}`);
     },
@@ -194,6 +203,9 @@ export function WorldMap() {
           />
           {!debug && zoom >= LANDCOVER_MIN_ZOOM && <LandcoverLayer view={view} />}
           {!debug && <ReliefLayer zoom={zoom} />}
+          {!debug && (
+            <PoliticalLayer zoom={zoom} selectedRegion={selectedRegion} hoveredRegion={hoveredRegion} />
+          )}
           <RiversLayer zoom={zoom} />
           <NatureLayer zoom={zoom} view={view} />
           <RoadsLayer zoom={zoom} />
@@ -275,6 +287,11 @@ export function WorldMap() {
         journal={journal}
         coins={PURSE_PLACEHOLDER}
         selected={region ? { name: region.name, biome: region.biome, pois: region.pointsOfInterest.length, settlements: region.settlements.length } : null}
+      />
+
+      <SettlementPanel
+        poi={panelPoiId ? poiById.get(panelPoiId) ?? null : null}
+        onClose={() => setPanelPoiId(null)}
       />
     </div>
   );

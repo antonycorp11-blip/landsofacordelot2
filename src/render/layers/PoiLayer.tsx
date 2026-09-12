@@ -5,6 +5,10 @@ import { getAsset } from "../mapAssets";
 import type { PointOfInterest } from "../../world/types";
 import { allPois } from "../../world/valdoria";
 import { MapSymbol } from "../MapSymbol";
+import { crestUrl } from "../../data/houseAssets";
+import { houseById } from "../../data/houses";
+import { holdingFor } from "../../data/holdings";
+import { useTerritories } from "../../data/territories";
 import type { ViewRect } from "./NatureLayer";
 
 type Props = {
@@ -26,6 +30,9 @@ export const PoiLayer = memo(function PoiLayer({
   travelerNodeId,
   onPoiClick,
 }: Props) {
+  // Reage a uma troca de controlador: o anel e o brasão seguem quem manda.
+  useTerritories();
+
   const visible = allPois
     .filter(
       (p) =>
@@ -43,6 +50,15 @@ export const PoiLayer = memo(function PoiLayer({
         const selected = selectedPoiId === poi.id;
         const here = travelerNodeId === poi.id;
         const fontSize = LABEL_BASE[poi.tier] / zoom;
+        const radius = getAsset(poi.assetKey).size * 0.62 * (poi.scale ?? 1);
+        // A cor de quem manda, nunca uma cor fixa da região.
+        const house = houseById.get(holdingFor(poi).controllerHouseId);
+        // Brasão só onde ele informa algo: a sede selecionada, ou um castelo
+        // grande de perto. Mais que isso vira poluição em cima da arte.
+        const crest =
+          (selected || (poi.tier === 1 && zoom >= lod(2.4))) && house
+            ? crestUrl(house.crestAssetKey)
+            : undefined;
         return (
           <g key={poi.id} style={{ cursor: "pointer" }} onClick={() => onPoiClick(poi)}>
             {(selected || here) && (
@@ -50,11 +66,23 @@ export const PoiLayer = memo(function PoiLayer({
                 cx={poi.x}
                 cy={poi.y}
                 // Proporcional ao asset, não à tela: o anel acompanha o ícone.
-                r={getAsset(poi.assetKey).size * 0.62 * (poi.scale ?? 1)}
+                r={radius}
                 fill="none"
-                stroke={here ? "#f0d48a" : "#fff6dc"}
+                stroke={here ? "#f0d48a" : house?.color ?? "#fff6dc"}
                 strokeWidth={(3.5 * S) / Math.max(1, zoom * 0.5)}
                 opacity={0.9}
+              />
+            )}
+            {crest && (
+              <image
+                href={crest}
+                x={poi.x - (9 * S) / zoom}
+                y={poi.y - radius - (26 * S) / zoom}
+                width={(18 * S) / zoom}
+                height={(21 * S) / zoom}
+                preserveAspectRatio="xMidYMid meet"
+                opacity={selected ? 1 : 0.82}
+                pointerEvents="none"
               />
             )}
             {/* Alvo de clique generoso e com tamanho constante na tela,

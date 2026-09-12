@@ -21,6 +21,14 @@ export type RegionId =
   | "greenfields"
   | "golden_coast";
 
+/**
+ * As Casas do reino.
+ *
+ * Sete delas dominam um senhorio; as três últimas não têm região própria — têm
+ * solares e feudos DENTRO do domínio alheio. Casa e região são coisas
+ * separadas: uma Casa pode perder o território e continuar existindo, ou
+ * possuir terras no território de outra.
+ */
 export type HouseId =
   | "house_valdoria"
   | "house_silvarden"
@@ -28,7 +36,13 @@ export type HouseId =
   | "house_karneth"
   | "house_caelmont"
   | "house_elmwood"
-  | "house_aurenna";
+  | "house_aurenna"
+  | "house_morvath"
+  | "house_veyr"
+  | "house_rosethorne";
+
+/** Arquétipo de um personagem. O brasão diz a família; a classe, o ofício. */
+export type AgentClass = "MILITARY" | "TRADE" | "POLITICS" | "RELIGION";
 
 export type Biome =
   | "temperate_valley"
@@ -309,9 +323,25 @@ export type Region = {
 export type House = {
   id: HouseId;
   name: string;
-  /** Cor usada quando o mapa for pintado por casa (conquista futura). */
+  /** Nome curto, para caber em painel e etiqueta. */
+  shortName: string;
+  /** Chave no registry de brasões. Trocar a arte não muda nada aqui. */
+  crestAssetKey: string;
+  /** Cor política da Casa. É daqui que o mapa tira o tom de um território. */
   color: string;
-  seatRegionId: RegionId;
+  secondaryColor: string;
+  leaderId: string;
+  primaryClass: AgentClass;
+  /** Região-sede. `undefined` nas Casas sem domínio próprio. */
+  seatRegionId?: RegionId;
+  capitalPoiId?: string;
+  description?: string;
+  /** Escalas 0–100. Metadados por enquanto: nada de simulação ainda. */
+  power?: number;
+  wealth?: number;
+  militaryPower?: number;
+  politicalInfluence?: number;
+  religiousInfluence?: number;
 };
 
 export type Kingdom = {

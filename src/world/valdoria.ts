@@ -16,7 +16,6 @@ import { sacredVale } from "./regions/sacredVale";
 import { rivers } from "./rivers";
 import { ringRoads, royalRoads } from "./roads";
 import type {
-  House,
   Kingdom,
   PointOfInterest,
   Region,
@@ -26,15 +25,13 @@ import type {
   Settlement,
 } from "./types";
 
-export const houses: House[] = [
-  { id: "house_valdoria", name: "Casa Valdória", color: "#b8993f", seatRegionId: "heart_of_valdoria" },
-  { id: "house_silvarden", name: "Casa Silvarden", color: "#3f7a4a", seatRegionId: "elmwood" },
-  { id: "house_dravenor", name: "Casa Dravenor", color: "#5d6572", seatRegionId: "greystone" },
-  { id: "house_karneth", name: "Casa Karneth", color: "#9c3b2e", seatRegionId: "karneth" },
-  { id: "house_caelmont", name: "Casa Caelmont", color: "#6f5aa8", seatRegionId: "sacred_vale" },
-  { id: "house_elmwood", name: "Casa Elmwood", color: "#a8912f", seatRegionId: "greenfields" },
-  { id: "house_aurenna", name: "Casa Aurenna", color: "#2f7d96", seatRegionId: "golden_coast" },
-];
+/**
+ * As Casas vivem em `data/houses.ts` — o registry político. Aqui só ficam
+ * reexportadas, para que quem já consumia `valdoria.houses` continue
+ * funcionando sem duplicar a fonte da verdade.
+ */
+export { houses, houseById } from "../data/houses";
+import { houses } from "../data/houses";
 
 /** O Coração vem primeiro: é desenhado por baixo e serve de referência. */
 export const regions: Region[] = [
@@ -65,7 +62,6 @@ export const valdoria: Kingdom = {
 /* ------------------------------------------------------------------ */
 
 export const regionById = new Map<RegionId, Region>(regions.map((r) => [r.id, r]));
-export const houseById = new Map(houses.map((h) => [h.id, h]));
 
 export const allPois: PointOfInterest[] = regions.flatMap((r) => r.pointsOfInterest);
 export const poiById = new Map(allPois.map((p) => [p.id, p]));

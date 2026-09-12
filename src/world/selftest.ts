@@ -10,6 +10,11 @@ import { bounds, makeRng, pointInPolygon } from "./geo";
 import { adjacency, findPath } from "./navgraph";
 import { valdoria, allPois, regions, routeNodes, regionById } from "./valdoria";
 import { formatDuration } from "./time";
+import { houses, houseById } from "../data/houses";
+import { characters, characterById } from "../data/characters";
+import { controllerOf, setController, territoryColor } from "../data/territories";
+import { holdingFor } from "../data/holdings";
+import { crestUrl } from "../data/houseAssets";
 
 export type Check = { name: string; ok: boolean; detail: string };
 
@@ -104,6 +109,66 @@ export function runSelfTest(): Check[] {
     "distância importa (curta < média < longa)",
     Boolean(short && medium && long && short.travelHours < medium.travelHours && medium.travelHours < long.travelHours),
     `curta ${formatDuration(short?.travelHours ?? 0)} · média ${formatDuration(medium?.travelHours ?? 0)} · longa ${formatDuration(long?.travelHours ?? 0)}`,
+  );
+
+  /* ---------------------- camada política ------------------------------ */
+
+  add("10 Casas", houses.length === 10, `${houses.length}`);
+
+  const leadersOk = houses.every((h) => characterById.has(h.leaderId));
+  add(
+    "toda Casa tem líder registrado",
+    leadersOk,
+    houses.filter((h) => !characterById.has(h.leaderId)).map((h) => h.name).join(", ") || `${characters.length} personagens`,
+  );
+
+  add(
+    "as 7 regiões têm controlador",
+    regions.every((r) => houseById.has(controllerOf(r.id))),
+    regions.map((r) => `${r.name}→${houseById.get(controllerOf(r.id))?.shortName}`).join(" · "),
+  );
+
+  /*
+   * A cor tem de vir do CONTROLADOR, não da região. Este teste conquista
+   * Elmwood com Karneth, confere que a cor mudou, e devolve — se alguém
+   * escrever uma cor fixa num componente, isto passa a falhar.
+   */
+  const victim = "elmwood" as const;
+  const before = territoryColor(victim);
+  const original = controllerOf(victim);
+  setController(victim, "house_karneth");
+  const after = territoryColor(victim);
+  setController(victim, original);
+  add(
+    "cor do território vem da Casa que controla",
+    before !== after && after === houseById.get("house_karneth")?.color && territoryColor(victim) === before,
+    `${before} → ${after} → ${territoryColor(victim)}`,
+  );
+
+  const missingCrest = houses.filter((h) => !crestUrl(h.crestAssetKey));
+  add(
+    "toda Casa tem brasão",
+    missingCrest.length === 0,
+    missingCrest.map((h) => h.name).join(", ") || `${houses.length} brasões`,
+  );
+
+  const badHoldings = allPois.filter((p) => {
+    const h = holdingFor(p);
+    return !houseById.has(h.ownerHouseId) || !houseById.has(h.controllerHouseId);
+  });
+  add(
+    "toda estrutura tem dono e controlador",
+    badHoldings.length === 0,
+    badHoldings.map((p) => p.name).join(", ") || `${allPois.length} estruturas`,
+  );
+
+  const minorHoldings = allPois.filter((p) =>
+    ["house_morvath", "house_veyr", "house_rosethorne"].includes(holdingFor(p).ownerHouseId),
+  );
+  add(
+    "Casas menores possuem estruturas em domínio alheio",
+    minorHoldings.length >= 3,
+    minorHoldings.map((p) => `${p.name} (${houseById.get(holdingFor(p).ownerHouseId)?.shortName})`).join(" · "),
   );
 
   return checks;
