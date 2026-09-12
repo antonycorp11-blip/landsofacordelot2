@@ -30,6 +30,14 @@ import type { JournalEntry, JournalKind } from "../ui/journal";
 
 const START_NODE = "castelo_real";
 
+/**
+ * Bolsa inicial do jogador.
+ *
+ * Provisória: não existe economia ainda — nada gasta nem ganha moeda. O campo
+ * está no HUD para o lugar já estar reservado quando existir.
+ */
+const PURSE_PLACEHOLDER = 120;
+
 /** Rótulos das regiões — some quando o jogador se aproxima do terreno. */
 /** Enquadramento inicial: a massa territorial, não o viewBox inteiro. */
 const KINGDOM_BOUNDS = bounds(valdoria.outline);
@@ -253,6 +261,7 @@ export function WorldMap() {
         debug={debug}
         onToggleDebug={() => setDebug((d) => !d)}
         journal={journal}
+        coins={PURSE_PLACEHOLDER}
         selected={region ? { name: region.name, biome: region.biome, pois: region.pointsOfInterest.length, settlements: region.settlements.length } : null}
       />
     </div>

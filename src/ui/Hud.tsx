@@ -22,7 +22,7 @@ const LIGHTING_LABEL: Record<LightingMode, string> = {
  * tortos, e no iOS nem sempre existem. Estes são sempre iguais em toda parte e
  * acompanham a cor do texto.
  */
-function Icon({ name }: { name: "pause" | "play" | "follow" | "fit" | "journal" | "sun" | "moon" | "debug" }) {
+function Icon({ name }: { name: "pause" | "play" | "follow" | "fit" | "journal" | "sun" | "moon" | "debug" | "coin" }) {
   const p = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
     <svg className="glyph" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" focusable="false">
@@ -33,6 +33,7 @@ function Icon({ name }: { name: "pause" | "play" | "follow" | "fit" | "journal" 
       {name === "journal" && <g {...p}><path d="M3.2 2.8h6.4a2 2 0 0 1 2 2v8.4H5.2a2 2 0 0 1-2-2Z" /><path d="M5.4 5.6h4M5.4 8h4" /></g>}
       {name === "sun" && <g {...p}><circle cx="8" cy="8" r="3" /><path d="M8 1.4v1.6M8 13v1.6M1.4 8H3M13 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M12.6 3.4l-1.1 1.1M4.5 11.5l-1.1 1.1" /></g>}
       {name === "debug" && <g {...p}><path d="M6.2 2.6 8 4.4 6.4 6 4.6 4.2a3.4 3.4 0 0 0 4.6 4.6l3.4 3.4a1.3 1.3 0 0 1-1.8 1.8L7.4 10.6a3.4 3.4 0 0 1-4.6-4.6Z" /></g>}
+      {name === "coin" && <g><circle cx="8" cy="8" r="5.6" fill="currentColor" opacity=".28" /><circle cx="8" cy="8" r="5.6" {...p} /><circle cx="8" cy="8" r="2.7" {...p} /></g>}
       {name === "moon" && <path d="M12.6 9.9A5.2 5.2 0 0 1 6.1 3.4a5.2 5.2 0 1 0 6.5 6.5Z" fill="currentColor" />}
     </svg>
   );
@@ -60,6 +61,8 @@ type Props = {
   debug: boolean;
   onToggleDebug: () => void;
   journal: JournalEntry[];
+  /** Bolsa do jogador. Provisória: ainda não há economia por trás. */
+  coins: number;
   /** Região tocada no mapa, quando houver. Leitura pura dos dados do mundo. */
   selected: { name: string; biome: string; pois: number; settlements: number } | null;
 };
@@ -78,7 +81,7 @@ export function Hud({
   paused, onTogglePause, speed, onSpeed,
   follow, onToggleFollow, onFit,
   lightingName, lightingNight, lightingMode, onCycleLighting,
-  debug, onToggleDebug, journal, selected,
+  debug, onToggleDebug, journal, selected, coins,
 }: Props) {
   // No desktop há espaço de sobra para o diário; no celular ele é uma gaveta.
   const [journalOpen, setJournalOpen] = useState(
@@ -96,9 +99,8 @@ export function Hud({
 
   return (
     <div className="hud-layer">
-      <div className="hud-top">
-        <div className="hud-panel hud-cartouche">
-          <div className="hud-kingdom">Reino de Valdória</div>
+      <div className="hud-bar">
+        <div className="hud-panel hud-place-chip">
           <div className="hud-place">{placeName}</div>
           <div className="hud-clock">
             <span>Dia <b>{day}</b></span>
@@ -128,30 +130,14 @@ export function Hud({
             </div>
           )}
         </div>
-      </div>
 
-      <div className="hud-bottom">
-        {journalOpen && (
-          <div className="hud-panel hud-journal">
-            <div className="hud-journal-head">
-              Diário de viagem
-              <button onClick={() => setJournalOpen(false)} aria-label="Fechar o diário">×</button>
-            </div>
-            <div className="hud-journal-list" ref={listRef}>
-              {journal.length === 0 ? (
-                <div className="hud-empty">Nada aconteceu ainda. Toque em uma cidade para partir.</div>
-              ) : (
-                journal.map((e) => (
-                  <div className={`hud-entry kind-${e.kind}`} key={e.id}>
-                    <span className="glyph">{JOURNAL_GLYPH[e.kind]}</span>
-                    <span className="when">{stamp(e.hours)}</span>
-                    <span>{e.text}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+        <div className="spacer" />
+
+        {/* O lugar da bolsa já fica reservado; o número ainda é de mentira. */}
+        <div className="hud-panel hud-purse" title="Moedas">
+          <Icon name="coin" />
+          {coins}
+        </div>
 
         <div className="hud-panel hud-dock">
           <button
@@ -226,6 +212,28 @@ export function Hud({
           </button>
         </div>
       </div>
+
+        {journalOpen && (
+          <div className="hud-panel hud-journal">
+            <div className="hud-journal-head">
+              Diário de viagem
+              <button onClick={() => setJournalOpen(false)} aria-label="Fechar o diário">×</button>
+            </div>
+            <div className="hud-journal-list" ref={listRef}>
+              {journal.length === 0 ? (
+                <div className="hud-empty">Nada aconteceu ainda. Toque em uma cidade para partir.</div>
+              ) : (
+                journal.map((e) => (
+                  <div className={`hud-entry kind-${e.kind}`} key={e.id}>
+                    <span className="glyph">{JOURNAL_GLYPH[e.kind]}</span>
+                    <span className="when">{stamp(e.hours)}</span>
+                    <span>{e.text}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
     </div>
   );
 }

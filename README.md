@@ -118,16 +118,21 @@ Não é a interface final — é o mínimo que já serve para jogar o mapa, e fo
 escrito para ser substituído inteiro sem tocar no jogo: o HUD só lê o que o
 mapa e a viagem já sabem.
 
-- **Cartucho** (topo): região atual, dia e hora do mundo, e a viagem em curso
-  com destino, duração e barra de progresso. Tocar numa região acrescenta os
-  dados dela.
+Tudo encostado no topo, em painéis translúcidos e pequenos. O mapa é a tela do
+jogo; o HUD é só a moldura. No estado parado ocupa cerca de 9% da altura de um
+celular; com viagem em curso, região tocada e diário aberto, 27%.
+
+- **Lugar** (topo, esquerda): região atual, dia e hora do mundo, estado. Em
+  viagem abre destino, duração e barra de progresso; tocar numa região do mapa
+  acrescenta os dados dela.
+- **Bolsa** (topo, direita): `PURSE_PLACEHOLDER` em `WorldMap.tsx`. O lugar
+  está reservado — não existe economia ainda, nada ganha nem gasta moeda.
+- **Doca**: pausa, 1× / 2× / 4×, seguir o viajante, enquadrar o reino, diário,
+  luz e depuração. No celular ganha a segunda linha inteira.
 - **Diário de viagem**: histórico do caminho — partida, marcos, travessias de
   fronteira, entrada em região, encontros e chegada. Cada entrada já guarda
   tipo e hora do mundo, que é o formato de que um registro de verdade vai
-  precisar quando existirem emboscadas e pedágios. No desktop fica aberto; no
-  celular é uma gaveta.
-- **Doca** (base): pausa, velocidade 1× / 2× / 4×, seguir o viajante,
-  enquadrar o reino, diário, luz e depuração.
+  precisar quando existirem emboscadas e pedágios.
 
 Não há botões de zoom: pinça no celular e roda no desktop dão conta, e cada
 botão a menos é mais mapa visível. A pausa cancela o rAF da viagem — nada
