@@ -60,8 +60,10 @@ export type AgentColors = {
 };
 
 /**
- * Todas as folhas saem de `tools/pack-agent-sheet.py --pixel 48`, então a
- * ALTURA da célula é sempre 48: é o padrão do jogo. A largura varia com o
+ * Todas as folhas saem de `tools/pack-agent-sheet.py --pixel 32`, então a
+ * ALTURA da célula é sempre 32: é o padrão do jogo, e é o mesmo número do
+ * teto de tamanho na tela — assim a arte é desenhada perto de 1:1 em vez de
+ * ser reduzida para um tamanho quebrado, que num pixel art borra as bordas. A largura varia com o
  * assunto — uma carroça ocupa mais lado a lado que um cavaleiro — e é o número
  * que a ferramenta imprime ao empacotar.
  *
@@ -69,17 +71,17 @@ export type AgentColors = {
  * um bufarinheiro não tem o mesmo compasso de um cavalo a meio galope.
  */
 export const agentSheets = {
-  knight_rider:   { url: knightRider,   rows: 4, cols: 4, cellWidth: 48, cellHeight: 48, fps: 8, shadowWidth: 0.34, pixelArt: true },
-  lord_rider:     { url: lordRider,     rows: 4, cols: 4, cellWidth: 55, cellHeight: 48, fps: 7, shadowWidth: 0.34, pixelArt: true },
-  outriders:      { url: outriders,     rows: 4, cols: 4, cellWidth: 43, cellHeight: 48, fps: 8, shadowWidth: 0.36, pixelArt: true },
-  messenger:      { url: messenger,     rows: 4, cols: 4, cellWidth: 58, cellHeight: 48, fps: 9, shadowWidth: 0.34, pixelArt: true },
-  patrol_footmen: { url: patrolFootmen, rows: 4, cols: 4, cellWidth: 50, cellHeight: 48, fps: 6, shadowWidth: 0.42, pixelArt: true },
-  levy_column:    { url: levyColumn,    rows: 4, cols: 4, cellWidth: 59, cellHeight: 48, fps: 6, shadowWidth: 0.46, pixelArt: true },
-  raiders:        { url: raiders,       rows: 4, cols: 4, cellWidth: 64, cellHeight: 48, fps: 6, shadowWidth: 0.5,  pixelArt: true },
-  pilgrims:       { url: pilgrims,      rows: 4, cols: 4, cellWidth: 75, cellHeight: 48, fps: 5, shadowWidth: 0.56, pixelArt: true },
-  merchant_mule:  { url: merchantMule,  rows: 4, cols: 4, cellWidth: 81, cellHeight: 48, fps: 5, shadowWidth: 0.6,  pixelArt: true },
-  caravan_wagon:  { url: caravanWagon,  rows: 4, cols: 4, cellWidth: 74, cellHeight: 48, fps: 6, shadowWidth: 0.6,  pixelArt: true },
-  royal_carriage: { url: royalCarriage, rows: 4, cols: 4, cellWidth: 69, cellHeight: 48, fps: 6, shadowWidth: 0.58, pixelArt: true },
+  knight_rider:   { url: knightRider,   rows: 4, cols: 4, cellWidth: 32, cellHeight: 32, fps: 8, shadowWidth: 0.34, pixelArt: true },
+  lord_rider:     { url: lordRider,     rows: 4, cols: 4, cellWidth: 37, cellHeight: 32, fps: 7, shadowWidth: 0.34, pixelArt: true },
+  outriders:      { url: outriders,     rows: 4, cols: 4, cellWidth: 29, cellHeight: 32, fps: 8, shadowWidth: 0.36, pixelArt: true },
+  messenger:      { url: messenger,     rows: 4, cols: 4, cellWidth: 39, cellHeight: 32, fps: 9, shadowWidth: 0.34, pixelArt: true },
+  patrol_footmen: { url: patrolFootmen, rows: 4, cols: 4, cellWidth: 33, cellHeight: 32, fps: 6, shadowWidth: 0.42, pixelArt: true },
+  levy_column:    { url: levyColumn,    rows: 4, cols: 4, cellWidth: 40, cellHeight: 32, fps: 6, shadowWidth: 0.46, pixelArt: true },
+  raiders:        { url: raiders,       rows: 4, cols: 4, cellWidth: 42, cellHeight: 32, fps: 6, shadowWidth: 0.5,  pixelArt: true },
+  pilgrims:       { url: pilgrims,      rows: 4, cols: 4, cellWidth: 50, cellHeight: 32, fps: 5, shadowWidth: 0.56, pixelArt: true },
+  merchant_mule:  { url: merchantMule,  rows: 4, cols: 4, cellWidth: 54, cellHeight: 32, fps: 5, shadowWidth: 0.6,  pixelArt: true },
+  caravan_wagon:  { url: caravanWagon,  rows: 4, cols: 4, cellWidth: 49, cellHeight: 32, fps: 6, shadowWidth: 0.6,  pixelArt: true },
+  royal_carriage: { url: royalCarriage, rows: 4, cols: 4, cellWidth: 46, cellHeight: 32, fps: 6, shadowWidth: 0.58, pixelArt: true },
 } satisfies Record<string, AgentSheet>;
 
 export type AgentSheetId = keyof typeof agentSheets;

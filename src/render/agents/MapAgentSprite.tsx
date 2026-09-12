@@ -33,13 +33,13 @@ import {
  *
  *   altura em px = SIZE_FACTOR × (px por unidade) ^ SIZE_EXPONENT
  */
-const SIZE_FACTOR = 81;
-const SIZE_EXPONENT = 0.435;
-const MIN_SCREEN_PX = 12;
-const MAX_SCREEN_PX = 48;
+const SIZE_FACTOR = 49;
+const SIZE_EXPONENT = 0.47;
+const MIN_SCREEN_PX = 9;
+const MAX_SCREEN_PX = 32;
 
 /** Abaixo desta altura na tela o agente ganha um anel, senão some no mapa. */
-const LOCATOR_BELOW_PX = 22;
+const LOCATOR_BELOW_PX = 18;
 
 /**
  * Oscilação da cavalgada, em pixels da folha, por quadro do ciclo.

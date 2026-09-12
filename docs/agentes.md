@@ -91,13 +91,17 @@ Se vier errado, gere de novo — sai mais rápido que consertar.
 Um comando:
 
 ```bash
-python3 tools/pack-agent-sheet.py entrada.png src/assets/agents/nome.png --pixel 48 --colors 28
+python3 tools/pack-agent-sheet.py entrada.png src/assets/agents/nome.png --pixel 32 --colors 24
 ```
 
-**`--pixel 48` é o padrão do jogo.** A altura da célula é sempre 48; a largura
+**`--pixel 32` é o padrão do jogo.** A altura da célula é sempre 32; a largura
 sai do assunto (uma carroça ocupa mais lado a lado que um cavaleiro) e a
-ferramenta a imprime. Como nenhum agente passa de 48 px na tela, não adianta
-gerar com mais detalhe do que isso — some na redução.
+ferramenta a imprime. Trinta e dois é também o TETO de tamanho na tela: assim a
+arte é desenhada perto de 1:1 em vez de reduzida para um tamanho quebrado, que
+num pixel art borra as bordas.
+
+Ou seja: não adianta gerar com muito detalhe. O que não couber em 32 px de
+altura some na redução, seja o prompt o que for.
 
 Ele acha cada sprite pelo alfa, mede onde ficam os **pés** e reempacota numa
 grade regular com o ponto de apoio sempre no mesmo lugar da célula — é isso que
@@ -116,8 +120,8 @@ mensageiro: {
   url: mensageiro,
   rows: 4,
   cols: 4,
-  cellWidth: 58,     // o que a ferramenta imprimiu
-  cellHeight: 48,
+  cellWidth: 39,     // o que a ferramenta imprimiu
+  cellHeight: 32,
   fps: 8,
   shadowWidth: 0.34,
   pixelArt: true,
