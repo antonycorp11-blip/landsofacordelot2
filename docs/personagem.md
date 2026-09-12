@@ -112,14 +112,17 @@ valer pontos.
 
 ---
 
-## Arte que falta
+## A arte dos quatro
 
-Os quatro retratos. Solte os arquivos em `src/assets/heroes/` e acrescente um
-`import` por linha em `src/data/heroAssets.ts`:
+Os cards vêm com moldura, brasão de classe e uma **faixa de pergaminho em
+branco** na base — desenhada para receber o nome. Por isso a imagem entra
+inteira, sem borda nem fundo por baixo (seria moldura dentro de moldura), e o
+nome é escrito na faixa em vez de repetido embaixo.
 
-```
-kael_arven.webp · lyra_venn.webp · edrian_vale.webp · serah_elynn.webp
-```
+Trocar a arte é trocar o arquivo em `src/assets/heroes/`. Se um deles sumir, a
+tela cai na inicial do nome na cor do arquétipo e o autoteste acusa — nunca um
+retrato inventado em CSS.
 
-Sem eles a tela mostra a inicial na cor do arquétipo e o autoteste acusa —
-nunca um retrato inventado em CSS.
+Ainda faltam os **quatro ícones de classe avulsos** (MILITARY, TRADE, POLITICS,
+RELIGION). Eles aparecem dentro dos cards, mas não como arquivos próprios; o
+painel usa um glifo provisório.

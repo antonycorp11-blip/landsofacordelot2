@@ -24,8 +24,18 @@ const ARCHETYPE_COLOR: Record<string, string> = {
 
 function Portrait({ hero }: { hero: HeroDefinition }) {
   const url = heroPortraitUrl(hero.portraitAssetKey);
-  if (url) return <img className="hs-portrait" src={url} alt={hero.name} />;
-  // Sem arte ainda: a inicial na cor do arquétipo, e não um desenho inventado.
+  if (url) {
+    return (
+      <div className="hs-figure">
+        <img src={url} alt={hero.name} />
+        {/* O nome vai na faixa de pergaminho que a própria arte reservou. */}
+        <span className="hs-plate">
+          <b>{hero.name}</b>
+        </span>
+      </div>
+    );
+  }
+  // Sem arte: a inicial na cor do arquétipo, e não um desenho inventado.
   return (
     <div className="hs-portrait">
       <div style={{ textAlign: "center", display: "grid", gap: 6 }}>
@@ -63,7 +73,6 @@ export function HeroSelect() {
           >
             <Portrait hero={hero} />
             <div>
-              <div className="hs-name">{hero.name}</div>
               <div className="hs-role">
                 {hero.age} anos · {CAREER_LABEL[hero.archetype]}
               </div>

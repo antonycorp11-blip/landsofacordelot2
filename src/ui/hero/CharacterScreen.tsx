@@ -89,11 +89,20 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
           <div className="sheet-inner cols">
             {/* ------------------------- identidade ------------------------- */}
             <div className="panel">
-              <div className="id-portrait">
-                {portrait ? <img src={portrait} alt={hero.name} /> : <span className="hs-portrait-note">retrato a caminho</span>}
+              <div className={`id-portrait ${portrait ? "" : "empty"}`}>
+                {portrait ? (
+                  <>
+                    <img src={portrait} alt={hero.name} />
+                    <span className="hs-plate">
+                      <b>{hero.name}</b>
+                    </span>
+                  </>
+                ) : (
+                  <span className="hs-portrait-note">retrato a caminho</span>
+                )}
               </div>
               <div>
-                <div className="id-name">{hero.name}</div>
+                {!portrait && <div className="id-name">{hero.name}</div>}
                 <div className="id-line">
                   Nível <b>{game.level}</b> · {hero.age} anos
                 </div>
@@ -234,7 +243,13 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
                 const canRecruit = c.status === "AVAILABLE" && c.relation >= RECRUIT_RELATION;
                 return (
                   <div className="comp" key={c.id}>
-                    <div className="comp-portrait">{def?.name[0]}</div>
+                    <div className="comp-portrait">
+                      {heroPortraitUrl(def?.portraitAssetKey) ? (
+                        <img src={heroPortraitUrl(def?.portraitAssetKey)} alt={def?.name} loading="lazy" />
+                      ) : (
+                        def?.name[0]
+                      )}
+                    </div>
                     <div className="comp-body">
                       <span className="comp-name">{def?.name}</span>
                       <span className="comp-line">

@@ -1,15 +1,21 @@
 /**
  * RETRATOS DOS QUATRO INÍCIOS.
  *
- * Vazio até a arte chegar. Quem desenha cai num retrato provisório com a cor
- * do arquétipo — nunca uma tentativa de recriar a arte em CSS.
- *
- * Para aplicar: solte os arquivos em `src/assets/heroes/` com estes nomes e
- * acrescente um `import` por linha aqui.
- *
- *   kael_arven.webp · lyra_venn.webp · edrian_vale.webp · serah_elynn.webp
+ * Mesmo registry dos brasões e dos líderes: a arte é referenciada por chave, e
+ * trocar um arquivo não toca em componente nenhum. Chave sem arquivo devolve
+ * `undefined` e a tela cai na inicial do nome, nunca num retrato inventado.
  */
-export const heroPortraits: Record<string, string> = {};
+import kael from "../assets/heroes/kael_arven.webp?url";
+import lyra from "../assets/heroes/lyra_venn.webp?url";
+import edrian from "../assets/heroes/edrian_vale.webp?url";
+import serah from "../assets/heroes/serah_elynn.webp?url";
+
+export const heroPortraits: Record<string, string> = {
+  hero_kael_arven: kael,
+  hero_lyra_venn: lyra,
+  hero_edrian_vale: edrian,
+  hero_serah_elynn: serah,
+};
 
 export function heroPortraitUrl(key: string | undefined): string | undefined {
   return key ? heroPortraits[key] : undefined;

@@ -54,16 +54,40 @@
 .hs-card[aria-pressed="true"] { border-color: #d8b85c; background: #1e2725; transform: translateY(-2px); }
 .hs-card:focus-visible { outline: 2px solid #d8b85c; outline-offset: 2px; }
 
+/*
+ * A arte já é um card inteiro: moldura, brasão de classe e uma faixa de
+ * pergaminho em branco na base, feita para receber o nome. Então a imagem
+ * entra sem borda nem fundo por baixo — seria moldura dentro de moldura — e o
+ * nome é escrito NA faixa, que é onde ele foi desenhado para ficar.
+ */
+.hs-figure { position: relative; aspect-ratio: 420 / 634; }
+.hs-figure img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+.hs-plate {
+  position: absolute;
+  left: 16%; right: 16%;
+  top: 71.5%; height: 15%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+.hs-plate b {
+  font-size: clamp(11px, 2.1vw, 15px);
+  line-height: 1.1;
+  font-weight: 600;
+  color: #3a2f1d;
+  letter-spacing: 0.01em;
+}
+
 .hs-portrait {
-  aspect-ratio: 3 / 4;
-  border-radius: 3px;
-  background: #0d1413;
-  border: 1px solid #c8af6e2b;
-  object-fit: cover;
-  object-position: top center;
+  aspect-ratio: 420 / 634;
   display: grid;
   place-items: center;
   overflow: hidden;
+  border-radius: 3px;
+  background: #0d1413;
+  border: 1px solid #c8af6e2b;
 }
 .hs-portrait-empty { color: var(--arch); font-size: 34px; font-weight: 600; letter-spacing: 0.06em; }
 .hs-portrait-note { font-size: 10px; color: #7d8a86; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -129,8 +153,10 @@
 .panel { background: #161d1c99; border: 1px solid #c8af6e2b; border-radius: 4px; padding: 13px; display: flex; flex-direction: column; gap: 10px; }
 .panel-title { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: #b6a97a; }
 
-.id-portrait { aspect-ratio: 3 / 4; border-radius: 3px; background: #0d1413; border: 1px solid #c8af6e2b; display: grid; place-items: center; overflow: hidden; }
-.id-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.id-portrait { position: relative; aspect-ratio: 420 / 634; display: grid; place-items: center; overflow: hidden; }
+.id-portrait.empty { border-radius: 3px; background: #0d1413; border: 1px solid #c8af6e2b; }
+.id-portrait img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.id-portrait .hs-plate b { font-size: clamp(11px, 1.6vw, 14px); }
 .id-name { font-size: 20px; font-weight: 600; line-height: 1.15; }
 .id-line { font-size: 12.5px; color: #cbbf9d; }
 .id-line b { color: #f4ecd2; font-weight: 500; }
@@ -187,7 +213,8 @@
 
 .comp { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid #c8af6e1f; }
 .comp:first-of-type { border-top: 0; }
-.comp-portrait { width: 54px; height: 72px; flex: none; border-radius: 3px; background: #0d1413; border: 1px solid #c8af6e2b; display: grid; place-items: center; color: #6f7a76; font-size: 18px; }
+.comp-portrait { width: 54px; height: 72px; flex: none; display: grid; place-items: center; color: #6f7a76; font-size: 18px; overflow: hidden; }
+.comp-portrait img { width: 100%; height: 100%; object-fit: contain; }
 .comp-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .comp-name { font-size: 14.5px; font-weight: 600; }
 .comp-line { font-size: 12px; color: #cbbf9d; }
