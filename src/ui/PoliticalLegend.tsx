@@ -3,6 +3,8 @@ import { houses, houseById } from "../data/houses";
 import { crestUrl } from "../data/houseAssets";
 import { controllerOf, regionsControlledBy, useTerritories } from "../data/territories";
 import { ownerOf, priceFor, useFiefOwners } from "../data/fiefOwners";
+import { incomeOf } from "../game/estates";
+import { getState } from "../game/store";
 import { relationLabel, relationWith } from "../data/player";
 import { fiefs, fiefsOfRegion, TIER_LABEL, type Fief } from "../world/fiefs";
 import { regionById, regions } from "../world/valdoria";
@@ -156,7 +158,7 @@ function FiefList({
                         </span>
                       </span>
                       <span className="legend-rel">
-                        {owner === "player" ? `${fief.income}/dia` : priceFor(fief.id).toLocaleString("pt-BR")}
+                        {owner === "player" ? `${incomeOf(getState(), fief.id)}/dia` : priceFor(fief.id).toLocaleString("pt-BR")}
                       </span>
                     </button>
                   );

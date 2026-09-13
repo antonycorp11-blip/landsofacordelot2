@@ -120,12 +120,23 @@ export function advanceWorldForces(input:GameState,day:number):{state:GameState;
   // Patrulhas caçam saqueadores; saqueadores preferem caravanas.
   const raiders=active().filter((id)=>wandererById.get(id)?.routine==="pilhagem");
   const caravans=active().filter((id)=>wandererById.get(id)?.routine==="comércio");
+  // Uma presa por caçador. Sem isto as cinco patrulhas convergiam todas no
+  // mesmo bando — que é o mais próximo de todas — e os outros ficavam livres
+  // para saquear o reino inteiro sem ninguém atrás.
+  const claimedRaiders=new Set<string>();
+  const claimedCaravans=new Set<string>();
   for(const id of active()){
     const def=wandererById.get(id),force=forces[id];
     if(def?.routine==="patrulha"){
-      const target=nearest(id,raiders,forces);forces[id]={...force,objective:"hunt",targetForceId:target,targetPoiId:target?forces[target].at:null,objectiveLabel:target?`Caçando ${wandererById.get(target)?.name}`:"Patrulhando uma estrada tranquila"};
+      const free=raiders.filter((r)=>!claimedRaiders.has(r));
+      const target=nearest(id,free.length?free:raiders,forces);
+      if(target)claimedRaiders.add(target);
+      forces[id]={...force,objective:"hunt",targetForceId:target,targetPoiId:target?forces[target].at:null,objectiveLabel:target?`Caçando ${wandererById.get(target)?.name}`:"Patrulhando uma estrada tranquila"};
     }else if(def?.routine==="pilhagem"){
-      const target=nearest(id,caravans,forces);forces[id]={...force,objective:"raid",targetForceId:target,targetPoiId:target?forces[target].at:null,objectiveLabel:target?`Seguindo ${wandererById.get(target)?.name}`:"Procurando uma presa"};
+      const free=caravans.filter((c)=>!claimedCaravans.has(c));
+      const target=nearest(id,free.length?free:caravans,forces);
+      if(target)claimedCaravans.add(target);
+      forces[id]={...force,objective:"raid",targetForceId:target,targetPoiId:target?forces[target].at:null,objectiveLabel:target?`Seguindo ${wandererById.get(target)?.name}`:"Procurando uma presa"};
     }
   }
 

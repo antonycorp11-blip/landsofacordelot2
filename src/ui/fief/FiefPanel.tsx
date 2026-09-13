@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { EstatePanel } from "./EstatePanel";
+import { estateOf, incomeOf } from "../../game/estates";
 import { TIER_LABEL, type Fief } from "../../world/fiefs";
 import { buyBlocker, buyFief, ownerOf, priceFor, useFiefOwners, BUY_RELATION } from "../../data/fiefOwners";
 import { houseById } from "../../data/houses";
@@ -31,6 +33,7 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
   useFiefOwners();
   const game = useGame();
   const [note, setNote] = useState<string | null>(null);
+  const [managing, setManaging] = useState(false);
 
   const owner = ownerOf(fief.id);
   const house = owner === "player" ? null : houseById.get(owner);
@@ -39,6 +42,23 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
   const region = regionById.get(fief.regionId);
   const blocker = buyBlocker(fief.id);
   const relation = house ? relationWith(house.id) : 0;
+
+  if (managing && owner === "player") {
+    return (
+      <aside className="agent-panel" style={{ borderLeftColor: "#e2c169" }}>
+        <header className="agent-head">
+          <div>
+            <h2>{fief.name}</h2>
+            <div className="agent-sub">{TIER_LABEL[fief.tier]} · lealdade {Math.round(estateOf(game, fief.id).loyalty)}</div>
+          </div>
+          <button className="sheet-close" onClick={onClose} aria-label="Fechar">×</button>
+        </header>
+        <div className="agent-body">
+          <EstatePanel fief={fief} onClose={() => setManaging(false)} />
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="agent-panel" style={{ borderLeftColor: house?.color ?? "#e2c169" }}>
@@ -82,7 +102,7 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
         </div>
         <div className="pair">
           <span>Renda</span>
-          <b>{fief.income} moedas / dia</b>
+          <b>{owner === "player" ? incomeOf(game, fief.id) : fief.income} moedas / dia</b>
         </div>
         <div className="pair">
           <span>Defesa</span>
@@ -111,7 +131,7 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
 
       <div className="agent-actions">
         {owner === "player" ? (
-          <button className="btn" disabled title="Administração ainda não disponível">
+          <button className="btn" onClick={() => setManaging(true)}>
             Gerir
           </button>
         ) : (

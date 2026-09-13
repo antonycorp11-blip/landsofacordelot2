@@ -15,6 +15,7 @@ import { advanceWorld, WORLD_TICK_DAYS } from './worldSim';
 import { heroById } from '../data/heroes';
 import { skillById } from '../data/skills';
 import { CAREER_LABEL } from './careers';
+import { fiefById } from '../world/fiefs';
 import { poiById } from '../world/valdoria';
 import { goodById, type GoodId } from '../data/goods';
 import type { AgentClass, RouteEdge } from '../world/types';
@@ -207,6 +208,16 @@ export function settleDays(upToDay: number) {
       deserted += result.report.deserted;
       const line = reportLine(result.report, next.troops);
       if (line) next = logged(next, 'evento', line);
+      // Perder terra por má administração é notícia, não um número no diário.
+      for (const fiefId of result.report.revolts) {
+        const fief = fiefById.get(fiefId);
+        next = logged(next, 'fronteira', `${fief?.name ?? fiefId} se levantou e deixou de ser seu.`);
+        next = { ...next, adventure: { ...next.adventure, notice: {
+          title: 'A terra se levantou',
+          text: `${fief?.name ?? 'Um senhorio seu'} expulsou os seus e voltou para a Casa que o tinha antes. Imposto pesado por tempo demais cobra assim.`,
+          levelUp: false,
+        } } };
+      }
       const forceStep=advanceWorldForces(next,result.report.day);
       next=forceStep.state;
       for(const item of forceStep.news)next=logged(next,item.kind,item.text);

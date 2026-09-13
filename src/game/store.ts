@@ -25,6 +25,7 @@ import type { AgentClass, FiefOwner, HouseId } from "../world/types";
 
 import { freshAdventure, type AdventureState, type JourneySave } from "./adventureState";
 import type { War } from "./worldSim";
+import type { Estate } from "./estates";
 import { normalizeForceState, type WorldForceState } from "./worldForces";
 
 /**
@@ -107,6 +108,8 @@ export type GameState = {
   houseRelations: Partial<Record<HouseId, number>>;
   /** Senhorios que trocaram de dono nesta campanha. O resto usa o dono histórico. */
   fiefOwners: Record<string, FiefOwner>;
+  /** Como você administra cada terra sua: imposto, prosperidade, lealdade, guarnição. */
+  fiefEstates: Record<string, Estate>;
 
   /** Guerras entre Casas, movidas pelo mundo e não pelo jogador. */
   wars: War[];
@@ -162,6 +165,7 @@ function blank(): GameState {
     localInfluence: {},
     houseRelations: { ...DEFAULT_RELATIONS },
     fiefOwners: {},
+    fiefEstates: {},
     wars: [],
     worldTickDay: 0,
     dayProcessed: 0,

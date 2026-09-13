@@ -74,3 +74,60 @@
 
 /* Rosto no cabeçalho de um painel: redondo, do tamanho de um brasão. */
 .panel-face { flex: none; border-radius: 50%; display: block; }
+
+/* ---------------------------- administração -----------------------------
+ * Fica dentro do painel de senhorio, com os números antes das escolhas: a
+ * renda de cada imposto está escrita no próprio botão, para escolher não ser
+ * um palpite.
+ */
+.estate { display: flex; flex-direction: column; gap: 11px; }
+.estate-head { display: flex; align-items: center; gap: 8px; }
+.estate-head .sheet-close { margin-left: auto; }
+
+.estate-figures { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.estate-figures > div { padding: 7px 9px; border: 1px solid #a8915b44; border-radius: 6px; background: #0f202780; }
+.estate-figures small { display: block; font: 8.5px var(--ui-small); letter-spacing: .12em; text-transform: uppercase; color: #b6a97a; }
+.estate-figures b { font-size: 19px; font-weight: 400; color: #f2e5c1; font-variant-numeric: tabular-nums; }
+.estate-figures i { font-style: normal; font-size: 10px; color: #9fae9f; }
+
+.estate-meter { display: flex; flex-direction: column; gap: 3px; }
+.estate-meter-head { display: flex; justify-content: space-between; font: 10.5px var(--ui-small); color: #b9c1b5; }
+.estate-meter-head b { color: #ecd9a4; font-variant-numeric: tabular-nums; }
+.estate-meter-head b.bad { color: #e0a08c; }
+.estate-bar { display: block; height: 4px; border-radius: 2px; background: #07151899; overflow: hidden; }
+.estate-bar i { display: block; height: 100%; background: linear-gradient(90deg, #8f783e, #e1c583); transition: width .25s ease; }
+.estate-bar i.bad { background: linear-gradient(90deg, #8f5a4a, #cf9a7e); }
+.estate-meter small { font: 9.5px/1.4 var(--ui-small); color: #96a096; }
+@media (prefers-reduced-motion: reduce) { .estate-bar i { transition: none; } }
+
+.estate-block { display: flex; flex-direction: column; gap: 6px; padding-top: 9px; border-top: 1px solid #a8915b33; }
+.estate-taxes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.estate-tax {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 6px 5px; font: inherit; text-align: center;
+  border: 1px solid #a8915b44; border-radius: 5px;
+  background: #ffffff08; color: #cfd6c8; cursor: pointer;
+}
+.estate-tax:hover { background: #ffffff14; }
+.estate-tax.on { background: #c9a84c2e; border-color: #d8b85c77; color: #f3dc9b; }
+.estate-tax strong { font-size: 12px; font-weight: 400; }
+.estate-tax span { font: 600 12px var(--ui-small); color: #ecd9a4; font-variant-numeric: tabular-nums; }
+.estate-tax em { font: 8.5px var(--ui-small); font-style: normal; color: #96a096; }
+.estate-note { margin: 0; font: 10px/1.45 var(--ui-small); color: #96a096; }
+.estate-invest { width: 100%; min-height: 34px; font-size: 11.5px; }
+
+.estate-troop { display: flex; align-items: center; gap: 8px; font: 11px var(--ui-small); color: #cfd6c8; padding: 3px 0; }
+.estate-count { margin-left: auto; color: #96a096; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.estate-move { display: flex; gap: 3px; flex: none; }
+.estate-move button {
+  width: 24px; height: 24px; display: grid; place-items: center;
+  border: 1px solid #a8915b55; border-radius: 4px;
+  background: #ffffff0d; color: #ded3b4; font: inherit; font-size: 12px; cursor: pointer; padding: 0;
+}
+.estate-move button:disabled { opacity: .35; cursor: default; }
+.estate-move button:hover:not(:disabled) { background: #ffffff1a; }
+
+.estate-tabs { display: flex; gap: 2px; padding: 2px; border: 1px solid #b99c5f33; border-radius: 6px; background: #0a151899; }
+.estate-tabs button { font: 600 10px var(--ui-small); padding: 5px 11px; border: 0; border-radius: 4px; background: none; color: #a4ae9f; cursor: pointer; }
+.estate-tabs button:hover { color: #e6dcbc; }
+.estate-tabs button[aria-selected="true"] { background: #c9a84c33; color: #f3dc9b; }

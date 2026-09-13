@@ -405,3 +405,34 @@
   .offer-card span { font-size: 9.5px; }
   .offer-card small { font-size: 7.5px; }
 }
+
+/* Administração deitada: os números encolhem e o painel continua sem rolar. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .estate { gap: 8px; }
+  .estate-figures > div { padding: 5px 8px; }
+  .estate-figures b { font-size: 16px; }
+  .estate-block { padding-top: 7px; gap: 5px; }
+  .estate-tax { padding: 5px 4px; }
+  .estate-tax strong { font-size: 11px; }
+  .estate-tax span { font-size: 11px; }
+  .estate-invest { min-height: 30px; font-size: 11px; }
+  .estate-troop { padding: 2px 0; font-size: 10px; }
+  .estate-move button { width: 22px; height: 22px; }
+}
+
+/* Os últimos 32 px da aba Terra: medidores e notas mais justos. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .estate-meter small { font-size: 9px; line-height: 1.3; }
+  .estate-meter { gap: 2px; }
+  .estate-note { font-size: 9.5px; line-height: 1.3; }
+  .estate-invest { min-height: 28px; }
+  .estate-tax em { font-size: 8px; }
+  .estate-figures { gap: 7px; }
+  .estate-head { margin-bottom: -2px; }
+  .estate-block { padding-top: 6px; gap: 4px; }
+  .estate-figures > div { padding: 4px 8px; }
+  .estate-figures b { font-size: 15px; }
+  .estate { gap: 6px; }
+  .estate-taxes { gap: 4px; }
+  .estate-tax { padding: 4px 3px; }
+}
