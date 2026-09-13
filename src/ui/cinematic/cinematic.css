@@ -41,38 +41,53 @@
 }
 .cine-dot { margin: 0 7px; opacity: 0.6; }
 
-.cine-body { display: flex; flex-direction: column; gap: 11px; min-height: 0; }
+/* --------------------------- quem está falando -------------------------- */
 
-.cine-speaker { display: flex; align-items: center; gap: 11px; }
+.cine-who { display: flex; align-items: center; gap: 10px; }
 .cine-face { border-radius: 50%; flex: none; box-shadow: 0 3px 14px #0008; }
-.cine-speaker span { display: flex; flex-direction: column; gap: 2px; }
-.cine-speaker b { font-size: 17px; font-weight: 400; color: #f2e5c1; }
-.cine-speaker em {
+.cine-who span { display: flex; flex-direction: column; gap: 2px; }
+.cine-who b { font-size: 16px; font-weight: 400; color: #f2e5c1; }
+.cine-who em {
   font: 9.5px var(--ui-small); font-style: normal;
   letter-spacing: 0.12em; text-transform: uppercase; color: #9a8b63;
 }
 
-.cine-text { display: flex; flex-direction: column; gap: 7px; min-height: 0; overflow: hidden; }
-.cine-text p {
-  margin: 0;
-  font-family: Georgia, serif;
-  font-size: 17px;
-  line-height: 1.55;
-  color: #e9dec3;
-  text-wrap: pretty;
-}
-/* A primeira linha puxa o olho, como abertura de capítulo. */
-.cine-text p:first-child { color: #f4e9cd; }
+/* ------------------------------- a conversa ------------------------------ */
 
-.cine-outcome {
+.cine-thread { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+
+.cine-thread p {
   margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
   font-family: Georgia, serif;
-  font-size: 17px;
-  line-height: 1.6;
-  color: #e9dec3;
+  line-height: 1.55;
+  text-wrap: pretty;
   white-space: pre-line;
-  max-width: 62ch;
 }
+
+/* O que se vê: recuado, sem rosto, mais apagado — é a voz de quem olha. */
+.cine-thread p.seen {
+  font-size: 16px;
+  color: #cfc5a8;
+  padding-left: 12px;
+  border-left: 1px solid #6b6047;
+  max-width: 66ch;
+}
+
+/* O que alguém diz: bolha com o rosto ao lado. */
+.cine-thread p.said > span {
+  flex: 0 1 auto;
+  padding: 8px 13px;
+  border-radius: 3px 12px 12px 12px;
+  background: #1b2a2ecc;
+  border: 1px solid #c1a96a2e;
+  font-size: 17px;
+  color: #f4e9cd;
+  max-width: 54ch;
+}
+.cine-bubble-face { flex: none; border-radius: 50%; margin-top: 2px; box-shadow: 0 2px 8px #0007; }
 
 /* ------------------------------- escolhas ------------------------------- */
 

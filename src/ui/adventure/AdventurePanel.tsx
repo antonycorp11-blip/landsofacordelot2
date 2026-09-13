@@ -95,6 +95,7 @@ function StoryTab() {
   const step=currentStep(game.adventure.story);
   const chapter=step?chapterOfStep.get(step.id):null;
   const vazio=!k.facts.length&&!k.questions.length&&!k.evidence.length;
+  const caminhos=leadsFor(k.evidence);
 
   if(vazio) return <>
     <p className="adv-story">Você chegou a Valdória sem nada que valha registrar. Ainda.</p>
@@ -119,7 +120,30 @@ function StoryTab() {
       <span className="adv-eyebrow">Em suas mãos</span>
       <ul className="know-list proof">{k.evidence.map((id)=><li key={id}>{EVIDENCE_NAME[id]??id}</li>)}</ul>
     </>}
+
+    {caminhos.length>0 && <>
+      <span className="adv-eyebrow">Quem saberia dizer</span>
+      <ul className="know-list where">{caminhos.map((c)=><li key={c}>{c}</li>)}</ul>
+    </>}
   </>;
+}
+
+/**
+ * CAMINHOS, NÃO OBJETIVOS.
+ *
+ * Não é uma lista de destinos com seta: é gente que teria motivo para
+ * reconhecer o que você carrega. Quem procurar primeiro é escolha sua, e cada
+ * um responde de um jeito — o mercador vê preço, o escrivão vê marca, o guarda
+ * vê problema.
+ */
+function leadsFor(evidence: string[]): string[] {
+  if (!evidence.includes('royal_seal')) return [];
+  return [
+    'Um escrivão reconhece marca de chancelaria.',
+    'Um mercador sabe o que não é joia comum.',
+    'Um sacerdote lembra símbolos antigos.',
+    'A própria Coroa — se você confiar nela.',
+  ];
 }
 
 /** Nome legível de cada prova. A função escondida delas não é dita aqui. */
@@ -177,39 +201,45 @@ function BattleScene({battle}:{battle:NonNullable<ReturnType<typeof useGame>['ad
   const flank=canFlank(battle.mine);
   return <>
     <BattleArena battle={battle}/>
-    <div className="btl-sides">
-      <div className="btl-side">
-        <span className="btl-label">Os seus</span>
-        <b>{troopTotal(battle.mine)}</b>
-        <span className="btl-bar"><i style={{width:`${battle.myMorale}%`}}/></span>
-        <small>moral {battle.myMorale} · {battle.myDead??0} mortos · {battle.myWounded??0} feridos</small>
+    {/* Coluna de comando: forças, relato, parlamento e ordens juntos.
+        Precisa ser um contêiner de verdade — deitado, ela fica ao lado do
+        campo, e sem um elemento próprio cada pedaço quebrava para uma
+        linha abaixo da arena. */}
+    <div className="btl-command">
+      <div className="btl-sides">
+        <div className="btl-side">
+          <span className="btl-label">Os seus</span>
+          <b>{troopTotal(battle.mine)}</b>
+          <span className="btl-bar"><i style={{width:`${battle.myMorale}%`}}/></span>
+          <small>moral {battle.myMorale} · {battle.myDead??0} mortos · {battle.myWounded??0} feridos</small>
+        </div>
+        <div className="btl-side them">
+          <span className="btl-label">{battle.enemyName}</span>
+          <b>{troopTotal(battle.theirs)}</b>
+          <span className="btl-bar"><i style={{width:`${battle.theirMorale}%`}}/></span>
+          <small>moral {battle.theirMorale} · {battle.theirLosses??0} fora de combate</small>
+        </div>
       </div>
-      <div className="btl-side them">
-        <span className="btl-label">{battle.enemyName}</span>
-        <b>{troopTotal(battle.theirs)}</b>
-        <span className="btl-bar"><i style={{width:`${battle.theirMorale}%`}}/></span>
-        <small>moral {battle.theirMorale} · {battle.theirLosses??0} fora de combate</small>
-      </div>
+      <p className="adv-story btl-log">{battle.log[battle.log.length-1] ?? 'As linhas se encaram. A sua ordem decide como isto começa.'}</p>
+      {!battle.parleyAttempted && <div className="btl-parley">
+        {canDemandSurrender(battle)&&<button className="adv-choice" onClick={()=>attemptParley('exigir')}><strong>Exigir rendição</strong><span>Diplomacia {game.attributes.diplomacy} + Persuasão {game.skills.persuasao}</span><span className="adv-check"><em>{Math.round(parleyChance(game,battle,'exigir')*100)}% de sucesso</em></span><span className="adv-outcome">Captura parte dos sobreviventes e encerra o combate.</span></button>}
+        <button className="adv-choice" onClick={()=>attemptParley('retirada')}><strong>Negociar passagem</strong><span>Oferecer dinheiro para sair com feridos e carga.</span><span className="adv-check"><em>{Math.round(parleyChance(game,battle,'retirada')*100)}% de sucesso</em></span></button>
+      </div>}
+      <div className="btl-orders">{ORDERS.map(o=>{
+        const ruim=o.id==='flanquear' && !flank;
+        const effect=orderEffects(game,battle,o.id);
+        const available=orderAvailable(o.id,battle.mine);
+        return <button className="adv-choice" key={o.id} disabled={!available} onClick={()=>giveOrder(o.id)}>
+          <strong>{o.name}</strong>
+          <span>{!available?(o.id==='saraivada'?'Você não tem arqueiros.':'Você não tem cavalaria.'):ruim?'Sem cavalaria, a manobra expõe o seu flanco.':o.blurb}</span>
+          <span className="btl-effect">
+            {effect.retreatPercent!=null
+              ? <><b>{effect.retreatPercent}%</b> de sair da batalha</>
+              : <><b>Ataque {effect.attackPercent>=0?'+':''}{effect.attackPercent}%</b><b>Exposição {effect.exposurePercent>=0?'+':''}{effect.exposurePercent}%</b><span>{BATTLE_TERRAINS[battle.terrain]?.name??'Campo'} {effect.terrainNote>=0?'+':''}{effect.terrainNote}%</span></>}
+          </span>
+        </button>;
+      })}</div>
     </div>
-    <p className="adv-story btl-log">{battle.log[battle.log.length-1] ?? 'As linhas se encaram. A sua ordem decide como isto começa.'}</p>
-    {!battle.parleyAttempted && <div className="btl-parley">
-      {canDemandSurrender(battle)&&<button className="adv-choice" onClick={()=>attemptParley('exigir')}><strong>Exigir rendição</strong><span>Diplomacia {game.attributes.diplomacy} + Persuasão {game.skills.persuasao}</span><span className="adv-check"><em>{Math.round(parleyChance(game,battle,'exigir')*100)}% de sucesso</em></span><span className="adv-outcome">Captura parte dos sobreviventes e encerra o combate.</span></button>}
-      <button className="adv-choice" onClick={()=>attemptParley('retirada')}><strong>Negociar passagem</strong><span>Oferecer dinheiro para sair com feridos e carga.</span><span className="adv-check"><em>{Math.round(parleyChance(game,battle,'retirada')*100)}% de sucesso</em></span></button>
-    </div>}
-    <div className="btl-orders">{ORDERS.map(o=>{
-      const ruim=o.id==='flanquear' && !flank;
-      const effect=orderEffects(game,battle,o.id);
-      const available=orderAvailable(o.id,battle.mine);
-      return <button className="adv-choice" key={o.id} disabled={!available} onClick={()=>giveOrder(o.id)}>
-        <strong>{o.name}</strong>
-        <span>{!available?(o.id==='saraivada'?'Você não tem arqueiros.':'Você não tem cavalaria.'):ruim?'Sem cavalaria, a manobra expõe o seu flanco.':o.blurb}</span>
-        <span className="btl-effect">
-          {effect.retreatPercent!=null
-            ? <><b>{effect.retreatPercent}%</b> de sair da batalha</>
-            : <><b>Ataque {effect.attackPercent>=0?'+':''}{effect.attackPercent}%</b><b>Exposição {effect.exposurePercent>=0?'+':''}{effect.exposurePercent}%</b><span>{BATTLE_TERRAINS[battle.terrain]?.name??'Campo'} {effect.terrainNote>=0?'+':''}{effect.terrainNote}%</span></>}
-        </span>
-      </button>;
-    })}</div>
   </>;
 }
 
@@ -291,7 +321,7 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
     {!event && !notice && !raid && !battle && !beat && <nav className="adv-tabs" aria-label="Jornada">
       {([['story','Campanha'],['contracts','Encargo'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
     </nav>}
-    <div className="adv-body">
+    <div className={`adv-body${battle?" is-battle":""}`}>
       {battle ? <BattleScene battle={battle}/> : beat ? <BeatScene beat={beat}/> : raid ? <RaidScene raid={raid}/> : event && pending ? <>
         <p className="adv-story">{event.text}</p>
         <p className="adv-caption">A viagem está pausada. Atributos e habilidades influenciam a chance; XP pode conceder pontos para você distribuir.</p>

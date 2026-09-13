@@ -133,3 +133,5 @@
 .know-list.ask li::before { content:"?"; color:#c9a85c; font-weight:700; }
 .know-list.proof li { color:#d9c48d; }
 .know-list.proof li::before { content:"◆"; color:#c9a85c; font-size:8px; top:3px; }
+.know-list.where li { color:#b8c4b4; }
+.know-list.where li::before { content:"→"; color:#8aa0a8; font-size:9px; }

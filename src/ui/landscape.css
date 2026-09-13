@@ -459,3 +459,100 @@
   .know-list { margin:3px 0 9px; gap:4px; }
   .know-list li { font-size:10.5px; line-height:1.45; }
 }
+
+/* ------------------------------- batalha --------------------------------
+ * Deitada, a batalha era uma coluna de 816 px num espaço de 353: arena,
+ * forças, relato, parlamento e ordens empilhados. Vira DUAS COLUNAS — o campo
+ * à esquerda, o comando à direita —, que é a forma natural de uma tela larga
+ * e baixa, e o estouro acaba.
+ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .adv-dialog:has(.is-battle) { width: min(880px, 100%); }
+
+  /*
+   * FLEX, NÃO GRADE.
+   *
+   * Com `grid` a linha que hospedava o campo colapsava para 54 px e o
+   * `overflow:hidden` do quadro cortava o canvas — a batalha virava uma faixa
+   * vazia. Duas colunas flexíveis dizem exatamente o que se quer: o campo
+   * ocupa a esquerda com a altura que tem, o comando empilha na direita.
+   */
+  /*
+   * DUAS COLUNAS: o campo à esquerda, o comando à direita.
+   *
+   * Deitada, a batalha era uma pilha de 816 px num espaço de 353. A coluna de
+   * comando é um contêiner de verdade (`.btl-command`) e não um truque de
+   * CSS: sem ele, cada pedaço quebrava para uma linha abaixo da arena e as
+   * ordens ficavam fora da tela.
+   */
+  .adv-body.is-battle { display: flex; align-items: stretch; gap: 12px; overflow: hidden; }
+  .adv-body.is-battle > .battle-arena { flex: 1 1 auto; min-width: 0; margin: 0; align-self: flex-start; }
+  .btl-command {
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0;
+  }
+  .btl-command > .btl-sides { margin-bottom: 0; }
+  /* A coluna é estreita: o relato quebra em duas linhas e as ordens pedem
+     mais altura. Tudo encolhe junto, e o campo continua grande. */
+  .btl-command > .btl-log { font-size: 10.5px !important; line-height: 1.35; margin: 0 !important; min-height: 0; }
+  .btl-command .btl-orders { gap: 3px; }
+  .btl-command .btl-orders .adv-choice { padding: 3px 6px; }
+  .btl-command .btl-orders .adv-choice strong { font-size: 10.5px; }
+  .btl-command .btl-effect { font-size: 8px !important; line-height: 1.25; }
+  .btl-command .btl-parley .adv-choice { padding: 3px 7px; }
+  .btl-command .btl-parley .adv-choice strong { font-size: 11px; }
+  .btl-command .adv-check em { padding: 1px 4px; font-size: 8.5px; }
+  .btl-command { gap: 3px; }
+  .btl-command .btl-orders .adv-choice { padding: 2px 6px; }
+  .btl-command .btl-side { padding: 2px 7px; }
+  /* Mortos e feridos continuam visíveis: é a informação que decide se vale
+     seguir atacando. O espaço veio da legenda do terreno, cuja explicação
+     ("Espaço para cavalaria e linha larga") o jogador lê uma vez e sabe. */
+  .btl-command .btl-side small { font-size: 7.5px; }
+  .btl-command .btl-label { font-size: 7px; }
+  .adv-body.is-battle .battle-arena figcaption span { display: none; }
+  .adv-body.is-battle .battle-arena figcaption { padding: 2px 8px; }
+  .btl-command .btl-parley { margin-bottom: 1px; }
+  .btl-command .btl-side b { font-size: 14px; }
+  .adv-body.is-battle .battle-arena figcaption { padding: 3px 8px; font-size: 10px; }
+
+  .adv-body.is-battle > .btl-log { margin: 0 0 4px; min-height: 0; }
+  .btl-parley { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .btl-parley .adv-choice { padding: 6px 8px; }
+  .btl-parley .adv-choice strong { font-size: 11.5px; }
+  .btl-parley .adv-choice span { font-size: 9px; line-height: 1.3; }
+  .adv-body.is-battle .btl-orders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+  .adv-body.is-battle .btl-orders .adv-choice { padding: 5px 7px; }
+  .adv-body.is-battle .btl-orders .adv-choice strong { font-size: 11.5px; }
+  /*
+   * Na coluna estreita a descrição de cada ordem quebrava em três linhas e as
+   * quatro ordens sozinhas passavam de 270 px. Fica o NOME e o efeito — que é
+   * o número que decide a jogada —, e a explicação sai: quem já jogou uma
+   * rodada sabe o que "Avançar" faz.
+   */
+  .adv-body.is-battle .btl-orders .adv-choice > span:not(.btl-effect) { display: none; }
+  .adv-body.is-battle .btl-orders .adv-choice { flex-direction: row; align-items: baseline; gap: 8px; }
+  .adv-body.is-battle .btl-orders .btl-effect { margin-left: auto; text-align: right; font-size: 8.5px; }
+
+  /* No parlamento fica o nome e a chance. O resto se aprende tentando. */
+  .btl-parley .adv-choice > span:not(.adv-check) { display: none; }
+  .btl-parley .adv-choice { flex-direction: row; align-items: baseline; gap: 8px; }
+  .btl-parley .adv-check { margin-left: auto; }
+
+  .adv-body.is-battle .btl-orders { gap: 3px; }
+  .adv-body.is-battle .btl-orders .adv-choice { padding: 4px 7px; }
+  .adv-body.is-battle .btl-sides { gap: 7px; }
+  .adv-body.is-battle .btl-side small { font-size: 8px; }
+  .adv-body.is-battle .btl-side { padding: 4px 8px; }
+  .adv-body.is-battle .btl-side b { font-size: 15px; line-height: 1; }
+  .adv-body.is-battle .btl-side { padding: 3px 7px; gap: 1px; }
+  .adv-body.is-battle .btl-label { font-size: 7.5px; }
+  .adv-body.is-battle .btl-bar { height: 3px; }
+  .btl-parley .adv-choice { padding: 4px 8px; }
+  .adv-body.is-battle { gap: 4px 12px; }
+  .adv-body.is-battle .btl-orders .adv-choice strong { font-size: 11px; }
+  .adv-body.is-battle > .btl-log { font-size: 11px; margin: 0; }
+}

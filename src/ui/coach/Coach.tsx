@@ -55,6 +55,17 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
       };
     }
 
+    /* --------------------------- o selo -------------------------------- */
+    // Direção sem seta: o jogador sabe o que tem na mão e por que isso importa,
+    // e escolhe sozinho a quem mostrar. Some assim que ele mostrar a alguém.
+    if (game.knowledge.evidence.includes("royal_seal") && !game.storyFlags.includes("mostrou_selo")) {
+      return {
+        id: "selo",
+        title: "Você carrega um selo da Coroa",
+        body: "Alguém vai reconhecê-lo: um escrivão, um mercador, um sacerdote. Procure gente numa localidade e mostre.",
+      };
+    }
+
     /* ------------------------------ chegar ---------------------------- */
     if (!atPlace && !contract) {
       const target = nearestPlace(stop);
