@@ -19,7 +19,12 @@ interativos em SVG, com o mesmo modelo de navegação.
 
 1. Na Vercel, escolha **Add New → Project** e importe `antonycorp11-blip/landsofacordelot2`.
 2. Use a branch **main**, diretório raiz **./**. O `vercel.json` já configura Vite,
-   instalação `npm ci`, build `npm run build` e saída `dist`.
+   instalação `npm ci --include=dev`, build `npm run build` e saída `dist`.
+
+   O `--include=dev` não é decoração: se o projeto tiver `NODE_ENV=production`
+   nas variáveis de ambiente, `npm ci` pula as devDependencies e o build morre
+   em `tsc: command not found` — o TypeScript e o Vite vivem lá. Com a opção, a
+   instalação passa a não depender do `NODE_ENV`.
 3. Clique em **Deploy** e abra o endereço HTTPS gerado no celular.
 
 Não são necessárias variáveis de ambiente. [Documentação Vite/Vercel](https://vercel.com/docs/frameworks/frontend/vite).
