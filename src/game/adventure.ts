@@ -3,7 +3,9 @@ import type { Contract, JourneySave, Tutorial } from './adventureState';
 import { withReward, type Reward } from './experience';
 import { contractsAt } from './contracts';
 import { choiceChance, roadEventById, roadEvents } from './roadEvents';
+import { makeRaid, resolveRaid, type Raid } from './raid';
 import { isPresent } from './presence';
+import { applyDay, reportLine } from './daily';
 import { heroById } from '../data/heroes';
 import { skillById } from '../data/skills';
 import { CAREER_LABEL } from './careers';
@@ -89,7 +91,15 @@ export function completeContract(): boolean {
 /** The first encounter teaches decisions; later ones are spaced and rolled at road checkpoints. */
 export function checkRoadEvent(edge: RouteEdge, roll: number) {
   const s=getState(), a=s.adventure, hours=s.journey?.hours??0;
-  if (a.event || a.notice || hours<a.nextEventHour) return;
+  if (a.event || a.notice || a.raid || hours<a.nextEventHour) return;
+  // Estrada perigosa cospe bando. É a razão de existir tropa — e a razão de
+  // uma rota curta e arriscada não ser automaticamente a melhor.
+  if (edge.danger>0.12 && roll<edge.danger*0.55) {
+    const day=Math.floor(hours/24)+1;
+    const raid=makeRaid(edge.id,edge.danger,day);
+    update(g=>({...g,adventure:{...g.adventure,raid,nextEventHour:hours+10}}));
+    return;
+  }
   if (a.eventCount>0 && roll>Math.min(.7,.25+edge.eventChance+edge.danger*.2)) return;
   const candidates=roadEvents.filter(e=>e.id!==a.lastEventId);
   const def=a.eventCount===0 ? roadEvents[0] : candidates[Math.floor(Math.random()*candidates.length)];
@@ -131,3 +141,71 @@ export function recruitCompanion(id: string): boolean {
 export function remainingContractHours(s: GameState): number {
   return round(Math.max(0,(s.adventure.contract?.deadline??0)-(s.journey?.hours??0)));
 }
+
+/**
+ * FECHA OS DIAS QUE PASSARAM.
+ *
+ * Chamada pelo relógio sempre que o dia vira. Cada dia é aplicado UM a um e
+ * escrito na crônica: quem ficou três dias sem soldo precisa ver os três, e
+ * não um total que não explica nada.
+ *
+ * Deserção levanta aviso — é a única coisa aqui que o jogador não pode deixar
+ * passar despercebida, porque muda o que ele pode fazer a seguir.
+ */
+export function settleDays(upToDay: number) {
+  // Sai ANTES de `update`: um `update` que devolve o mesmo estado ainda
+  // notifica todo mundo, e chamado a cada quadro isso redesenhava o mapa
+  // sessenta vezes por segundo — o relógio parava de andar de tanto React.
+  const now = getState();
+  if (!now.started || now.dayProcessed >= upToDay) return;
+  update(s => {
+    if (!s.started || s.dayProcessed >= upToDay) return s;
+    let next = s;
+    let deserted = 0;
+    // Um teto evita que uma aba esquecida aberta cobre um ano de soldo.
+    for (let guard = 0; next.dayProcessed < upToDay && guard < 30; guard++) {
+      const result = applyDay(next, next.dayProcessed + 1);
+      next = result.state;
+      deserted += result.report.deserted;
+      const line = reportLine(result.report, next.troops);
+      if (line) next = logged(next, 'evento', line);
+    }
+    next = { ...next, dayProcessed: upToDay };
+    if (deserted > 0) {
+      next = { ...next, adventure: { ...next.adventure, notice: {
+        title: 'Homens foram embora',
+        text: `${deserted} soldado(s) desertaram por falta de soldo ou de comida. Pague o que deve e reabasteça antes de perder o resto.`,
+        levelUp: false,
+      } } };
+    }
+    return next;
+  });
+}
+
+/**
+ * Resolve o encontro com um bando e escreve o resultado na crônica.
+ *
+ * O desfecho é aplicado UMA vez: o sorteio acontece aqui, não na tela, para
+ * que reabrir o painel não sorteie de novo.
+ */
+export function actOnRaid(action: 'lutar'|'fugir'|'pagar'): boolean {
+  const s=getState(), raid=s.adventure.raid;
+  if (!raid) return false;
+  const result=resolveRaid(s,raid,action,Math.random());
+  update(g=>{
+    let next=withReward(result.state,{xp:result.outcome.xp,
+      ...(result.outcome.kind==='vitoria'?{careerXp:{MILITARY:45},skillXp:{tatica:2}}:{})});
+    const levelUp=next.level>g.level;
+    next={...next,journey:next.journey?{...next.journey,hours:next.journey.hours+result.outcome.hours}:null};
+    next={...next,adventure:{...next.adventure,raid:null,
+      notice:{title:TITLE[result.outcome.kind],text:result.outcome.text+(levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''),levelUp},
+    }};
+    return logged(next,'evento',`${raid.name}: ${result.outcome.text}`);
+  });
+  return true;
+}
+const TITLE: Record<string,string> = {
+  vitoria:'O bando quebrou', derrota:'Vocês perderam a estrada', fuga:'Escaparam',
+  fuga_falhou:'Não deu para fugir', pedagio:'Pedágio pago',
+};
+export type { Raid };

@@ -82,6 +82,11 @@ export type GameState = {
   houseRelations: Partial<Record<HouseId, number>>;
   /** Senhorios que trocaram de dono nesta campanha. O resto usa o dono histórico. */
   fiefOwners: Record<string, FiefOwner>;
+
+  /** Último dia do mundo já cobrado. Impede pagar salário duas vezes. */
+  dayProcessed: number;
+  /** Dias seguidos sem soldo ou sem comida. É o que faz homem desertar. */
+  hardshipDays: number;
 };
 
 const DEFAULT_RELATIONS: Partial<Record<HouseId, number>> = {
@@ -115,6 +120,8 @@ function blank(): GameState {
     localInfluence: {},
     houseRelations: { ...DEFAULT_RELATIONS },
     fiefOwners: {},
+    dayProcessed: 0,
+    hardshipDays: 0,
   };
 }
 
@@ -178,11 +185,15 @@ function load(): GameState | null {
     if (parsed?.version !== 1) return null;
     // Preenche o que uma versão anterior possa não ter gravado.
     const adventure = freshAdventure();
-    return {
+    const merged = {
       ...blank(), ...parsed,
       skills: { ...startingSkills({}), ...parsed.skills },
       adventure: { ...adventure, ...parsed.adventure, tutorial: { ...adventure.tutorial, ...parsed.adventure?.tutorial } },
     };
+    // Save anterior à economia diária: começa a cobrar de hoje, e não seis
+    // dias de soldo de uma vez por uma regra que não existia quando ele jogou.
+    if (!merged.dayProcessed) merged.dayProcessed = Math.floor((merged.journey?.hours ?? 0) / 24) + 1;
+    return merged;
   } catch {
     return null;
   }
@@ -247,6 +258,7 @@ export function startCampaign(heroId: string) {
       speed: 1,
       paused: false,
     },
+    dayProcessed: 1,
   }));
 }
 

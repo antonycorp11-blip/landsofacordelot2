@@ -4,7 +4,7 @@ import { crossingByNodeId, routeNodeById } from '../world/valdoria';
 import { nodeStop, pathBetween, saveStop, stopAlong, type RoadStop } from '../world/roadStops';
 import type { Point, RegionId, TravelEvents, TravelPath } from '../world/types';
 import { getState, flushGameSave } from '../game/store';
-import { saveJourney, tutorialFlag } from '../game/adventure';
+import { saveJourney, settleDays, tutorialFlag } from '../game/adventure';
 import { samplePath } from './samplePath';
 import { restoreJourney } from './journey';
 
@@ -56,6 +56,8 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
   const lastTimeRef=useRef(0);
   const lastSaveRef=useRef(0);
   const lastUiRef=useRef(0);
+  /** Último dia já fechado, para só cobrar quando o dia realmente vira. */
+  const dayRef=useRef(Math.floor(initial.hours/24)+1);
   const [state,setState]=useState<TravelState>(initial.path?'traveling':'idle');
   const [path,setPath]=useState<TravelPath|null>(initial.path);
   const [stop,setStopState]=useState<RoadStop>(initial.stop);
@@ -93,10 +95,18 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     setStopState(next);
   },[]);
 
+  /** Fecha o dia uma única vez, no quadro em que ele vira. */
+  const closeDay=useCallback(()=>{
+    const day=Math.floor(hoursRef.current/24)+1;
+    if (day===dayRef.current) return;
+    dayRef.current=day;
+    settleDays(day);
+  },[]);
+
   const frame=useCallback((now:number)=>{
     rafRef.current=0;
     const p=pathRef.current;
-    if (pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice) return;
+    if (pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice || getState().adventure.raid) return;
     const dt=Math.min(.05,(now-lastTimeRef.current)/1000);
     lastTimeRef.current=now;
 
@@ -106,6 +116,7 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
       const before=Math.floor(hoursRef.current);
       hoursRef.current+=IDLE_HOURS_PER_SECOND*speedRef.current*dt;
       if (Math.floor(hoursRef.current)!==before) setWorldHours(hoursRef.current);
+      closeDay();
       if (now-lastSaveRef.current>4000) { lastSaveRef.current=now; checkpoint(); }
       rafRef.current=requestAnimationFrame(frame);
       return;
@@ -124,6 +135,8 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     posRef.current={x:at.x,y:at.y};
     headingRef.current=at.heading;
     hoursRef.current+=((after-before)*modifier)/UNITS_PER_HOUR;
+    // O dia vira também na estrada: soldo e comida não esperam você parar.
+    closeDay();
     if (now-lastUiRef.current>=100) {
       lastUiRef.current=now;
       setWorldHours(hoursRef.current);
@@ -167,8 +180,8 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     }
 
     writeMarker();
-    if (!getState().adventure.event && !getState().adventure.notice) rafRef.current=requestAnimationFrame(frame);
-  },[checkpoint,setStop,writeMarker]);
+    if (!getState().adventure.event && !getState().adventure.notice && !getState().adventure.raid) rafRef.current=requestAnimationFrame(frame);
+  },[checkpoint,closeDay,setStop,writeMarker]);
 
   useEffect(()=>{
     stopLoop();
@@ -185,7 +198,7 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
    * voltar a nenhum nó. É assim que se foge de alguma coisa.
    */
   const travelTo=useCallback((destination:RoadStop|string)=>{
-    if (blockedRef.current || getState().adventure.event || getState().adventure.notice) return null;
+    if (blockedRef.current || getState().adventure.event || getState().adventure.notice || getState().adventure.raid) return null;
     const target=typeof destination==='string'?nodeStop(destination):destination;
     if (!target) return null;
     const p=pathRef.current;

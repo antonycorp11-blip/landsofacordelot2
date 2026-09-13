@@ -10,6 +10,10 @@ import { isPresent, locationId } from '../../game/presence';
 import { withReward, type Reward } from '../../game/experience';
 import { abandonContract, canRecruitCompanion, completeContract, dismissNotice, recruitCompanion, remainingContractHours, resolveRoadEvent, rewardSummary } from '../../game/adventure';
 import { choiceChance, roadEventById } from '../../game/roadEvents';
+import { actOnRaid } from '../../game/adventure';
+import { fleeChance, winChance } from '../../game/raid';
+import { readForce } from '../../game/estimate';
+import { troopTotal } from '../../data/troops';
 import { ResourceIcon } from '../ResourceIcon';
 import './adventure.css';
 
@@ -47,15 +51,59 @@ function RestartButton() {
   </>;
 }
 
+/**
+ * O ENCONTRO COM UM BANDO.
+ *
+ * A leitura da força é a de `estimate.ts`, ou seja: o que você vê depende da
+ * sua Tática. Sem Tática, "um grupo considerável" e mais nada — e decidir no
+ * escuro é exatamente o ponto. As chances aparecem porque escolher às cegas
+ * entre três botões não é decisão, é sorteio.
+ */
+function RaidScene({raid}:{raid:import('../../game/raid').Raid}) {
+  const game=useGame();
+  const reading=readForce(raid.band);
+  const mine=troopTotal(game.troops);
+  const win=Math.round(winChance(game,raid)*100);
+  const flee=Math.round(fleeChance(game)*100);
+  const canPay=game.gold>=raid.toll;
+  const vago=reading.confidence==='vago';
+  return <>
+    <p className="adv-story">Homens atravessados na estrada, e não é para pedir carona. Você conta {reading.label.toLowerCase()}.</p>
+    <p className="adv-caption">{reading.verdict} Risco: <b className={`risk ${reading.risk}`}>{reading.risk}</b>. {mine===0?'Você viaja sem ninguém.':`Você tem ${mine} homem(ns).`}</p>
+    <div className="adv-choices">
+      <button className="adv-choice" onClick={()=>actOnRaid('lutar')}>
+        <strong>Enfrentar</strong>
+        <span>Manda-se a linha à frente e resolve-se ali.</span>
+        <span className="adv-check"><em>{vago?'chance incerta':`${win}% de vencer`}</em></span>
+        <span className="adv-outcome">Se vencer: despojos e experiência de comando.</span>
+        <span className="adv-failure">Se perder: homens mortos, um terço do ouro e metade das provisões.</span>
+      </button>
+      <button className="adv-choice" onClick={()=>actOnRaid('fugir')}>
+        <strong>Fugir pelo mato</strong>
+        <span>Sair da estrada e torcer para as pernas bastarem.</span>
+        <span className="adv-check"><em>{flee}% de escapar</em></span>
+        <span className="adv-outcome">Se conseguir: três horas perdidas e nada mais.</span>
+        <span className="adv-failure">Se falhar: a briga acontece, e em desvantagem.</span>
+      </button>
+      <button className="adv-choice" disabled={!canPay} onClick={()=>actOnRaid('pagar')}>
+        <strong>Pagar o pedágio</strong>
+        <span>{canPay?'Eles abrem caminho e ninguém sangra.':'Ouro insuficiente.'}</span>
+        <span className="adv-cost">Custo: {raid.toll} moedas{canPay?'':` · você tem ${game.gold}`}</span>
+      </button>
+    </div>
+  </>;
+}
+
 export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:AdventureView|null;onClose:()=>void;onView:(view:AdventureView)=>void;onNavigate:(id:string)=>void;onSheet:()=>void}) {
   const game=useGame(), a=game.adventure;
   const pending=a.event;
+  const raid=a.raid;
   const event=pending ? roadEventById.get(pending.definitionId) : undefined;
   const notice=a.notice;
-  const active=!!view || !!event || !!notice;
+  const active=!!view || !!event || !!notice || !!raid;
   const dialog=useRef<HTMLDivElement>(null);
   const closeRef=useRef(()=>{});
-  closeRef.current=()=>{if(event)return;if(notice)dismissNotice();else onClose();};
+  closeRef.current=()=>{if(event||raid)return;if(notice)dismissNotice();else onClose();};
   useEffect(()=>{
     if(!active) return;
     const previous=document.activeElement as HTMLElement|null;
@@ -78,16 +126,16 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
   const here=!!placeId&&isPresent(placeId,game);
   const contract=a.contract;
   const tab=view?.tab==='guide'?'contracts':view?.tab??'contracts';
-  const title=event?.title??notice?.title??(tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':'Encargo em curso');
+  const title=raid?.name??event?.title??notice?.title??(tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':'Encargo em curso');
   return <div className="adv-backdrop"><div className="adv-dialog" role="dialog" aria-modal="true" aria-labelledby="adv-title" ref={dialog} tabIndex={-1}>
-    <header className="adv-head"><div><span className="hs-kicker">{event?'Encontro na estrada':notice?'Crônica de Valdória':'Lands of Acordelot'}</span><h2 id="adv-title">{title}</h2></div>
-      {!event && <button className="sheet-close" onClick={()=>closeRef.current()} aria-label="Fechar">×</button>}
+    <header className="adv-head"><div><span className="hs-kicker">{raid?'A estrada está tomada':event?'Encontro na estrada':notice?'Crônica de Valdória':'Lands of Acordelot'}</span><h2 id="adv-title">{title}</h2></div>
+      {!event && !raid && <button className="sheet-close" onClick={()=>closeRef.current()} aria-label="Fechar">×</button>}
     </header>
-    {!event && !notice && <nav className="adv-tabs" aria-label="Jornada">
+    {!event && !notice && !raid && <nav className="adv-tabs" aria-label="Jornada">
       {([['contracts','Encargo'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
     </nav>}
     <div className="adv-body">
-      {event && pending ? <>
+      {raid ? <RaidScene raid={raid}/> : event && pending ? <>
         <p className="adv-story">{event.text}</p>
         <p className="adv-caption">A viagem está pausada. Atributos e habilidades influenciam a chance; XP pode conceder pontos para você distribuir.</p>
         <div className="adv-choices">{event.choices.map(choice=><button className="adv-choice" key={choice.id} disabled={game.gold<(choice.cost??0)} onClick={()=>resolveRoadEvent(pending.id,choice.id)}>

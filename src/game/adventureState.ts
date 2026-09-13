@@ -2,6 +2,7 @@ import type { AgentClass } from '../world/types';
 import type { Reward } from './experience';
 import type { JournalEntry } from '../ui/journal';
 import type { RoadStopSave } from '../world/roadStops';
+import type { Raid } from './raid';
 
 export type JourneySave = {
   /** Nó em que o viajante está, ou `null` quando ele parou no meio da estrada. */
@@ -48,6 +49,8 @@ export type AdventureState = {
   history: Contract[];
   finishedOffers: Record<string, 'completed' | 'failed'>;
   event: { id: string; definitionId: string; roll: number; hours: number } | null;
+  /** Bando bloqueando a estrada. Trava a viagem até você decidir o que fazer. */
+  raid: Raid | null;
   eventCount: number;
   nextEventHour: number;
   lastEventId: string | null;
@@ -58,7 +61,7 @@ export type AdventureState = {
 export function freshAdventure(): AdventureState {
   return {
     tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, politicsSeen:false },
-    contract:null, history:[], finishedOffers:{}, event:null, eventCount:0,
+    contract:null, history:[], finishedOffers:{}, event:null, raid:null, eventCount:0,
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
 }

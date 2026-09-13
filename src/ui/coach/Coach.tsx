@@ -90,12 +90,21 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
       };
     }
 
+    /* ----------------------- fome e soldo ----------------------------- */
+    if (game.hardshipDays > 0) {
+      return {
+        id: "hardship",
+        title: game.food <= 0 ? "Seu grupo está sem comida" : "Seus homens não foram pagos",
+        body: "Cada dia assim faz gente desertar. Cumpra um encargo por ouro e comida, ou dispense homens que você não sustenta.",
+      };
+    }
+
     /* ------------------------------ o ouro ---------------------------- */
     if (tutorial.completed && troops === 0) {
       return {
         id: "gold",
         title: `Você tem ${game.gold} moedas`,
-        body: "Ouro vem de encargo cumprido, e serve para comprar gente. No menu de uma cidade ou castelo: Recrutar tropas.",
+        body: "Ouro vem de encargo cumprido e serve para comprar gente — mas homem custa soldo TODO DIA. Menu de uma cidade: Recrutar tropas.",
       };
     }
 
