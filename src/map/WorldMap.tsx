@@ -45,7 +45,8 @@ import type { ForeignRealm } from "../world/foreignRealms";
 import { FiefLayer } from "../render/layers/FiefLayer";
 import { FiefPanel } from "../ui/fief/FiefPanel";
 import type { Fief } from "../world/fiefs";
-import { nearestRoadStop, nodeStop, type RoadStop } from "../world/roadStops";
+import { nodeStop, type RoadStop } from "../world/roadStops";
+import { nearestWalkable } from "../world/navigation/navigationGrid";
 import { routeEdgeById } from "../world/navgraph";
 import { routeNodeById } from "../world/valdoria";
 import { useCamera } from "./useCamera";
@@ -59,8 +60,6 @@ const FALLBACK_START = "castelo_real";
 /** Enquadramento inicial: a massa territorial, não o viewBox inteiro. */
 const KINGDOM_BOUNDS = bounds(valdoria.outline);
 
-/** Até onde um toque é atraído para a estrada. Fora disso, não se anda. */
-const ROAD_REACH = 320 * S;
 
 const REGION_LABELS = regions.map((r) => ({ id: r.id, name: r.name, at: centroid(r.polygon) }));
 
@@ -194,14 +193,23 @@ export function WorldMap() {
    * faz nada —, mas não é preciso mirar numa cidade para se mover, e isso vale
    * no meio de uma viagem já começada.
    */
+  /**
+   * TOQUE NO MAPA: ANDA ATÉ LÁ.
+   *
+   * A estrada deixou de ser o único chão caminhável. Um toque em qualquer
+   * ponto de terra do reino traça uma rota pelo TERRENO — que prefere estrada
+   * quando ela compensa e corta o mato quando não compensa. Mar, leito de rio
+   * grande e fora do reino continuam intransponíveis: o toque é atraído para o
+   * chão caminhável mais próximo, e recusado se não houver nenhum por perto.
+   */
   const handleMapClick = useCallback(
     (e: React.MouseEvent) => {
       if (camera.wasDragged() || adventureBlocked) return;
       const world = camera.screenToWorld(e.clientX, e.clientY);
-      const target = nearestRoadStop(world, ROAD_REACH);
+      const target = nearestWalkable(world);
       if (!target) return;
       setPanelPoiId(null);
-      setQueuedDestination(target);
+      setQueuedDestination({ kind: "free", x: target.x, y: target.y });
     },
     [adventureBlocked, camera],
   );

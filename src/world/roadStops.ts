@@ -23,16 +23,28 @@ import type { Point, RouteEdge, TravelPath } from "./types";
 
 export type RoadStop =
   | { kind: "node"; id: string; x: number; y: number }
-  | { kind: "road"; edgeId: string; along: number; x: number; y: number };
+  | { kind: "road"; edgeId: string; along: number; x: number; y: number }
+  /**
+   * CHÃO LIVRE.
+   *
+   * Um ponto qualquer do mapa, fora do grafo de estradas. Existe porque o
+   * jogador deixou de estar preso à malha: ele pode parar numa clareira, num
+   * vau, no meio de um campo. Os agentes de estrada continuam usando `node` e
+   * `road`, e nada do que já funcionava precisou mudar de forma.
+   */
+  | { kind: "free"; x: number; y: number };
 
 /** Forma curta e estável para gravar no save. */
-export type RoadStopSave = { n: string } | { e: string; a: number };
+export type RoadStopSave = { n: string } | { e: string; a: number } | { x: number; y: number };
 
 export function saveStop(stop: RoadStop): RoadStopSave {
-  return stop.kind === "node" ? { n: stop.id } : { e: stop.edgeId, a: stop.along };
+  if (stop.kind === "node") return { n: stop.id };
+  if (stop.kind === "free") return { x: stop.x, y: stop.y };
+  return { e: stop.edgeId, a: stop.along };
 }
 export function loadStop(saved: RoadStopSave | null | undefined): RoadStop | null {
   if (!saved) return null;
+  if ("x" in saved) return { kind: "free", x: saved.x, y: saved.y };
   if ("n" in saved) return nodeStop(saved.n);
   const edge = routeEdgeById.get(saved.e);
   if (!edge || !Number.isFinite(saved.a)) return null;
@@ -51,6 +63,7 @@ function roadStop(edge: RouteEdge, along: number): RoadStop {
 /** Nome curto do lugar, para o diário e para a barra. */
 export function stopLabel(stop: RoadStop): string {
   if (stop.kind === "node") return routeNodeById.get(stop.id)?.id ?? stop.id;
+  if (stop.kind === "free") return "campo aberto";
   return routeEdgeById.get(stop.edgeId)?.regionId ?? "estrada";
 }
 
@@ -139,6 +152,8 @@ function legOf(edge: RouteEdge, from: number, to: number, endNode?: string): Leg
 /** As maneiras de sair de uma parada e chegar a um nó de verdade. */
 function exits(stop: RoadStop): { node: string; legs: Leg[] }[] {
   if (stop.kind === "node") return [{ node: stop.id, legs: [] }];
+  // De chão livre não se entra no grafo: quem parte dali viaja por terreno.
+  if (stop.kind === "free") return [];
   const edge = routeEdgeById.get(stop.edgeId);
   if (!edge) return [];
   return [
@@ -150,6 +165,7 @@ function exits(stop: RoadStop): { node: string; legs: Leg[] }[] {
 /** As maneiras de entrar numa parada vindo de um nó de verdade. */
 function entries(stop: RoadStop): { node: string; legs: Leg[] }[] {
   if (stop.kind === "node") return [{ node: stop.id, legs: [] }];
+  if (stop.kind === "free") return [];
   const edge = routeEdgeById.get(stop.edgeId);
   if (!edge) return [];
   return [
@@ -216,6 +232,7 @@ function assemble(legs: Leg[], endStop: RoadStop): TravelPath | null {
  */
 export function pathBetween(from: RoadStop, to: RoadStop): TravelPath | null {
   // Mesma aresta: anda-se por dentro dela, sem passar por nó nenhum.
+  if (from.kind === "free" || to.kind === "free") return null;
   if (from.kind === "road" && to.kind === "road" && from.edgeId === to.edgeId) {
     if (Math.abs(from.along - to.along) < 1) return null;
     const edge = routeEdgeById.get(from.edgeId)!;

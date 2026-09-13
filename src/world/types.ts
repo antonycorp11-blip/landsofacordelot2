@@ -394,6 +394,17 @@ export type TravelPath = {
   legEnd?: (string | undefined)[];
   /** Onde a viagem termina, quando não é um nó. */
   endStop?: import("./roadStops").RoadStop;
+  /**
+   * Custo médio do chão desta rota, quando ela foi traçada pelo TERRENO e não
+   * pelo grafo de estradas. O laço de viagem multiplica o tempo por ele — é
+   * como uma travessia de bosque leva mais horas que a mesma distância em
+   * planície sem existir aresta nenhuma para carregar o modificador.
+   */
+  terrainModifier?: number;
+  /** Ponto exato onde a rota termina, quando o destino é chão livre. */
+  endPoint?: Point;
+  /** Fração do trajeto feita sobre estrada. */
+  roadShare?: number;
 };
 
 export type TravelEvents = {

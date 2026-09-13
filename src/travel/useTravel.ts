@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { UNITS_PER_HOUR, routeEdgeById } from '../world/navgraph';
 import { crossingByNodeId, routeNodeById } from '../world/valdoria';
 import { nodeStop, pathBetween, saveStop, stopAlong, type RoadStop } from '../world/roadStops';
+import { terrainPath } from '../world/navigation/routePlanner';
 import type { Point, RegionId, TravelEvents, TravelPath } from '../world/types';
 import { getState, flushGameSave } from '../game/store';
 import { saveJourney, settleDays, tutorialFlag } from '../game/adventure';
@@ -73,7 +74,15 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
 
   const checkpoint=useCallback(()=>{
     const p=pathRef.current;
-    const here=stopRef.current;
+    /**
+     * Numa rota de TERRENO a parada não muda enquanto se anda — ela só é
+     * atualizada na chegada. Gravar `stopRef` no meio da viagem salvava o
+     * ponto de PARTIDA, e recarregar rebobinava o jogador para trás. Aqui a
+     * posição real do marcador é a verdade.
+     */
+    const here: RoadStop = p?.endPoint
+      ? { kind: 'free', x: posRef.current.x, y: posRef.current.y }
+      : stopRef.current;
     saveJourney({
       currentNodeId:here.kind==='node'?here.id:null,
       destinationId:p?.endStop?.kind==='node'?p.endStop.id:null,
@@ -125,7 +134,8 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     const boundaries=boundariesRef.current;
     const before=progressRef.current;
     const edge=routeEdgeById.get(p.edgeIds[legCursorRef.current]);
-    const modifier=edge?.movementModifier??1;
+    // Sem aresta, quem carrega o custo do chão é a própria rota de terreno.
+    const modifier=edge?.movementModifier??p.terrainModifier??1;
     // Para exatamente nas fronteiras; nenhuma distância não percorrida é
     // creditada quando um encontro interrompe a viagem.
     const nextBoundary=boundaries[legCursorRef.current+1]??p.totalDistance;
@@ -158,7 +168,13 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
         pathRef.current=null;
         setPath(null);
         setState('arrived');
-        setStop(p.endStop ?? stopAlong(p,after) ?? stopRef.current);
+        // Rota de terreno não termina em nó: a parada vira o próprio ponto.
+        if (p.endPoint) {
+          posRef.current={x:p.endPoint.x,y:p.endPoint.y};
+          setStop({kind:'free',x:p.endPoint.x,y:p.endPoint.y});
+        } else {
+          setStop(p.endStop ?? stopAlong(p,after) ?? stopRef.current);
+        }
       } else if (reachedNode) {
         const node=routeNodeById.get(reachedNode);
         if (node) setStop({kind:'node',id:node.id,x:node.x,y:node.y});
@@ -197,13 +213,45 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
    * viagem: o trajeto novo começa exatamente onde o viajante está, sem
    * voltar a nenhum nó. É assim que se foge de alguma coisa.
    */
-  const travelTo=useCallback((destination:RoadStop|string)=>{
+  const travelTo=useCallback((destination:RoadStop|string|Point)=>{
     if (blockedRef.current || getState().adventure.event || getState().adventure.notice || getState().adventure.raid || getState().adventure.battle || getState().adventure.quest?.pending) return null;
     const target=typeof destination==='string'?nodeStop(destination):destination;
     if (!target) return null;
+
+    /**
+     * DUAS MANEIRAS DE TRAÇAR O CAMINHO, e a escolha é do destino.
+     *
+     * Destino que é um lugar do grafo continua usando o grafo: assim as
+     * travessias, os marcos e os eventos de estrada seguem valendo. Qualquer
+     * outro ponto do mapa vira rota de TERRENO — a estrada deixa de ser a
+     * única coisa caminhável, mas continua sendo a mais rápida, porque o
+     * planejador prefere estrada quando ela compensa.
+     */
+    const isStop='kind' in target;
+    if (!isStop || (target as RoadStop).kind==='free') {
+      const to=target as Point;
+      const found=terrainPath(posRef.current,to,'prefer_roads');
+      if (!found) return null;
+      stopLoop();
+      pathRef.current=found as unknown as TravelPath;
+      boundariesRef.current=found.legAt;
+      progressRef.current=0;
+      legCursorRef.current=0;
+      setPath(found as unknown as TravelPath);
+      setState('traveling');
+      pausedRef.current=false;
+      setPaused(false);
+      checkpoint();
+      tutorialFlag('departed');
+      eventsRef.current?.onTravelStart?.(found as unknown as TravelPath);
+      lastTimeRef.current=performance.now();
+      rafRef.current=requestAnimationFrame(frame);
+      return found as unknown as TravelPath;
+    }
+
     const p=pathRef.current;
     const here=p ? (stopAlong(p,progressRef.current) ?? stopRef.current) : stopRef.current;
-    const found=pathBetween(here,target);
+    const found=pathBetween(here,target as RoadStop);
     if (!found || found.totalDistance<=0) return null;
     stopLoop();
     setStop(here);
