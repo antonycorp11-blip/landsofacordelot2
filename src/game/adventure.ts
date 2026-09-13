@@ -6,6 +6,7 @@ import { choiceChance, roadEventById, roadEvents } from './roadEvents';
 import { makeRaid, resolveRaid, type Raid } from './raid';
 import { beginQuest, closingFor, complicationFor } from './quests';
 import { playRound, startBattle, type Order } from './battle';
+import { allSteps, chapterOfStep, currentStep, triggerMet } from './story';
 import { isPresent } from './presence';
 import { applyDay, reportLine } from './daily';
 import { heroById } from '../data/heroes';
@@ -292,7 +293,8 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
     const fromQuest=beat?.kind==='batalha';
     const won=battle.result==='vitoria';
 
-    let next: GameState={...g,troops:battle.mine};
+    let next: GameState={...g,troops:battle.mine,
+      adventure:{...g.adventure,battlesWon:g.adventure.battlesWon+(battle.result==='vitoria'?1:0)}};
     next=withReward(next,{
       xp:won?Math.round(50+battle.theirLosses*6):20,
       gold:won?battle.loot:0,
@@ -331,5 +333,68 @@ export function openClosing(): boolean {
   const s=getState(), c=s.adventure.contract, quest=s.adventure.quest;
   if (!c || !quest || !isPresent(c.destinationId,s)) return false;
   update(g=>({...g,adventure:{...g.adventure,quest:{...quest,phase:'entrega',pending:closingFor(c,quest)}}}));
+  return true;
+}
+
+/* ====================== A CAMPANHA PRINCIPAL ========================== */
+
+/**
+ * Verifica se o passo atual da campanha foi cumprido.
+ *
+ * Chamada a cada mudança de estado. Sai barata quando não há nada a fazer,
+ * que é a maior parte do tempo — e é por isso que pode ser chamada assim.
+ */
+export function checkStory() {
+  const s = getState();
+  if (!s.started) return;
+  const story = s.adventure.story;
+  if (story.done || story.pending) return;
+  const step = currentStep(story);
+  if (!step || !triggerMet(s, step)) return;
+
+  update(g => {
+    const current = currentStep(g.adventure.story);
+    if (!current || g.adventure.story.pending) return g;
+    // Passo sem cena avança sozinho; com cena, espera ser lido.
+    if (!current.scene) {
+      const next = withReward(g, current.reward ?? {});
+      return logged(advance(next), 'evento', `Campanha: ${current.objective} — cumprido.`);
+    }
+    return { ...g, adventure: { ...g.adventure, story: { ...g.adventure.story, pending: current.id } } };
+  });
+}
+
+function advance(s: GameState): GameState {
+  const step = s.adventure.story.step + 1;
+  const done = step >= allSteps.length;
+  return { ...s, adventure: { ...s.adventure, story: { ...s.adventure.story, step, pending: null, done } } };
+}
+
+/** A resposta do jogador numa cena da campanha. */
+export function chooseStoryOption(optionId: string): boolean {
+  const s = getState();
+  const story = s.adventure.story;
+  const step = currentStep(story);
+  if (!step || story.pending !== step.id || !step.scene) return false;
+  const option = step.scene.options.find(o => o.id === optionId);
+  if (!option) return false;
+
+  update(g => {
+    let next = withReward(g, { ...(step.reward ?? {}), ...(option.reward ?? {}) });
+    const levelUp = next.level > g.level;
+    if (option.flag) {
+      next = { ...next, adventure: { ...next.adventure, story: {
+        ...next.adventure.story,
+        flags: next.adventure.story.flags.includes(option.flag) ? next.adventure.story.flags : [...next.adventure.story.flags, option.flag],
+      } } };
+    }
+    next = advance(next);
+    const chapter = chapterOfStep.get(step.id);
+    return logged({ ...next, adventure: { ...next.adventure, notice: {
+      title: chapter ? `${chapter.title}` : 'A campanha avança',
+      text: option.result + (levelUp ? ` Nível ${next.level}: abra sua ficha para distribuir os pontos.` : ''),
+      levelUp,
+    } } }, 'evento', `Campanha — ${step.objective}: ${option.result}`);
+  });
   return true;
 }

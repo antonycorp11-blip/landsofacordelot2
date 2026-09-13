@@ -30,9 +30,10 @@ import { SettlementPanel } from "../ui/settlement/SettlementPanel";
 import { CharacterScreen } from "../ui/hero/CharacterScreen";
 import { AgentPanel } from "../ui/agent/AgentPanel";
 import { useGame } from "../game/store";
-import { checkRoadEvent, recordJourney, tutorialFlag } from "../game/adventure";
+import { checkRoadEvent, checkStory, recordJourney, tutorialFlag } from "../game/adventure";
 import { AdventurePanel, type AdventureView } from "../ui/adventure/AdventurePanel";
 import { Coach } from "../ui/coach/Coach";
+import { StoryScene } from "../ui/story/StoryScene";
 import { restoreJourney } from "../travel/journey";
 import { heroById } from "../data/heroes";
 import { troopTotal } from "../data/troops";
@@ -92,7 +93,7 @@ export function WorldMap() {
   const [adventureView, setAdventureView] = useState<AdventureView | null>(null);
   const [queuedDestination, setQueuedDestination] = useState<RoadStop | null>(null);
   const [initialPosition] = useState(() => restoreJourney(startNode).position);
-  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.notice || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending;
+  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.notice || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending || !!game.adventure.story.pending;
 
   const followRef = useRef(follow);
   followRef.current = follow;
@@ -138,6 +139,13 @@ export function WorldMap() {
       [centerOn],
     ),
   });
+
+  /**
+   * A campanha é conferida a cada mudança de estado. A verificação sai barata
+   * quando não há nada a fazer, que é quase sempre — e assim nenhum sistema
+   * precisa lembrar de avisar a história de que algo aconteceu.
+   */
+  useEffect(() => { checkStory(); }, [game]);
 
   const openSheet = useCallback(() => {
     setAdventureView(null);
@@ -415,6 +423,9 @@ export function WorldMap() {
       {realm && <FrontierPanel realm={realm} onClose={() => setRealm(null)} />}
       {fief && !realm && politicalView === "fiefs" && <FiefPanel fief={fief} onClose={() => setFief(null)} />}
       {readAgent && !realm && !fief && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
+      {/* A campanha principal fala por cima de tudo: é a linha da partida. */}
+      <StoryScene />
+
       {/* O guia não é uma tela: é uma linha dizendo a próxima ação, que some
           quando a ação acontece. */}
       <Coach stop={travel.stop} traveling={travel.state === "traveling"} />

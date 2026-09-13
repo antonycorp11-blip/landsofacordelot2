@@ -4,6 +4,7 @@ import { poiById, allPois } from "../../world/valdoria";
 import { holdingFor } from "../../data/holdings";
 import { tutorialFlag } from "../../game/adventure";
 import { troopTotal } from "../../data/troops";
+import { chapterOfStep, currentStep } from "../../game/story";
 import type { RoadStop } from "../../world/roadStops";
 import "./coach.css";
 
@@ -114,6 +115,18 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
         id: "sheet",
         title: "Você aprendeu alguma coisa",
         body: "Toque no seu retrato. O anel em volta é o próximo nível, e cada nível dá um ponto para distribuir.",
+      };
+    }
+
+    /* --------------------- a campanha principal ----------------------- */
+    // Sem encargo em mãos, o que o jogo tem a dizer é a linha da partida.
+    const step = currentStep(game.adventure.story);
+    if (step && tutorial.politicsSeen) {
+      const chapter = chapterOfStep.get(step.id);
+      return {
+        id: `story-${step.id}`,
+        title: `${chapter ? `Capítulo ${chapter.number}` : "Campanha"} · ${step.objective}`,
+        body: step.detail,
       };
     }
 

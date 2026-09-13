@@ -29,6 +29,8 @@ export type DialogueScene = {
   accent?: string;
   /** Onde a conversa acontece. */
   placeName?: string;
+  /** Sem ninguém falando: a cena narra, e o círculo de retrato sai. */
+  narration?: boolean;
   text: string;
   options: DialogueOption[];
 };
@@ -69,11 +71,11 @@ export function DialogueScreen({ scene, onClose }: { scene: DialogueScene; onClo
         style={{ ["--accent" as string]: scene.accent ?? "#c8af6e" }}
       >
         <div className="dlg-speaker">
-          <div className="dlg-portrait">
+          {!scene.narration && <div className="dlg-portrait">
             {scene.portraitUrl
               ? <img src={scene.portraitUrl} alt="" />
               : <span className="dlg-monogram" aria-hidden="true">{scene.speakerName.replace(/^(Lorde|Lady|Rei|Rainha|Sir|Mestre|Irmã|Irmão)\s+/i, "")[0]}</span>}
-          </div>
+          </div>}
           <div className="dlg-plate">
             <b>{scene.speakerName}</b>
             <span>

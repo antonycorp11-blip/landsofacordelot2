@@ -5,6 +5,7 @@ import type { RoadStopSave } from '../world/roadStops';
 import type { Raid } from './raid';
 import type { QuestState } from './quests';
 import type { Battle } from './battle';
+import { freshStory, type StoryState } from './story';
 
 export type JourneySave = {
   /** Nó em que o viajante está, ou `null` quando ele parou no meio da estrada. */
@@ -58,6 +59,10 @@ export type AdventureState = {
   /** Batalha em andamento, rodada a rodada. */
   battle: Battle | null;
   eventCount: number;
+  /** Batalhas vencidas, para a campanha principal poder pedir uma. */
+  battlesWon: number;
+  /** A linha que atravessa a partida inteira. */
+  story: StoryState;
   nextEventHour: number;
   lastEventId: string | null;
   sequence: number;
@@ -67,7 +72,7 @@ export type AdventureState = {
 export function freshAdventure(): AdventureState {
   return {
     tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, politicsSeen:false },
-    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, eventCount:0,
+    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, eventCount:0, battlesWon:0, story:freshStory(),
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
 }

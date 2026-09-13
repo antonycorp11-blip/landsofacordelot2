@@ -12,6 +12,7 @@ import { abandonContract, canRecruitCompanion, completeContract, dismissNotice, 
 import { choiceChance, roadEventById } from '../../game/roadEvents';
 import { actOnRaid, chooseQuestOption, giveOrder, startQuestBattle, startRaidBattle } from '../../game/adventure';
 import { ORDERS, canFlank } from '../../game/battle';
+import { allSteps, chapterOfStep, chapters, currentStep } from '../../game/story';
 import { abandonContract as giveUpContract } from '../../game/adventure';
 import { fleeChance, winChance } from '../../game/raid';
 import { readForce } from '../../game/estimate';
@@ -19,7 +20,7 @@ import { troopTotal } from '../../data/troops';
 import { ResourceIcon } from '../ResourceIcon';
 import './adventure.css';
 
-export type AdventureView = {tab:'guide'|'contracts'|'companions'|'history';poiId?:string};
+export type AdventureView = {tab:'guide'|'story'|'contracts'|'companions'|'history';poiId?:string};
 function Gains({reward}:{reward:Reward}) {
   const game=useGame();
   const after=withReward(game,reward);
@@ -68,6 +69,33 @@ function RestartButton() {
  * opções com o custo dito antes —, porque é a mesma coisa: um momento em que
  * o jogo pergunta quem você é e guarda a resposta.
  */
+/**
+ * A CAMPANHA NO DIÁRIO.
+ *
+ * O capítulo, o que ele é sobre, o objetivo de agora e o que já ficou para
+ * trás. É a única aba que responde "por que eu estou jogando".
+ */
+function StoryTab() {
+  const game=useGame();
+  const story=game.adventure.story;
+  const step=currentStep(story);
+  const chapter=step?chapterOfStep.get(step.id):chapters[chapters.length-1];
+  const feitos=allSteps.slice(0,story.step).slice(-3).reverse();
+  return <>
+    <span className="adv-eyebrow">Capítulo {chapter?.number} · {chapter?.title}</span>
+    <p className="adv-story">{chapter?.blurb}</p>
+    {step ? <article className="adv-contract active">
+      <span className="adv-eyebrow">Agora</span>
+      <h3>{step.objective}</h3>
+      <p>{step.detail}</p>
+    </article> : <p className="adv-caption">A campanha chegou ao fim do que está escrito. Novos capítulos entram aqui.</p>}
+    {feitos.length>0 && <>
+      <p className="adv-caption">Atrás de você</p>
+      {feitos.map(f=><article className="adv-log" key={f.id}><p>{f.objective}</p></article>)}
+    </>}
+  </>;
+}
+
 function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGame>['adventure']['quest']>['pending']>}) {
   const game=useGame();
   if (beat.kind==='batalha') {
@@ -204,14 +232,14 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
   const place=placeId?poiById.get(placeId):undefined;
   const here=!!placeId&&isPresent(placeId,game);
   const contract=a.contract;
-  const tab=view?.tab==='guide'?'contracts':view?.tab??'contracts';
-  const title=battle?.enemyName??beat?.title??raid?.name??event?.title??notice?.title??(tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':'Encargo em curso');
+  const tab=view?.tab==='guide'?'story':view?.tab??'story';
+  const title=battle?.enemyName??beat?.title??raid?.name??event?.title??notice?.title??(tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':tab==='story'?'A campanha':'Encargo em curso');
   return <div className="adv-backdrop"><div className="adv-dialog" role="dialog" aria-modal="true" aria-labelledby="adv-title" ref={dialog} tabIndex={-1}>
     <header className="adv-head"><div><span className="hs-kicker">{battle?`Rodada ${battle.round}`:beat?(a.quest?.phase==='entrega'?'Na chegada':'No meio do caminho'):raid?'A estrada está tomada':event?'Encontro na estrada':notice?'Crônica de Valdória':'Lands of Acordelot'}</span><h2 id="adv-title">{title}</h2></div>
       {!event && !raid && !battle && !beat && <button className="sheet-close" onClick={()=>closeRef.current()} aria-label="Fechar">×</button>}
     </header>
     {!event && !notice && !raid && !battle && !beat && <nav className="adv-tabs" aria-label="Jornada">
-      {([['contracts','Encargo'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
+      {([['story','Campanha'],['contracts','Encargo'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
     </nav>}
     <div className="adv-body">
       {battle ? <BattleScene battle={battle}/> : beat ? <BeatScene beat={beat}/> : raid ? <RaidScene raid={raid}/> : event && pending ? <>
@@ -228,7 +256,7 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
       </> : notice ? <>
         <div className={`adv-result ${notice.levelUp?'level-up':''}`}><span aria-hidden="true">✦</span><p>{notice.text}</p></div>
         <div className="adv-actions">{notice.levelUp && <button className="btn" onClick={()=>{dismissNotice();onSheet();}}>Distribuir pontos</button>}<button className="btn primary" onClick={dismissNotice}>Continuar</button></div>
-      </> : tab==='contracts' ? <>
+      </> : tab==='story' ? <StoryTab/> : tab==='contracts' ? <>
         {contract ? <article className="adv-contract active"><span className="adv-eyebrow">Contrato em andamento · {CAREER_LABEL[contract.career]}</span><h3>{contract.title}</h3><p>{contract.description}</p><p className="adv-route">{poiById.get(contract.sourceId)?.name} → <b>{poiById.get(contract.destinationId)?.name}</b></p><p>Prazo restante: {formatDuration(remainingContractHours(game))}</p><Gains reward={contract.reward}/><div className="adv-actions">
           {isPresent(contract.destinationId,game)?<button className="btn primary" onClick={completeContract}>Entregar e receber</button>:<button className="btn primary" disabled={!!game.journey?.destinationId} onClick={()=>onNavigate(contract.destinationId)}>{game.journey?.destinationId?'Viagem em andamento':'Viajar ao destino'}</button>}
           <button className="btn" onClick={abandonContract}>Encerrar sem recompensa</button>
