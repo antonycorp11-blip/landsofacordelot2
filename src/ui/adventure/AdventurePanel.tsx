@@ -11,13 +11,16 @@ import { withReward, type Reward } from '../../game/experience';
 import { abandonContract, canRecruitCompanion, completeContract, dismissNotice, recruitCompanion, remainingContractHours, resolveRoadEvent, rewardSummary } from '../../game/adventure';
 import { choiceChance, roadEventById } from '../../game/roadEvents';
 import { actOnRaid, chooseQuestOption, giveOrder, startQuestBattle, startRaidBattle } from '../../game/adventure';
-import { ORDERS, canFlank } from '../../game/battle';
+import { ORDERS, canFlank, orderEffects } from '../../game/battle';
 import { allSteps, chapterOfStep, chapters, currentStep } from '../../game/story';
 import { abandonContract as giveUpContract } from '../../game/adventure';
 import { fleeChance, winChance } from '../../game/raid';
 import { readForce } from '../../game/estimate';
 import { troopTotal } from '../../data/troops';
 import { ResourceIcon } from '../ResourceIcon';
+import { goodById } from '../../data/goods';
+import { amountOwned } from '../../game/economy';
+import { questOptionChance } from '../../game/quests';
 import './adventure.css';
 
 export type AdventureView = {tab:'guide'|'story'|'contracts'|'companions'|'history';poiId?:string};
@@ -123,7 +126,11 @@ function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGam
       return <button className="adv-choice" key={o.id} disabled={semOuro} onClick={()=>chooseQuestOption(o.id)}>
         <strong>{o.label}</strong>
         {o.hint && <span>{o.hint}</span>}
+        {o.check ? <span className="adv-check"><b>{ATTRIBUTE_LABEL[o.check.attribute]} {game.attributes[o.check.attribute]} + {skillById.get(o.check.skill)?.name} {game.skills[o.check.skill]}</b><em>{Math.round(questOptionChance(o,game)*100)}% de sucesso</em></span> : <span className="adv-check">Resultado garantido · sem teste</span>}
         {o.goldCost ? <span className="adv-cost">Custo: {o.goldCost} moedas{semOuro?` · você tem ${game.gold}`:''}</span> : null}
+        <span className="adv-outcome">Se conseguir: {rewardSummary(o.reward??{})}</span>
+        <DecisionGrowth reward={o.reward??{}}/>
+        {o.check && <span className="adv-failure">Se falhar: {rewardSummary(o.failureReward??{})}</span>}
       </button>;
     })}</div>
   </>;
@@ -137,6 +144,7 @@ function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGam
  * acabarem, e quem não a vê não entende por que o campo virou.
  */
 function BattleScene({battle}:{battle:NonNullable<ReturnType<typeof useGame>['adventure']['battle']>}) {
+  const game=useGame();
   const flank=canFlank(battle.mine);
   return <>
     <div className="btl-sides">
@@ -156,9 +164,15 @@ function BattleScene({battle}:{battle:NonNullable<ReturnType<typeof useGame>['ad
     <p className="adv-story btl-log">{battle.log[battle.log.length-1] ?? 'As linhas se encaram. A sua ordem decide como isto começa.'}</p>
     <div className="btl-orders">{ORDERS.map(o=>{
       const ruim=o.id==='flanquear' && !flank;
+      const effect=orderEffects(game,battle,o.id);
       return <button className="adv-choice" key={o.id} onClick={()=>giveOrder(o.id)}>
         <strong>{o.name}</strong>
         <span>{ruim?'Sem cavalaria, a manobra expõe o seu flanco.':o.blurb}</span>
+        <span className="btl-effect">
+          {effect.retreatPercent!=null
+            ? <><b>{effect.retreatPercent}%</b> de sair da batalha</>
+            : <><b>Ataque {effect.attackPercent>=0?'+':''}{effect.attackPercent}%</b><b>Exposição {effect.exposurePercent>=0?'+':''}{effect.exposurePercent}%</b></>}
+        </span>
       </button>;
     })}</div>
   </>;
@@ -257,7 +271,9 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
         <div className={`adv-result ${notice.levelUp?'level-up':''}`}><span aria-hidden="true">✦</span><p>{notice.text}</p></div>
         <div className="adv-actions">{notice.levelUp && <button className="btn" onClick={()=>{dismissNotice();onSheet();}}>Distribuir pontos</button>}<button className="btn primary" onClick={dismissNotice}>Continuar</button></div>
       </> : tab==='story' ? <StoryTab/> : tab==='contracts' ? <>
-        {contract ? <article className="adv-contract active"><span className="adv-eyebrow">Contrato em andamento · {CAREER_LABEL[contract.career]}</span><h3>{contract.title}</h3><p>{contract.description}</p><p className="adv-route">{poiById.get(contract.sourceId)?.name} → <b>{poiById.get(contract.destinationId)?.name}</b></p><p>Prazo restante: {formatDuration(remainingContractHours(game))}</p><Gains reward={contract.reward}/><div className="adv-actions">
+        {contract ? <article className="adv-contract active"><span className="adv-eyebrow">Contrato em andamento · {CAREER_LABEL[contract.career]}</span><h3>{contract.title}</h3><p>{contract.description}</p><p className="adv-route">{poiById.get(contract.sourceId)?.name} → <b>{poiById.get(contract.destinationId)?.name}</b></p><p>Prazo restante: {formatDuration(remainingContractHours(game))}</p>
+          {contract.cargo && <div className="adv-cargo"><b>Carga exigida</b><span>{amountOwned(game,contract.cargo.goodId)}/{contract.cargo.amount} {goodById.get(contract.cargo.goodId)?.name.toLowerCase()}</span><small>{amountOwned(game,contract.cargo.goodId)>=contract.cargo.amount?'Encomenda completa. Proteja a carga até a entrega.':'Compre o restante num mercado antes de viajar.'}</small></div>}
+          <Gains reward={contract.reward}/><div className="adv-actions">
           {isPresent(contract.destinationId,game)?<button className="btn primary" onClick={completeContract}>Entregar e receber</button>:<button className="btn primary" disabled={!!game.journey?.destinationId} onClick={()=>onNavigate(contract.destinationId)}>{game.journey?.destinationId?'Viagem em andamento':'Viajar ao destino'}</button>}
           <button className="btn" onClick={abandonContract}>Encerrar sem recompensa</button>
         </div></article> : <>

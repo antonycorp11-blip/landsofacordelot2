@@ -10,6 +10,7 @@ import { getState, update, type GameState } from "./store";
 import type { SkillId } from "../data/skills";
 import type { Attributes } from "../data/heroes";
 import type { AgentClass, HouseId } from "../world/types";
+import type { GoodId } from "../data/goods";
 
 /** De onde veio o XP. Serve para o registro e, depois, para achados por fonte. */
 export type XpSource =
@@ -100,6 +101,8 @@ export type Reward = {
   characterRelation?: { characterId: string; amount: number };
   localInfluence?: { poiId: string; amount: number };
   troops?: Partial<Record<string, number>>;
+  /** Formato já preparado para saques e recompensas comerciais futuras. */
+  goods?: Partial<Record<GoodId, number>>;
 };
 
 /** Estado do herói pronto para as fórmulas derivadas. */
@@ -154,9 +157,15 @@ export function withReward(s: GameState, reward: Reward): GameState {
     const { poiId, amount } = reward.localInfluence;
     localInfluence[poiId] = Math.max(0, Math.min(100, (localInfluence[poiId] ?? 0) + amount));
   }
-  return { ...s, level, xp, attributePoints, skillPoints, skills, careerXp, companions, houseRelations, localInfluence,
+  const inventory = { ...s.inventory };
+  let food = Math.max(0, s.food + Math.round(reward.food ?? 0));
+  for (const [id, amount] of Object.entries(reward.goods ?? {}) as [GoodId, number][]) {
+    if (id === "provisions") food = Math.max(0, food + Math.round(amount));
+    else inventory[id] = Math.max(0, (inventory[id] ?? 0) + Math.round(amount));
+  }
+  return { ...s, level, xp, attributePoints, skillPoints, skills, careerXp, companions, houseRelations, localInfluence, inventory,
     gold: Math.max(0, s.gold + Math.round(reward.gold ?? 0)),
-    food: Math.max(0, s.food + Math.round(reward.food ?? 0)),
+    food,
     influence: Math.max(0, Math.round((s.influence + (reward.influence ?? 0)) * 10) / 10),
   };
 }

@@ -7,6 +7,7 @@ import type { QuestState } from './quests';
 import type { Battle } from './battle';
 import { freshStory, type StoryState } from './story';
 import type { Offer } from './offers';
+import type { GoodId } from '../data/goods';
 
 export type JourneySave = {
   /** Nó em que o viajante está, ou `null` quando ele parou no meio da estrada. */
@@ -34,6 +35,8 @@ export type Contract = {
   deadline: number;
   status: 'active' | 'completed' | 'failed';
   reward: Reward;
+  /** Encomenda comercial que precisa estar na carga no momento da entrega. */
+  cargo?: { goodId: GoodId; amount: number };
 };
 export type Tutorial = {
   introSeen: boolean;

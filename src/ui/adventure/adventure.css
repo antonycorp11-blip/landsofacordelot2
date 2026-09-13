@@ -24,6 +24,10 @@
 .adv-contract.active { border-color:#cfb570; }
 .adv-eyebrow { font:10px var(--ui-small); color:#d5bc85; text-transform:uppercase; letter-spacing:.12em; }
 .adv-route { color:#d2bc84!important; }
+.adv-cargo { display:flex; flex-direction:column; gap:3px; margin:11px 0; padding:9px 11px; border-left:2px solid #d4ac47; background:#d4ac4712; }
+.adv-cargo b { color:#e6cb83; font-size:12px; }
+.adv-cargo span { color:#f1e4c1; font:600 12px var(--ui-small); }
+.adv-cargo small { color:#b5ad96; font:10.5px/1.4 var(--ui-small); }
 .adv-gains { border-top:1px solid #a8915b33; padding-top:12px; margin:14px 0; }
 .adv-reward-chips { display:flex; flex-wrap:wrap; gap:16px; }
 .adv-reward-chips span { display:flex; align-items:center; gap:5px; color:#f1d491; font:600 12.5px var(--ui-small); }
@@ -98,4 +102,6 @@
 .btl-side.them .btl-bar i { background:linear-gradient(90deg,#8f5a4a,#cf9a7e); }
 .adv-body .btl-log { font-size:15px; margin:0 0 10px; min-height:2.6em; }
 .btl-orders { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.adv-choice .btl-effect { display:flex; flex-wrap:wrap; gap:5px 10px; padding-top:6px; border-top:1px solid #b49d6633; color:#aab6aa; font-size:10px; }
+.btl-effect b { color:#dec782; font-weight:600; }
 @media (prefers-reduced-motion:reduce) { .btl-bar i { transition:none; } }

@@ -1,6 +1,6 @@
-# Combate entre grupos — desenho para a próxima etapa
+# Combate entre grupos
 
-Proposta baseada no pedido de exército contra exército, nas tropas e atributos já existentes. **Combate ainda não está implementado nesta entrega.** Os contratos e encontros desta versão fornecem o crescimento e os recursos que prepararão essa etapa.
+O primeiro combate entre grupos já está jogável em emboscadas de missão e bandos de estrada. Ele resolve uma ordem por rodada, aplica baixas permanentes, acompanha moral, paga saque uma única vez e permite retirada. Esta página separa o que funciona agora do próximo avanço.
 
 ## Escala e adversários
 
@@ -8,13 +8,13 @@ Começar com 3–12 combatentes por lado e grupos controlados pelo jogo. O mesmo
 
 O herói e cada companheiro participam como personagens; tropas continuam sendo unidades. Evitar um único cálculo de força que simplesmente faça o maior número vencer. A leitura atual de força e risco em `game/estimate.ts` pode servir à preparação, mas não resolve baixas nem resultado.
 
-## Ciclo da batalha
+## Ciclo atual da batalha
 
-1. **Contato no mapa.** Aproximação real de um grupo hostil; distância e capacidade de agir verificadas pela simulação. Tocar num agente distante apenas mostra informações.
-2. **Preparação.** Exibir terreno, composição conhecida, moral, condição do grupo e possibilidade de retirada. Tática determina a precisão da informação, conforme o sistema atual.
-3. **Ordens.** Avançar, defender ou recuar. Em seguida, adicionar flanquear quando houver cavalaria e manter distância quando houver arqueiros. Cada ordem mostra o benefício, o risco e os atributos envolvidos.
-4. **Rodadas curtas.** Uma pequena arena 2D em pixel art ilustra o confronto. Um motor de regras separado da animação processa alcance, pressão, baixas e moral; a animação comunica o que foi decidido pelo motor.
-5. **Desfecho.** Vitória, retirada, rendição ou derrota. Relatório de sobreviventes, feridos, mortos, prisioneiros e recursos obtidos ou perdidos. Aplicar o resultado à campanha uma única vez.
+1. **Contato.** Um bando intercepta a viagem ou uma missão arma uma emboscada. A leitura de força depende de Tática.
+2. **Decisão.** O jogador luta, tenta fugir ou paga quando há pedágio.
+3. **Ordens.** Avançar, segurar, flanquear e recuar mostram antes o modificador de ataque, a exposição ou a chance de saída. Flanquear sem cavalaria expõe o grupo.
+4. **Rodadas.** Força, Tática, Comando, moral, composição e ordem determinam baixas. Moral pode quebrar uma linha antes do extermínio.
+5. **Desfecho.** Sobreviventes, mortos e saque voltam para a campanha. Derrota pode encerrar o encargo e tirar ouro; vitória alimenta experiência militar e a história principal.
 
 Para poucos soldados, mostrar cada unidade individualmente. Em exércitos maiores, representar formações mantendo a contagem real nos dados. O mapa estratégico conserva suas dimensões.
 
@@ -44,8 +44,8 @@ Os primeiros encontros devem permitir que uma boa ordem reduza perdas mesmo quan
 
 Salvar a batalha pendente e a semente/estado aleatório. Recarregar não deve restaurar tropas perdidas, repetir saque nem sortear outro resultado para a mesma rodada.
 
-## Primeiro marco de combate
+## Próximo marco de combate
 
-Um bando hostil contra o pequeno grupo do jogador, três ordens, dois terrenos contrastantes, feridos e retirada. Concluir ou perder o encontro precisa alterar a campanha e o grupo inimigo no mapa. Depois ampliar formações, prisioneiros, cercos e batalhas entre Casas.
+Adicionar terreno ao estado da batalha, posição de infantaria, arqueiros e cavalaria, feridos recuperáveis, prisioneiros e rendição negociada. A apresentação seguinte deve ser uma arena 32-bit curta que represente as formações sem mudar o resultado calculado pelo motor. Depois entram cercos, exércitos das Casas e campanhas militares com objetivos no mapa.
 
 Antes de multiplayer, retirar do cliente a autoridade sobre estado e recompensas, criar contas e sincronização no servidor. Isso é uma etapa própria; não é requisito para experimentar batalhas contra NPCs.

@@ -4,7 +4,7 @@ import { withReward, type Reward } from './experience';
 import { contractsAt } from './contracts';
 import { choiceChance, roadEventById, roadEvents } from './roadEvents';
 import { makeRaid, resolveRaid, type Raid } from './raid';
-import { beginQuest, closingFor, complicationFor } from './quests';
+import { beginQuest, closingFor, complicationFor, questOptionChance } from './quests';
 import { playRound, startBattle, type Order } from './battle';
 import { allSteps, chapterOfStep, currentStep, triggerMet } from './story';
 import { makeOffer, type Offer } from './offers';
@@ -16,6 +16,7 @@ import { heroById } from '../data/heroes';
 import { skillById } from '../data/skills';
 import { CAREER_LABEL } from './careers';
 import { poiById } from '../world/valdoria';
+import { goodById, type GoodId } from '../data/goods';
 import type { AgentClass, RouteEdge } from '../world/types';
 import type { JournalKind } from '../ui/journal';
 
@@ -32,6 +33,9 @@ export function rewardSummary(reward: Reward): string {
   if (reward.characterRelation) parts.push(`+${reward.characterRelation.amount} relação com ${heroById.get(reward.characterRelation.characterId)?.name ?? 'o solicitante'}`);
   if (reward.houseRelation) parts.push(`+${reward.houseRelation.amount} relação com a Casa local`);
   if (reward.localInfluence) parts.push(`+${reward.localInfluence.amount} influência local`);
+  for (const [id, amount] of Object.entries(reward.goods ?? {}) as [GoodId, number][]) {
+    parts.push(`${amount > 0 ? "+" : ""}${amount} ${goodById.get(id)?.name.toLowerCase() ?? id}`);
+  }
   return parts.join(' · ') || 'Sem alteração de recursos.';
 }
 function logged(s: GameState, kind: JournalKind, text: string): GameState {
@@ -85,8 +89,14 @@ export function abandonContract() {
 export function completeContract(): boolean {
   const s=getState(), c=s.adventure.contract;
   if (!c || s.adventure.event || !isPresent(c.destinationId,s) || (s.journey?.hours??0)>c.deadline || s.adventure.finishedOffers[c.id]) return false;
+  if (!hasContractCargo(s,c)) {
+    const cargo = c.cargo!;
+    update(g=>({...g,adventure:{...g.adventure,notice:{title:"A encomenda está incompleta",text:`Ainda faltam ${cargo.amount - cargoOwned(g,cargo.goodId)} ${goodById.get(cargo.goodId)?.name.toLowerCase()}. Compre a carga num mercado antes de entregar.`,levelUp:false}}}));
+    return false;
+  }
   update(g=>{
-    let next=withReward(g,c.reward);
+    let next=consumeContractCargo(g,c);
+    next=withReward(next,c.reward);
     const levelUp=next.level>g.level;
     const growth=levelUp ? ` Nível ${next.level}! +${next.skillPoints-g.skillPoints} ponto(s) de habilidade${next.attributePoints>g.attributePoints ? ` e +${next.attributePoints-g.attributePoints} de atributo` : ''}.` : '';
     next=endContract(next,c,'completed');
@@ -103,7 +113,7 @@ export function checkRoadEvent(edge: RouteEdge, roll: number) {
   // tem um segundo ato, e ele acontece no primeiro posto depois de aceitar.
   if (a.contract && a.quest && !a.quest.complicated && a.quest.phase==='a_caminho') {
     const beat=complicationFor(a.contract);
-    update(g=>logged({...g,adventure:{...g.adventure,quest:{...g.adventure.quest!,pending:beat,complicated:true}}},'evento',beat.title));
+    update(g=>logged({...g,adventure:{...g.adventure,quest:{...g.adventure.quest!,pending:beat,complicated:true,decisionRoll:Math.random()}}},'evento',beat.title));
     return;
   }
   if (hours<a.nextEventHour) return;
@@ -243,28 +253,34 @@ export function chooseQuestOption(optionId: string): boolean {
   if (option.goldCost && s.gold<option.goldCost) return false;
 
   update(g=>{
-    let next=withReward(g,option.reward??{});
-    const levelUp=next.level>g.level;
+    const success=!option.check || (quest.decisionRoll??Math.random())<questOptionChance(option,g);
+    const result=success ? option.result : option.failureResult ?? "A tentativa não convence.";
+    const reward=success ? option.reward??{} : option.failureReward??{};
+    let next=withReward(g,reward);
     const closing=quest.phase==='entrega';
-    const choices=[...quest.choices,option.id];
+    const choices=[...quest.choices,success?option.id:`${option.id}:falhou`];
+    const fails=success ? option.fails : option.failureFails;
 
-    if (option.fails && g.adventure.contract) {
+    if (fails && g.adventure.contract) {
       next=endContract(next,g.adventure.contract,'failed');
     } else if (closing && g.adventure.contract) {
       // O fecho É a entrega: paga o contrato junto com a escolha.
       const c=g.adventure.contract;
+      if (!hasContractCargo(next,c)) return {...g,adventure:{...g.adventure,notice:{title:"A encomenda está incompleta",text:"A pessoa confere a carga e encontra menos do que foi combinado. Compre o restante num mercado e volte.",levelUp:false}}};
+      next=consumeContractCargo(next,c);
       next=withReward(next,c.reward);
       next=endContract(next,c,'completed');
       next={...next,adventure:{...next.adventure,tutorial:{...next.adventure.tutorial,completed:true}}};
     } else {
-      next={...next,adventure:{...next.adventure,quest:{...quest,pending:null,choices}}};
+      next={...next,adventure:{...next.adventure,quest:{...quest,pending:null,choices,decisionRoll:null}}};
     }
 
+    const levelUp=next.level>g.level;
     return logged({...next,adventure:{...next.adventure,notice:{
       title:beat.title,
-      text:option.result+(levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''),
+      text:`${success||!option.check?'':'A tentativa falhou. '}${result} ${rewardSummary(reward)}.`+(levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''),
       levelUp,
-    }}},'evento',`${beat.title}: ${option.result}`);
+    }}},'evento',`${beat.title}: ${result} ${rewardSummary(reward)}.`);
   });
   return true;
 }
@@ -353,8 +369,29 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
 export function openClosing(): boolean {
   const s=getState(), c=s.adventure.contract, quest=s.adventure.quest;
   if (!c || !quest || !isPresent(c.destinationId,s)) return false;
-  update(g=>({...g,adventure:{...g.adventure,quest:{...quest,phase:'entrega',pending:closingFor(c,quest)}}}));
+  if (!hasContractCargo(s,c)) {
+    const cargo=c.cargo!;
+    update(g=>({...g,adventure:{...g.adventure,notice:{title:"Falta mercadoria",text:`O contrato exige ${cargo.amount} ${goodById.get(cargo.goodId)?.name.toLowerCase()}. Você carrega ${cargoOwned(g,cargo.goodId)}. Procure um mercado e complete a encomenda.`,levelUp:false}}}));
+    return true;
+  }
+  update(g=>({...g,adventure:{...g.adventure,quest:{...quest,phase:'entrega',pending:closingFor(c,quest),decisionRoll:Math.random()}}}));
   return true;
+}
+
+function cargoOwned(s: GameState, id: GoodId): number {
+  return id === "provisions" ? s.food : s.inventory[id] ?? 0;
+}
+export function hasContractCargo(s: GameState, contract: Contract): boolean {
+  return !contract.cargo || cargoOwned(s,contract.cargo.goodId) >= contract.cargo.amount;
+}
+function consumeContractCargo(s: GameState, contract: Contract): GameState {
+  if (!contract.cargo) return s;
+  const {goodId,amount}=contract.cargo;
+  if (goodId === "provisions") return {...s,food:Math.max(0,s.food-amount)};
+  const inventory={...s.inventory,[goodId]:Math.max(0,(s.inventory[goodId]??0)-amount)};
+  const owned=s.inventory[goodId]??0;
+  const inventoryCost={...s.inventoryCost,[goodId]:Math.max(0,(s.inventoryCost[goodId]??0)*(owned > 0 ? (owned-amount)/owned : 0))};
+  return {...s,inventory,inventoryCost};
 }
 
 /* ====================== A CAMPANHA PRINCIPAL ========================== */

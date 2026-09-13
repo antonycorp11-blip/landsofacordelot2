@@ -1,8 +1,8 @@
 # Lands of Acordelot — Mapa de Valdória
 
-Primeira versão jogável do mapa do reino. **Apenas o mapa**: geografia, regiões,
-rotas, pontos de interesse e movimentação do personagem. Sem mercado,
-inventário, combate, diplomacia, família ou telas de castelo.
+Campanha jogável em Valdória: mapa estratégico 32-bit, viagem por estradas,
+personagens e diálogos, história em capítulos, política territorial, contratos,
+economia diária, mercados regionais e combate entre pequenos grupos.
 
 ```bash
 npm install
@@ -171,11 +171,9 @@ traje separadamente** exige que a arte venha com máscaras por parte, e esta
 folha é uma imagem achatada — quando a arte tiver as máscaras, só a pintura
 muda.
 
-## HUD provisório
+## HUD
 
-Não é a interface final — é o mínimo que já serve para jogar o mapa, e foi
-escrito para ser substituído inteiro sem tocar no jogo: o HUD só lê o que o
-mapa e a viagem já sabem.
+O HUD mantém o mapa como tela principal e mostra o estado persistente da campanha.
 
 Tudo encostado no topo, em painéis translúcidos e pequenos. O mapa é a tela do
 jogo; o HUD é só a moldura. No estado parado ocupa cerca de 9% da altura de um
@@ -184,8 +182,8 @@ celular; com viagem em curso, região tocada e diário aberto, 27%.
 - **Lugar** (topo, esquerda): região atual, dia e hora do mundo, estado. Em
   viagem abre destino, duração e barra de progresso; tocar numa região do mapa
   acrescenta os dados dela.
-- **Bolsa** (topo, direita): `PURSE_PLACEHOLDER` em `WorldMap.tsx`. O lugar
-  está reservado — não existe economia ainda, nada ganha nem gasta moeda.
+- **Recursos** (topo): ouro, influência e comida usam os saldos reais da campanha.
+- **Ficha**: o retrato do herói abre atributos, habilidades, grupo e progressão; o anel em volta mostra o XP do nível.
 - **Doca**: pausa, 1× / 2× / 4×, seguir o viajante, enquadrar o reino, diário,
   luz e depuração. No celular ganha a segunda linha inteira.
 - **Diário de viagem**: histórico do caminho — partida, marcos, travessias de
@@ -301,7 +299,7 @@ pontes destruídas (`BorderCrossing.blocked`), pedágio (`tollable`,
 `controlledBy`) e fundação de novos assentamentos.
 
 Metadados econômicos por região (`produces` / `consumes` / `tradeActivity`) já
-estão nos dados, aguardando o mercado. Cada senhorio também tem de 5 a 7
+alimentam os mercados regionais. Cada senhorio também tem de 5 a 7
 assentamentos secundários que existem **apenas em dados**, para uma futura tela
 de "Assentamentos da Região" — o mapa principal não é poluído com eles.
 
@@ -315,5 +313,5 @@ ficam salvos localmente. O mapa abre perto do viajante; seu retrato com XP circu
 abre a ficha.
 
 Veja [como jogar e as regras atuais](docs/jornada.md) e a
-[proposta de combate entre grupos](docs/combate.md). Consumo de provisões, mercado
-e combate são etapas seguintes; nesta entrega a comida já pode ser recebida e armazenada.
+[combate entre grupos](docs/combate.md) e [economia regional](docs/economia.md).
+Provisões, salários, mercado, carga e combate já alteram o estado persistente da campanha.

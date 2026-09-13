@@ -12,6 +12,7 @@ import { acceptContract, completeContract, openClosing, rewardSummary } from "..
 import { isPresent } from "../../game/presence";
 import { useGame } from "../../game/store";
 import type { PointOfInterest } from "../../world/types";
+import { goodById } from "../../data/goods";
 
 /**
  * A CONVERSA DE UMA LOCALIDADE.
@@ -142,9 +143,12 @@ export function TownTalk({
       const issue = offers.find((i) => i.contract.id === node.issue);
       if (!issue) return { ...base(speaker), text: greetingOf(who), options: [leave] };
       const c = issue.contract;
+      const cargoLine = c.cargo
+        ? `\n\nA mercadoria não será entregue a você: compre ${c.cargo.amount} ${goodById.get(c.cargo.goodId)?.name.toLowerCase()} no mercado daqui e leve por sua conta.`
+        : "";
       return {
         ...base(speaker),
-        text: `${issue.ask}\n\nPrazo de ${formatDuration(c.deadline - c.acceptedAt)}. A paga: ${rewardSummary(c.reward)}.`,
+        text: `${issue.ask}${cargoLine}\n\nPrazo de ${formatDuration(c.deadline - c.acceptedAt)}. A paga: ${rewardSummary(c.reward)}.`,
         options: [
           {
             id: "accept",
@@ -163,14 +167,14 @@ export function TownTalk({
       return {
         ...base(speaker),
         text: c
-          ? `Então está combinado. ${poiById.get(c.destinationId)?.name}, e o prazo começa a correr agora.`
+          ? `Então está combinado. ${c.cargo ? `Compre primeiro ${c.cargo.amount} ${goodById.get(c.cargo.goodId)?.name.toLowerCase()} no mercado. Depois, ` : ""}${poiById.get(c.destinationId)?.name}, e o prazo começa a correr agora.`
           : "Então está combinado.",
         options: [
           ...(c ? [{
             id: "go",
-            label: "Parto agora mesmo.",
-            hint: `Viajar até ${poiById.get(c.destinationId)?.name}`,
-            onPick: () => { onTravel(c.destinationId); onClose(); },
+            label: c.cargo ? "Primeiro vou ao mercado." : "Parto agora mesmo.",
+            hint: c.cargo ? `Comprar a encomenda em ${poi.name}` : `Viajar até ${poiById.get(c.destinationId)?.name}`,
+            onPick: c.cargo ? onClose : () => { onTravel(c.destinationId); onClose(); },
           }] : []),
           { id: "stay", label: "Antes tenho o que resolver aqui.", onPick: () => setNode({ at: "talk", person: who.id }) },
         ],

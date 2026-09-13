@@ -20,6 +20,7 @@ import { heroById, heroes, type Attributes } from "../data/heroes";
 import { startingSkills, type SkillValues } from "./progression";
 import { emptyCareerXp, type CareerXp } from "./careers";
 import type { TroopCount, TroopId } from "../data/troops";
+import type { GoodId } from "../data/goods";
 import type { AgentClass, FiefOwner, HouseId } from "../world/types";
 
 import { freshAdventure, type AdventureState, type JourneySave } from "./adventureState";
@@ -73,6 +74,14 @@ export type GameState = {
   influence: number;
   gold: number;
   food: number;
+  /** Mercadorias carregadas; provisões continuam em `food`. */
+  inventory: Partial<Record<GoodId, number>>;
+  /** Valor contábil da carga, usado para mostrar lucro real ao vender. */
+  inventoryCost: Partial<Record<GoodId, number>>;
+  marketStocks: Record<string, Partial<Record<GoodId, number>>>;
+  marketRefreshDay: Record<string, number>;
+  tradeProfit: number;
+  tradesCompleted: number;
 
   troops: TroopCount;
   companions: Record<string, CompanionState>;
@@ -121,6 +130,12 @@ function blank(): GameState {
     influence: 5,
     gold: 0,
     food: 12,
+    inventory: {},
+    inventoryCost: {},
+    marketStocks: {},
+    marketRefreshDay: {},
+    tradeProfit: 0,
+    tradesCompleted: 0,
     troops: {},
     companions: {},
     recruitPools: {},

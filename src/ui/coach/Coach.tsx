@@ -6,6 +6,8 @@ import { tutorialFlag } from "../../game/adventure";
 import { troopTotal } from "../../data/troops";
 import { chapterOfStep, currentStep } from "../../game/story";
 import type { RoadStop } from "../../world/roadStops";
+import { amountOwned } from "../../game/economy";
+import { goodById } from "../../data/goods";
 import "./coach.css";
 
 /**
@@ -77,6 +79,18 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
     /* ------------------------------ cumprir --------------------------- */
     if (contract) {
       const target = poiById.get(contract.destinationId);
+      if (contract.cargo && amountOwned(game,contract.cargo.goodId)<contract.cargo.amount) {
+        const good=goodById.get(contract.cargo.goodId);
+        const missing=contract.cargo.amount-amountOwned(game,contract.cargo.goodId);
+        const atOrigin=isPresent(contract.sourceId,game);
+        return {
+          id:"buy-cargo",
+          title:`Faltam ${missing} ${good?.name.toLowerCase()}`,
+          body:atOrigin
+            ? "Abra o menu desta localidade e entre no mercado. A compra sai do seu bolso e precisa caber na carga."
+            : `Volte a ${poiById.get(contract.sourceId)?.name ?? "origem"} ou encontre outro mercado com a mercadoria antes de entregar.`,
+        };
+      }
       if (isPresent(contract.destinationId, game)) {
         return {
           id: "deliver",

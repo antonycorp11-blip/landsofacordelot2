@@ -24,6 +24,9 @@ import type { TroopCount } from "../data/troops";
 import type { Contract } from "./adventureState";
 import type { Reward } from "./experience";
 import type { AgentClass, HouseId } from "../world/types";
+import type { Attributes } from "../data/heroes";
+import type { SkillId } from "../data/skills";
+import type { GameState } from "./store";
 
 export type QuestPhase = "a_caminho" | "entrega" | "fim";
 
@@ -38,6 +41,11 @@ export type QuestOption = {
   /** O que acontece, dito ao jogador depois de escolher. */
   result: string;
   reward?: Reward;
+  /** Algumas falas dependem do personagem, e a chance é mostrada antes da escolha. */
+  check?: { attribute: keyof Attributes; skill: SkillId; difficulty: number };
+  failureResult?: string;
+  failureReward?: Reward;
+  failureFails?: boolean;
   /** Perde o encargo — a entrega deixa de ser possível. */
   fails?: boolean;
 };
@@ -55,10 +63,19 @@ export type QuestState = {
   complicated: boolean;
   /** O que o jogador escolheu, para o fecho poder se lembrar. */
   choices: string[];
+  /** Um único dado por cena: fechar e abrir a tela não permite rolar novamente. */
+  decisionRoll: number | null;
 };
 
 export function beginQuest(contract: Contract): QuestState {
-  return { contractId: contract.id, phase: "a_caminho", pending: null, complicated: false, choices: [] };
+  return { contractId: contract.id, phase: "a_caminho", pending: null, complicated: false, choices: [], decisionRoll:null };
+}
+
+export function questOptionChance(option: QuestOption, s: GameState): number {
+  if (!option.check) return 1;
+  const {attribute,skill,difficulty}=option.check;
+  const percent=40+s.attributes[attribute]*6+s.skills[skill]*0.45-difficulty;
+  return Math.max(.1,Math.min(.95,percent/100));
 }
 
 function houseOf(contract: Contract): HouseId {
@@ -110,9 +127,12 @@ export function complicationFor(contract: Contract): QuestBeat {
         {
           id: "prender",
           label: "Descobrir quem o mandou.",
-          hint: "Exige Diplomacia · pode render mais que a carga",
+          hint: "Pressioná-lo sem sacar a espada",
+          check: { attribute:"diplomacy", skill:"persuasao", difficulty:30 },
           result: `Você senta na pedra ao lado dele. Vinte minutos depois sabe quem paga, quanto paga e há quanto tempo. ${destination} vai querer ouvir isso mais do que quer a encomenda.`,
           reward: { xp: 70, influence: 5, skillXp: { diplomacia: 3 }, houseRelation: { houseId: house, amount: 5 } },
+          failureResult: "Ele percebe a ameaça escondida na cortesia, levanta e vai embora sem dar nome algum. Você conserva a carga, mas deixa claro que tentou jogar um jogo maior.",
+          failureReward: { xp:20, influence:-2, houseRelation:{houseId:house,amount:-2} },
         },
       ],
     },
@@ -200,8 +220,11 @@ export function closingFor(contract: Contract, quest: QuestState): QuestBeat {
           result: "Você conta sem enfeite, inclusive as partes que não lhe favorecem. O oficial anota tudo, e olha para você uma vez a mais do que precisava.",
           reward: { influence: 4, houseRelation: { houseId: house, amount: 6 }, skillXp: { tatica: 2 } } },
         { id: "glória", label: "Deixar a história crescer um pouco.", hint: "Mais influência · a verdade tem donos",
+          check: { attribute:"command", skill:"lideranca", difficulty:28 },
           result: "Você não mente; só não corrige. À noite a história já tem mais homens do que teve, e o seu nome no meio dela.",
-          reward: { influence: 8, xp: 25, houseRelation: { houseId: house, amount: -2 } } },
+          reward: { influence: 8, xp: 25, houseRelation: { houseId: house, amount: -2 } },
+          failureResult: "O oficial pede números, nomes e posições. A história cresce até encontrar quem estava lá; então encolhe de uma vez e leva parte do seu crédito.",
+          failureReward: { influence:-4, xp:10, houseRelation:{houseId:house,amount:-5} } },
       ],
     },
     TRADE: {
@@ -213,8 +236,11 @@ export function closingFor(contract: Contract, quest: QuestState): QuestBeat {
           result: "Você diz o número do acordo e ele paga sem discutir. Depois anota o seu nome numa lista que não é a dos pagamentos.",
           reward: { gold: 10, influence: 3, houseRelation: { houseId: house, amount: 5 } } },
         { id: "mais", label: "Cobrar pela estrada difícil.", hint: "Mais ouro agora · menos vontade de chamar de novo",
+          check: { attribute:"stewardship", skill:"negociacao", difficulty:27 },
           result: "Ele paga o que você pediu, porque precisa da carga. Paga olhando o volume, não você.",
-          reward: { gold: 55, influence: -2, houseRelation: { houseId: house, amount: -4 } } },
+          reward: { gold: 55, influence: -2, houseRelation: { houseId: house, amount: -4 } },
+          failureResult: "Ele refaz a conta na sua frente, desconta atraso, risco e embalagem. Você recebe o combinado, mas sai da mesa tendo pedido mais e conseguido menos respeito.",
+          failureReward: { influence:-3,houseRelation:{houseId:house,amount:-6} } },
       ],
     },
     POLITICS: {
@@ -229,8 +255,11 @@ export function closingFor(contract: Contract, quest: QuestState): QuestBeat {
               result: "Você recebe, agradece e sai. Três nomes e uma data continuam guardados onde ninguém procura.",
               reward: { influence: 5, xp: 30, skillXp: { intriga: 2 } } },
             { id: "avisar", label: "Dizer que leu.", hint: "Confiança agora · uma dívida depois",
+              check: { attribute:"diplomacy", skill:"intriga", difficulty:25 },
               result: "'Eu li', você diz. Ele fica muito quieto por um tempo. Depois: 'Então você me deve um silêncio, e eu lhe devo um favor.'",
-              reward: { influence: 3, houseRelation: { houseId: house, amount: 8 }, xp: 45 } },
+              reward: { influence: 3, houseRelation: { houseId: house, amount: 8 }, xp: 45 },
+              failureResult: "Você confessa esperando cumplicidade. Ele ouve apenas violação. A bolsa chega, curta, e a porta abre antes que a conversa termine.",
+              failureReward: { influence:-3,houseRelation:{houseId:house,amount:-8} } },
           ]
         : [
             { id: "sair", label: "Receber e sair.", hint: "Um trabalho limpo é um trabalho repetido",

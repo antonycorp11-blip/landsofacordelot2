@@ -13,6 +13,8 @@ import { SettlementStats } from "./SettlementStats";
 import { RecruitPanel } from "./RecruitPanel";
 import { TownTalk } from "../dialogue/TownTalk";
 import { notablesAt } from "../../data/notables";
+import { canTradeAt } from "../../game/economy";
+import { MarketPanel } from "../market/MarketPanel";
 import "./panel.css";
 
 /**
@@ -38,7 +40,7 @@ export const SettlementPanel = memo(function SettlementPanel({
   onTravel: (poiId: string) => void;
 }) {
   const game = useGame();
-  const [view, setView] = useState<"menu" | "recruit" | "info">("menu");
+  const [view, setView] = useState<"menu" | "recruit" | "market" | "info">("menu");
   const [talking, setTalking] = useState(false);
   if (!poi) return null;
 
@@ -59,6 +61,7 @@ export const SettlementPanel = memo(function SettlementPanel({
     if (id === "travel") { onTravel(poi.id); onClose(); }
     else if (id === "talk") setTalking(true);
     else if (id === "recruit") setView("recruit");
+    else if (id === "market") setView("market");
     else if (id === "info") setView(view === "info" ? "menu" : "info");
     else if (id === "deliver") { if (!openClosing()) completeContract(); onClose(); }
   };
@@ -71,6 +74,8 @@ export const SettlementPanel = memo(function SettlementPanel({
         <div className="sp-body">
           {view === "recruit" ? (
             <RecruitPanel poi={poi} worldHours={worldHours} onClose={() => setView("menu")} />
+          ) : view === "market" ? (
+            <MarketPanel poi={poi} onClose={() => setView("menu")} />
           ) : view === "info" ? (
             <>
               <SettlementStats holding={holding} />
@@ -80,7 +85,7 @@ export const SettlementPanel = memo(function SettlementPanel({
           ) : (
             <>
               {!here && <p className="sp-preview">Você observa {poi.name} de longe. Para agir é preciso chegar.</p>}
-              <SettlementMenu items={menuFor(holding, { here, speaker, canDeliver })} onPick={pick} />
+              <SettlementMenu items={menuFor(holding, { here, speaker, canDeliver, canMarket:canTradeAt(poi) })} onPick={pick} />
             </>
           )}
         </div>

@@ -6,6 +6,8 @@ import { getState, type GameState } from './store';
 import type { Contract } from './adventureState';
 import type { AgentClass } from '../world/types';
 import type { SkillId } from '../data/skills';
+import { goodById } from '../data/goods';
+import { canTradeAt, primaryExport, quoteAt } from './economy';
 
 const themes: Record<AgentClass,{title:string;description:string;skill:SkillId; kinds:string[]}> = {
   MILITARY:{title:'Relatório da patrulha',description:'Leve as observações da patrulha ao posto aliado. A guarnição precisa saber o que se passa na estrada.',skill:'tatica',kinds:['military','castle','town']},
@@ -40,9 +42,22 @@ export function contractsAt(sourceId: string, s: GameState = getState()): Contra
     const id = `${sourceId}:${career}:${cycle}`;
     if (!target || s.adventure.finishedOffers[id]) return [];
     const theme = themes[career];
-    return [{ id,title:theme.title,description:theme.description,career,sourceId,destinationId:target.id,patronId:patron?.id,
+    const cargoGood = career === 'TRADE' && canTradeAt(source) ? primaryExport(source) : undefined;
+    const cargoQuote = cargoGood ? quoteAt(source,cargoGood,s) : undefined;
+    const available = cargoQuote?.stock ?? 0;
+    // O primeiro trabalho nunca pode exigir uma compra que a própria bolsa atual torna impossível.
+    const affordable = cargoQuote ? Math.floor((s.gold * .75) / cargoQuote.buy) : 0;
+    const cargo = cargoGood && available >= 2 && affordable >= 2
+      ? { goodId:cargoGood, amount:Math.min(4 + (sourceId.length + cycle) % 4, available, affordable) }
+      : undefined;
+    const cargoCost = cargo ? quoteAt(source,cargo.goodId,s).buy * cargo.amount : 0;
+    const title = cargo ? `Encomenda de ${goodById.get(cargo.goodId)?.name.toLowerCase()}` : theme.title;
+    const description = cargo
+      ? `Compre ${cargo.amount} ${goodById.get(cargo.goodId)?.name.toLowerCase()} e entregue no destino. O custo da mercadoria sai do seu bolso; a paga cobre a compra e o risco da rota.`
+      : theme.description;
+    return [{ id,title,description,career,sourceId,destinationId:target.id,patronId:patron?.id,cargo,
       travelHours:target.hours,acceptedAt:hours,deadline:hours+Math.max(72,target.hours*3+24),status:'active' as const,
-      reward:{xp:100,food:6,gold:Math.round(40+target.hours*2),influence:4,careerXp:{[career]:70},skillXp:{[theme.skill]:3},
+      reward:{xp:100,food:6,gold:Math.round(cargoCost+45+target.hours*2),influence:4,careerXp:{[career]:70},skillXp:{[theme.skill]:3},
         houseRelation:{houseId:holdingFor(source).controllerHouseId,amount:2},
         localInfluence:{poiId:sourceId,amount:3},
         ...(patron ? {characterRelation:{characterId:patron.id,amount:12}} : {}),

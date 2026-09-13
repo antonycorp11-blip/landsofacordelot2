@@ -17,7 +17,7 @@
  * Perder homens é permanente. É isso que faz a decisão pesar.
  */
 import { mountedRatio, troopStrength, troopTotal, troops as troopTypes, type TroopCount, type TroopId } from "../data/troops";
-import { partySpeed, partyStrength } from "./progression";
+import { morale, partySpeed, partyStrength } from "./progression";
 import { derivedInput } from "./experience";
 import type { GameState } from "./store";
 
@@ -56,8 +56,8 @@ export function startBattle(s: GameState, enemy: TroopCount, enemyName: string):
     theirs: { ...enemy },
     myLosses: 0,
     theirLosses: 0,
-    myMorale: 100,
-    theirMorale: 100,
+    myMorale: morale(derivedInput(s)),
+    theirMorale: 72,
     log: [],
     result: "andamento",
     loot: 0,
@@ -71,6 +71,24 @@ export function canFlank(troops: TroopCount): boolean {
 
 const ATTACK: Record<Order, number> = { avancar: 1.3, segurar: 0.85, flanquear: 1.7, recuar: 0.35 };
 const DEFEND: Record<Order, number> = { avancar: 0.78, segurar: 1.35, flanquear: 0.68, recuar: 0.55 };
+
+export function retreatChance(s: GameState): number {
+  const input=derivedInput(s);
+  return Math.max(0.25,Math.min(0.9,0.4+(partySpeed(input)-1)*0.9+(s.skills.logistica_militar??0)/300));
+}
+
+/** Números que a interface mostra antes da ordem; são os mesmos multiplicadores usados na rodada. */
+export function orderEffects(s: GameState, battle: Battle, order: Order) {
+  const failedFlank=order==="flanquear"&&!canFlank(battle.mine);
+  const attack=ATTACK[order]*(failedFlank ? .55 : 1);
+  const exposure=1/DEFEND[order];
+  return {
+    attackPercent:Math.round((attack-1)*100),
+    exposurePercent:Math.round((exposure-1)*100),
+    retreatPercent:order==="recuar"?Math.round(retreatChance(s)*100):null,
+    failedFlank,
+  };
+}
 
 function takeLosses(troops: TroopCount, count: number): { troops: TroopCount; lost: number } {
   const next: TroopCount = { ...troops };
@@ -105,7 +123,7 @@ export function playRound(s: GameState, battle: Battle, order: Order, roll: numb
 
   /* ------------------------------- recuo ------------------------------- */
   if (order === "recuar") {
-    const chance = Math.max(0.25, Math.min(0.9, 0.4 + (partySpeed(input) - 1) * 0.9 + (s.skills.logistica_militar ?? 0) / 300));
+    const chance = retreatChance(s);
     if (roll < chance) {
       const parting = takeLosses(b.mine, Math.max(1, Math.round(troopTotal(b.mine) * 0.08)));
       b.mine = parting.troops;

@@ -22,8 +22,8 @@ export type MenuItem = {
 /** Onde faz sentido levantar homens. Um templo não arma ninguém. */
 const RECRUITS: string[] = ["castle", "city", "town", "village", "military", "market", "port", "mine", "estate"];
 
-export function menuFor(holding: Holding, opts: { here: boolean; speaker: string; canDeliver: boolean }): MenuItem[] {
-  const { here, speaker, canDeliver } = opts;
+export function menuFor(holding: Holding, opts: { here: boolean; speaker: string; canDeliver: boolean; canMarket: boolean }): MenuItem[] {
+  const { here, speaker, canDeliver, canMarket } = opts;
   const list: MenuItem[] = [];
 
   if (!here) {
@@ -45,8 +45,8 @@ export function menuFor(holding: Holding, opts: { here: boolean; speaker: string
   if (RECRUITS.includes(holding.kind)) {
     list.push({ id: "recruit", label: "Recrutar tropas", hint: here ? "Levantar homens com ouro" : "É preciso estar no local", enabled: here });
   }
-  if (holding.kind === "market" || holding.kind === "city" || holding.kind === "port") {
-    list.push({ id: "market", label: "Ir ao mercado", hint: "Comércio ainda não disponível", enabled: false });
+  if (canMarket) {
+    list.push({ id: "market", label: "Ir ao mercado", hint: here ? "Comprar provisões e mercadorias; vender a carga" : "É preciso estar no local", enabled: here });
   }
   if (holding.kind === "temple") {
     list.push({ id: "temple", label: "Entrar no templo", hint: "Ainda não disponível", enabled: false });
