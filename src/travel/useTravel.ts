@@ -106,7 +106,7 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
   const frame=useCallback((now:number)=>{
     rafRef.current=0;
     const p=pathRef.current;
-    if (pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice || getState().adventure.raid) return;
+    if (pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice || getState().adventure.raid || getState().adventure.battle || getState().adventure.quest?.pending) return;
     const dt=Math.min(.05,(now-lastTimeRef.current)/1000);
     lastTimeRef.current=now;
 
@@ -180,7 +180,7 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     }
 
     writeMarker();
-    if (!getState().adventure.event && !getState().adventure.notice && !getState().adventure.raid) rafRef.current=requestAnimationFrame(frame);
+    if (!getState().adventure.event && !getState().adventure.notice && !getState().adventure.raid && !getState().adventure.battle && !getState().adventure.quest?.pending) rafRef.current=requestAnimationFrame(frame);
   },[checkpoint,closeDay,setStop,writeMarker]);
 
   useEffect(()=>{
@@ -198,7 +198,7 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
    * voltar a nenhum nó. É assim que se foge de alguma coisa.
    */
   const travelTo=useCallback((destination:RoadStop|string)=>{
-    if (blockedRef.current || getState().adventure.event || getState().adventure.notice || getState().adventure.raid) return null;
+    if (blockedRef.current || getState().adventure.event || getState().adventure.notice || getState().adventure.raid || getState().adventure.battle || getState().adventure.quest?.pending) return null;
     const target=typeof destination==='string'?nodeStop(destination):destination;
     if (!target) return null;
     const p=pathRef.current;

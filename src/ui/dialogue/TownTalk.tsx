@@ -8,7 +8,7 @@ import { houseById } from "../../data/houses";
 import { poiById } from "../../world/valdoria";
 import { formatDuration } from "../../world/time";
 import { issueOf, issuesAt, type Issue } from "../../game/issues";
-import { acceptContract, completeContract, rewardSummary } from "../../game/adventure";
+import { acceptContract, completeContract, openClosing, rewardSummary } from "../../game/adventure";
 import { isPresent } from "../../game/presence";
 import { useGame } from "../../game/store";
 import type { PointOfInterest } from "../../world/types";
@@ -191,7 +191,9 @@ export function TownTalk({
         id: "deliver",
         label: "Trago o que me pediram.",
         hint: rewardSummary(contract.reward),
-        onPick: () => { completeContract(); onClose(); },
+        // A entrega abre o TERCEIRO ATO: como você se comporta ao entregar
+        // muda o que leva e o que pensam de você.
+        onPick: () => { if (!openClosing()) completeContract(); onClose(); },
       });
       void origin;
     } else if (contract) {

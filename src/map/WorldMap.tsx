@@ -92,7 +92,7 @@ export function WorldMap() {
   const [adventureView, setAdventureView] = useState<AdventureView | null>(null);
   const [queuedDestination, setQueuedDestination] = useState<RoadStop | null>(null);
   const [initialPosition] = useState(() => restoreJourney(startNode).position);
-  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.notice || !!game.adventure.raid;
+  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.notice || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending;
 
   const followRef = useRef(follow);
   followRef.current = follow;

@@ -4,6 +4,8 @@ import { withReward, type Reward } from './experience';
 import { contractsAt } from './contracts';
 import { choiceChance, roadEventById, roadEvents } from './roadEvents';
 import { makeRaid, resolveRaid, type Raid } from './raid';
+import { beginQuest, closingFor, complicationFor } from './quests';
+import { playRound, startBattle, type Order } from './battle';
 import { isPresent } from './presence';
 import { applyDay, reportLine } from './daily';
 import { heroById } from '../data/heroes';
@@ -44,7 +46,7 @@ export function dismissNotice() {
   update(s=>({...s,adventure:{...s.adventure,notice:null}}));
 }
 function endContract(s: GameState, contract: Contract, status:'completed'|'failed'): GameState {
-  return {...s,adventure:{...s.adventure,contract:null,
+  return {...s,adventure:{...s.adventure,contract:null,quest:null,
     history:[{...contract,status},...s.adventure.history].slice(0,30),
     finishedOffers:{...s.adventure.finishedOffers,[contract.id]:status},
   }};
@@ -67,7 +69,7 @@ export function acceptContract(id: string, sourceId: string): boolean {
   if (!isPresent(sourceId,s) || s.adventure.contract || s.adventure.event) return false;
   const contract=contractsAt(sourceId,s).find(c=>c.id===id);
   if (!contract) return false;
-  update(g=>logged({...g,adventure:{...g.adventure,contract,tutorial:{...g.adventure.tutorial,accepted:true}}},'evento',`Contrato aceito: ${contract.title}.`));
+  update(g=>logged({...g,adventure:{...g.adventure,contract,quest:beginQuest(contract),tutorial:{...g.adventure.tutorial,accepted:true}}},'evento',`Contrato aceito: ${contract.title}.`));
   return true;
 }
 export function abandonContract() {
@@ -91,7 +93,15 @@ export function completeContract(): boolean {
 /** The first encounter teaches decisions; later ones are spaced and rolled at road checkpoints. */
 export function checkRoadEvent(edge: RouteEdge, roll: number) {
   const s=getState(), a=s.adventure, hours=s.journey?.hours??0;
-  if (a.event || a.notice || a.raid || hours<a.nextEventHour) return;
+  if (a.event || a.notice || a.raid || a.battle || a.quest?.pending) return;
+  // O MIOLO DA MISSÃO vem antes de qualquer encontro genérico: todo encargo
+  // tem um segundo ato, e ele acontece no primeiro posto depois de aceitar.
+  if (a.contract && a.quest && !a.quest.complicated && a.quest.phase==='a_caminho') {
+    const beat=complicationFor(a.contract);
+    update(g=>logged({...g,adventure:{...g.adventure,quest:{...g.adventure.quest!,pending:beat,complicated:true}}},'evento',beat.title));
+    return;
+  }
+  if (hours<a.nextEventHour) return;
   // Estrada perigosa cospe bando. É a razão de existir tropa — e a razão de
   // uma rota curta e arriscada não ser automaticamente a melhor.
   if (edge.danger>0.12 && roll<edge.danger*0.55) {
@@ -209,3 +219,117 @@ const TITLE: Record<string,string> = {
   fuga_falhou:'Não deu para fugir', pedagio:'Pedágio pago',
 };
 export type { Raid };
+
+/* ======================= OS TRÊS ATOS DO ENCARGO ======================= */
+
+/** Aplica a opção escolhida num beat de missão e segue para o ato seguinte. */
+export function chooseQuestOption(optionId: string): boolean {
+  const s=getState(), quest=s.adventure.quest, beat=quest?.pending;
+  if (!quest || !beat || beat.kind!=='escolha') return false;
+  const option=beat.options.find(o=>o.id===optionId);
+  if (!option) return false;
+  if (option.goldCost && s.gold<option.goldCost) return false;
+
+  update(g=>{
+    let next=withReward(g,option.reward??{});
+    const levelUp=next.level>g.level;
+    const closing=quest.phase==='entrega';
+    const choices=[...quest.choices,option.id];
+
+    if (option.fails && g.adventure.contract) {
+      next=endContract(next,g.adventure.contract,'failed');
+    } else if (closing && g.adventure.contract) {
+      // O fecho É a entrega: paga o contrato junto com a escolha.
+      const c=g.adventure.contract;
+      next=withReward(next,c.reward);
+      next=endContract(next,c,'completed');
+      next={...next,adventure:{...next.adventure,tutorial:{...next.adventure.tutorial,completed:true}}};
+    } else {
+      next={...next,adventure:{...next.adventure,quest:{...quest,pending:null,choices}}};
+    }
+
+    return logged({...next,adventure:{...next.adventure,notice:{
+      title:beat.title,
+      text:option.result+(levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''),
+      levelUp,
+    }}},'evento',`${beat.title}: ${option.result}`);
+  });
+  return true;
+}
+
+/** A complicação armada entra em combate de verdade. */
+export function startQuestBattle(): boolean {
+  const s=getState(), beat=s.adventure.quest?.pending;
+  if (!beat || beat.kind!=='batalha') return false;
+  update(g=>({...g,adventure:{...g.adventure,battle:startBattle(g,beat.band,beat.enemyName)}}));
+  return true;
+}
+
+/** Um bando de estrada também vira batalha, em vez de um dado só. */
+export function startRaidBattle(): boolean {
+  const s=getState(), raid=s.adventure.raid;
+  if (!raid) return false;
+  update(g=>({...g,adventure:{...g.adventure,battle:startBattle(g,raid.band,raid.name)}}));
+  return true;
+}
+
+/** Uma rodada de batalha. Quando ela termina, o resultado cai na campanha. */
+export function giveOrder(order: Order): boolean {
+  const s=getState(), battle=s.adventure.battle;
+  if (!battle || battle.result!=='andamento') return false;
+  const next=playRound(s,battle,order,Math.random());
+  if (next.result==='andamento') {
+    update(g=>({...g,adventure:{...g.adventure,battle:next}}));
+    return true;
+  }
+  finishBattle(next);
+  return true;
+}
+
+function finishBattle(battle: ReturnType<typeof playRound>) {
+  update(g=>{
+    const beat=g.adventure.quest?.pending;
+    const fromQuest=beat?.kind==='batalha';
+    const won=battle.result==='vitoria';
+
+    let next: GameState={...g,troops:battle.mine};
+    next=withReward(next,{
+      xp:won?Math.round(50+battle.theirLosses*6):20,
+      gold:won?battle.loot:0,
+      careerXp:{MILITARY:won?60:20},
+      skillXp:{tatica:won?3:1},
+    });
+    const levelUp=next.level>g.level;
+
+    let text=battle.log[battle.log.length-1]??'';
+    if (won) text+=` ${battle.myLosses} dos seus ficaram no campo; ${battle.theirLosses} deles. Despojos: ${battle.loot} moedas.`;
+    else text+=` Você perdeu ${battle.myLosses} homens.`;
+
+    if (fromQuest && beat?.kind==='batalha') {
+      text+=` ${won?beat.onWin:beat.onLose}`;
+      if (!won && beat.loseReward) next=withReward(next,beat.loseReward);
+      const quest=next.adventure.quest!;
+      next={...next,adventure:{...next.adventure,quest:{...quest,pending:null,choices:[...quest.choices,won?'venceu':'perdeu']}}};
+      if (!won && next.adventure.contract) next=endContract(next,next.adventure.contract,'failed');
+    } else if (!won) {
+      // Derrota contra bando avulso: eles levam o que dá.
+      const robbed=Math.round(next.gold*0.3);
+      next={...next,gold:next.gold-robbed};
+      text+=` Levaram ${robbed} moedas.`;
+    }
+
+    next={...next,adventure:{...next.adventure,battle:null,raid:null,
+      notice:{title:won?'O campo é seu':battle.result==='retirada'?'Vocês saíram da linha':'A linha quebrou',
+        text:text+(levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''),levelUp},
+    }};
+    return logged(next,'evento',`${battle.enemyName}: ${text}`);
+  });
+}
+
+/** Na chegada, a entrega vira o TERCEIRO ato em vez de um botão. */
+export function openClosing(): boolean {
+  const s=getState(), c=s.adventure.contract, quest=s.adventure.quest;
+  if (!c || !quest || !isPresent(c.destinationId,s)) return false;
+  update(g=>({...g,adventure:{...g.adventure,quest:{...quest,phase:'entrega',pending:closingFor(c,quest)}}}));
+  return true;
+}

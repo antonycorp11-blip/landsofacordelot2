@@ -1,6 +1,6 @@
 import { isPresent } from "../../game/presence";
 import { useGame } from "../../game/store";
-import { completeContract } from "../../game/adventure";
+import { completeContract, openClosing } from "../../game/adventure";
 import { memo, useState } from "react";
 import { charactersAt } from "../../data/characters";
 import { holdingFor } from "../../data/holdings";
@@ -60,7 +60,7 @@ export const SettlementPanel = memo(function SettlementPanel({
     else if (id === "talk") setTalking(true);
     else if (id === "recruit") setView("recruit");
     else if (id === "info") setView(view === "info" ? "menu" : "info");
-    else if (id === "deliver") { completeContract(); onClose(); }
+    else if (id === "deliver") { if (!openClosing()) completeContract(); onClose(); }
   };
 
   return (

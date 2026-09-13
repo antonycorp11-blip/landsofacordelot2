@@ -380,3 +380,17 @@
   .adv-check em { padding: 1px 5px; }
   .adv-body .adv-caption { font-size: 9.5px; margin: 0 0 4px; }
 }
+
+/* Batalha deitada: colunas mais baixas e as quatro ordens numa fileira. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .btl-sides { gap:9px; margin-bottom:7px; }
+  .btl-side { padding:6px 9px; gap:2px; }
+  .btl-side b { font-size:19px; }
+  .btl-label { font-size:8px; }
+  .btl-side small { font-size:8.5px; }
+  .adv-body .btl-log { font-size:12.5px; margin:0 0 8px; min-height:2.4em; line-height:1.45; }
+  .btl-orders { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .btl-orders .adv-choice { padding:7px 8px; }
+  .btl-orders .adv-choice strong { font-size:12px; }
+  .btl-orders .adv-choice span { font-size:9px; line-height:1.35; }
+}

@@ -81,3 +81,21 @@
 /* Ação destrutiva: vermelha e sempre depois da saída segura. */
 .btn.danger { background:#40201d; border-color:#a4544799; color:#f0c3b6; }
 .btn.danger:hover:not(:disabled) { background:#5a2a25; color:#ffdccf; }
+
+/* ------------------------------- batalha --------------------------------
+ * Duas colunas, uma linha do que acabou de acontecer, quatro ordens. A moral
+ * tem barra própria porque é ela que decide a batalha antes dos homens
+ * acabarem.
+ */
+.btl-sides { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:10px; }
+.btl-side { display:flex; flex-direction:column; gap:3px; padding:9px 11px; border:1px solid #a8915b55; border-left:2px solid #8fb5a0; border-radius:6px; background:#0f202780; }
+.btl-side.them { border-left-color:#c07a68; }
+.btl-label { font:9px var(--ui-small); letter-spacing:.12em; text-transform:uppercase; color:#b6a97a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.btl-side b { font-size:24px; font-weight:400; color:#f2e5c1; line-height:1; font-variant-numeric:tabular-nums; }
+.btl-side small { font:9.5px var(--ui-small); color:#9fae9f; }
+.btl-bar { display:block; height:4px; border-radius:2px; background:#0715189e; overflow:hidden; margin-top:2px; }
+.btl-bar i { display:block; height:100%; background:linear-gradient(90deg,#6f8f6a,#b9cf8e); transition:width .25s ease; }
+.btl-side.them .btl-bar i { background:linear-gradient(90deg,#8f5a4a,#cf9a7e); }
+.adv-body .btl-log { font-size:15px; margin:0 0 10px; min-height:2.6em; }
+.btl-orders { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+@media (prefers-reduced-motion:reduce) { .btl-bar i { transition:none; } }

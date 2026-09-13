@@ -3,6 +3,8 @@ import type { Reward } from './experience';
 import type { JournalEntry } from '../ui/journal';
 import type { RoadStopSave } from '../world/roadStops';
 import type { Raid } from './raid';
+import type { QuestState } from './quests';
+import type { Battle } from './battle';
 
 export type JourneySave = {
   /** Nó em que o viajante está, ou `null` quando ele parou no meio da estrada. */
@@ -51,6 +53,10 @@ export type AdventureState = {
   event: { id: string; definitionId: string; roll: number; hours: number } | null;
   /** Bando bloqueando a estrada. Trava a viagem até você decidir o que fazer. */
   raid: Raid | null;
+  /** Os três atos do encargo em curso. */
+  quest: QuestState | null;
+  /** Batalha em andamento, rodada a rodada. */
+  battle: Battle | null;
   eventCount: number;
   nextEventHour: number;
   lastEventId: string | null;
@@ -61,7 +67,7 @@ export type AdventureState = {
 export function freshAdventure(): AdventureState {
   return {
     tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, politicsSeen:false },
-    contract:null, history:[], finishedOffers:{}, event:null, raid:null, eventCount:0,
+    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, eventCount:0,
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
 }
