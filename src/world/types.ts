@@ -384,6 +384,16 @@ export type TravelPath = {
   totalDistance: number;
   /** Custo em horas do mundo, considerando modificadores. */
   travelHours: number;
+  /**
+   * Distância acumulada ao FIM de cada trecho de `edgeIds` — o índice 0 é
+   * sempre 0. Um trajeto que começa ou termina no meio de uma aresta tem
+   * trechos parciais, e então isto não coincide com a distância das arestas.
+   */
+  legAt?: number[];
+  /** Nó alcançado ao fim de cada trecho; ausente quando o trecho para no meio da estrada. */
+  legEnd?: (string | undefined)[];
+  /** Onde a viagem termina, quando não é um nó. */
+  endStop?: import("./roadStops").RoadStop;
 };
 
 export type TravelEvents = {
@@ -392,5 +402,6 @@ export type TravelEvents = {
   onRegionEntered?: (regionId: RegionId) => void;
   onBorderCrossed?: (crossing: BorderCrossing) => void;
   onRandomEventCheck?: (edge: RouteEdge, roll: number) => void;
-  onDestinationReached?: (nodeId: string) => void;
+  /** Chegada ao destino — que pode ser um lugar OU um ponto de estrada. */
+  onArrival?: (stop: import("./roadStops").RoadStop) => void;
 };

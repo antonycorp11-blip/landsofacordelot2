@@ -1,11 +1,16 @@
 import type { AgentClass } from '../world/types';
 import type { Reward } from './experience';
 import type { JournalEntry } from '../ui/journal';
+import type { RoadStopSave } from '../world/roadStops';
 
 export type JourneySave = {
-  currentNodeId: string;
-  fromNodeId: string;
+  /** Nó em que o viajante está, ou `null` quando ele parou no meio da estrada. */
+  currentNodeId: string | null;
+  /** Nó de destino, quando o destino é um lugar. */
   destinationId: string | null;
+  at: RoadStopSave;
+  from: RoadStopSave | null;
+  to: RoadStopSave | null;
   distance: number;
   hours: number;
   speed: number;

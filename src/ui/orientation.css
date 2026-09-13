@@ -1,0 +1,23 @@
+.rotate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px 28px;
+  text-align: center;
+  color: #d9cba8;
+  background: radial-gradient(circle at 50% 35%, #1b2a2e, #0a1012 72%);
+  font-family: inherit;
+}
+.rotate svg { color: #c8ad6c; animation: rotate-hint 2.6s ease-in-out infinite; }
+@keyframes rotate-hint {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  70%, 90% { transform: rotate(-90deg); }
+}
+@media (prefers-reduced-motion: reduce) { .rotate svg { animation: none; } }
+.rotate b { font-size: 21px; font-weight: 400; color: #f2e5c1; }
+.rotate span { font: 12.5px/1.6 var(--ui-small); max-width: 34ch; color: #9fae9f; }

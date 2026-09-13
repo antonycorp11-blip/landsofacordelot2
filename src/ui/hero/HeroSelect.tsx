@@ -9,11 +9,13 @@ import "./hero.css";
  * ESCOLHA DO PERSONAGEM.
  *
  * Aparece uma vez, no começo de uma campanha nova. A escolha define a ORIGEM —
- * atributos, habilidades já aprendidas, onde a história começa — e nada mais:
- * as quatro carreiras continuam abertas para qualquer um dos quatro.
+ * atributos, habilidades já aprendidas, quem você era antes — e nada mais: as
+ * quatro carreiras continuam abertas para qualquer um dos quatro.
  *
- * Os três não escolhidos não somem. Continuam no mundo, cada um no seu canto,
- * e podem ser recrutados depois.
+ * A tela é deitada e não rola: os quatro retratos ficam sempre visíveis lado a
+ * lado, e o que se lê sobre cada um aparece na coluna ao lado, trocando com o
+ * toque. Comparar quatro origens é o ponto da tela — ter que rolar para ver a
+ * quarta destruiria isso.
  */
 const ARCHETYPE_COLOR: Record<string, string> = {
   MILITARY: "#d1876e",
@@ -24,25 +26,13 @@ const ARCHETYPE_COLOR: Record<string, string> = {
 
 function Portrait({ hero }: { hero: HeroDefinition }) {
   const url = heroPortraitUrl(hero.portraitAssetKey);
-  if (url) {
-    return (
-      <div className="hs-figure">
-        <img src={url} alt={hero.name} />
-        {/* O nome vai na faixa de pergaminho que a própria arte reservou. */}
-        <span className="hs-plate">
-          <b>{hero.name}</b>
-        </span>
-      </div>
-    );
-  }
-  // Sem arte: a inicial na cor do arquétipo, e não um desenho inventado.
+  if (!url) return <span className="hs-portrait-empty">{hero.name[0]}</span>;
   return (
-    <div className="hs-portrait">
-      <div style={{ textAlign: "center", display: "grid", gap: 6 }}>
-        <span className="hs-portrait-empty">{hero.name[0]}</span>
-        <span className="hs-portrait-note">retrato a caminho</span>
-      </div>
-    </div>
+    <span className="hs-figure">
+      <img src={url} alt="" />
+      {/* O nome vai na faixa de pergaminho que a própria arte reservou. */}
+      <span className="hs-plate"><b>{hero.name}</b></span>
+    </span>
   );
 }
 
@@ -55,65 +45,57 @@ export function HeroSelect() {
       <div className="hs-head">
         <span className="hs-kicker">Lands of Acordelot</span>
         <h1 className="hs-title">De quem será esta história?</h1>
-        <p className="hs-sub">
-          Quatro origens, um reino por descobrir. Escolha quem dará o primeiro passo.
-          Todas as carreiras permanecem abertas para você.
-        </p>
       </div>
 
-      <div className="hs-grid">
-        {heroes.map((hero) => (
-          <button
-            key={hero.id}
-            className="hs-card"
-            aria-label={`Escolher ${hero.name}`}
-            style={{ ["--arch" as string]: ARCHETYPE_COLOR[hero.archetype] }}
-            aria-pressed={pickedId === hero.id}
-            onClick={() => setPicked(hero.id)}
-          >
-            <div className="hs-choice-mark" aria-hidden="true">{pickedId === hero.id ? "Escolhido" : "Conhecer origem"}</div>
-            <Portrait hero={hero} />
-            <div>
-              <div className="hs-role">
+      <div className="hs-stage">
+        <div className="hs-grid">
+          {heroes.map((hero) => (
+            <button
+              key={hero.id}
+              className="hs-card"
+              aria-label={`Escolher ${hero.name}`}
+              style={{ ["--arch" as string]: ARCHETYPE_COLOR[hero.archetype] }}
+              aria-pressed={pickedId === hero.id}
+              onClick={() => setPicked(hero.id)}
+            >
+              <Portrait hero={hero} />
+              <span className="hs-role">
                 {hero.age} anos · {CAREER_LABEL[hero.archetype]}
-              </div>
-            </div>
-            <div className="hs-tag">{hero.tagline}</div>
-            <div className="hs-strengths">
-              {hero.strengths.map((s) => (
-                <span key={s}>{s}</span>
-              ))}
-            </div>
-            <div className="hs-attrs">
-              {(Object.keys(hero.attributes) as (keyof typeof hero.attributes)[]).map((k) => (
-                <div className="hs-attr" key={k}>
-                  <b>{hero.attributes[k]}</b>
-                  <span>{ATTRIBUTE_LABEL[k]}</span>
-                </div>
-              ))}
-            </div>
-          </button>
-        ))}
-      </div>
+              </span>
+            </button>
+          ))}
+        </div>
 
-      <div className="hs-confirm">
-        {picked ? (
-          <>
-            <p>
-              Você iniciará sua jornada como <b>{picked.name}</b>.
+        <aside className="hs-detail" style={picked ? { ["--arch" as string]: ARCHETYPE_COLOR[picked.archetype] } : undefined}>
+          {picked ? (
+            <>
+              <div className="hs-detail-head">
+                <b>{picked.name}</b>
+                <span>{CAREER_LABEL[picked.archetype]}</span>
+              </div>
+              <p className="hs-tag">{picked.tagline}</p>
+              <div className="hs-strengths">
+                {picked.strengths.map((s) => <span key={s}>{s}</span>)}
+              </div>
+              <div className="hs-attrs">
+                {(Object.keys(picked.attributes) as (keyof typeof picked.attributes)[]).map((k) => (
+                  <div className="hs-attr" key={k}>
+                    <b>{picked.attributes[k]}</b>
+                    <span>{ATTRIBUTE_LABEL[k]}</span>
+                  </div>
+                ))}
+              </div>
+              <button className="btn primary hs-go" onClick={() => startCampaign(picked.id)}>
+                Começar como {picked.name.split(" ")[0]}
+              </button>
+            </>
+          ) : (
+            <p className="hs-empty">
+              Quatro origens, um reino por descobrir.<br />
+              Toque num retrato para conhecê-lo.
             </p>
-            <div className="hs-actions">
-              <button className="btn" onClick={() => setPicked(null)}>
-                Voltar
-              </button>
-              <button className="btn primary" onClick={() => startCampaign(picked.id)}>
-                Iniciar jornada
-              </button>
-            </div>
-          </>
-        ) : (
-          <p className="hs-sub">Escolha um dos quatro para continuar.</p>
-        )}
+          )}
+        </aside>
       </div>
     </div>
   );

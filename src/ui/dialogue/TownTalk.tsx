@@ -61,7 +61,15 @@ export function TownTalk({
 
   const here = isPresent(poi.id, game);
   const contract = game.adventure.contract;
-  const offers = contractsAt(poi.id, game);
+  /**
+   * Quem recebe tem POUCO a oferecer — dois serviços, não um catálogo. É como
+   * funciona quando se pergunta a uma pessoa em vez de ler um mural, e é o que
+   * faz a conversa caber na tela sem rolagem.
+   */
+  const offers = contractsAt(poi.id, game)
+    .slice()
+    .sort((a, b) => a.travelHours - b.travelHours)
+    .slice(0, 2);
 
   const leave: DialogueOption = { id: "leave", label: "Fique bem.", onPick: onClose };
 

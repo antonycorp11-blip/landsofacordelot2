@@ -8,22 +8,12 @@ import { resetCampaign, useGame } from '../../game/store';
 import { CAREER_LABEL } from '../../game/careers';
 import { isPresent, locationId } from '../../game/presence';
 import { withReward, type Reward } from '../../game/experience';
-import { abandonContract, canRecruitCompanion, completeContract, dismissNotice, recruitCompanion, remainingContractHours, resolveRoadEvent, rewardSummary, tutorialFlag } from '../../game/adventure';
+import { abandonContract, canRecruitCompanion, completeContract, dismissNotice, recruitCompanion, remainingContractHours, resolveRoadEvent, rewardSummary } from '../../game/adventure';
 import { choiceChance, roadEventById } from '../../game/roadEvents';
-import type { Tutorial } from '../../game/adventureState';
 import { ResourceIcon } from '../ResourceIcon';
 import './adventure.css';
 
 export type AdventureView = {tab:'guide'|'contracts'|'companions'|'history';poiId?:string};
-const STEPS: {key:keyof Tutorial;title:string;description:string}[] = [
-  {key:'accepted',title:'Aceite seu primeiro encargo',description:'Toque na localidade onde você está, escolha Falar e peça trabalho. Quem atende diz o destino, o prazo e a paga antes de você aceitar.'},
-  {key:'departed',title:'Pegue a estrada',description:'Toque na localidade de destino e escolha Viajar até aqui. Arraste para olhar o mapa e use pinça ou a roda do mouse para aproximar.'},
-  {key:'eventResolved',title:'Faça sua primeira escolha',description:'A viagem pausa nos encontros. Veja os atributos, as chances, os custos e os ganhos antes de decidir.'},
-  {key:'completed',title:'Entregue e receba',description:'Ao chegar, o menu do lugar abre com Entregar o encargo. Você recebe ouro, comida, influência e experiência.'},
-  {key:'sheetViewed',title:'Conheça sua progressão',description:'Toque no seu retrato com o anel de XP. Cada nível concede um ponto de habilidade; os níveis 3, 5, 7… também concedem um ponto de atributo.'},
-  {key:'recruited',title:'Conquiste um companheiro',description:'Visite um dos outros protagonistas, cumpra um encargo pedido por ele e volte para convidá-lo. É preciso relação 10.'},
-];
-export function tutorialNext(tutorial: Tutorial) { return STEPS.find(step=>!tutorial[step.key]); }
 function Gains({reward}:{reward:Reward}) {
   const game=useGame();
   const after=withReward(game,reward);
@@ -84,17 +74,17 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
   },[active]);
   if(!active)return null;
   const placeId=view?.poiId??locationId(game);
-  const place=poiById.get(placeId);
-  const here=isPresent(placeId,game);
+  const place=placeId?poiById.get(placeId):undefined;
+  const here=!!placeId&&isPresent(placeId,game);
   const contract=a.contract;
-  const tab=view?.tab??'guide';
-  const title=event?.title??notice?.title??(tab==='guide'?'Guia do viajante':tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':'Encargo em curso');
+  const tab=view?.tab==='guide'?'contracts':view?.tab??'contracts';
+  const title=event?.title??notice?.title??(tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':'Encargo em curso');
   return <div className="adv-backdrop"><div className="adv-dialog" role="dialog" aria-modal="true" aria-labelledby="adv-title" ref={dialog} tabIndex={-1}>
     <header className="adv-head"><div><span className="hs-kicker">{event?'Encontro na estrada':notice?'Crônica de Valdória':'Lands of Acordelot'}</span><h2 id="adv-title">{title}</h2></div>
       {!event && <button className="sheet-close" onClick={()=>closeRef.current()} aria-label="Fechar">×</button>}
     </header>
     {!event && !notice && <nav className="adv-tabs" aria-label="Jornada">
-      {([['guide','Guia'],['contracts','Encargo'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
+      {([['contracts','Encargo'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
     </nav>}
     <div className="adv-body">
       {event && pending ? <>
@@ -111,10 +101,6 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
       </> : notice ? <>
         <div className={`adv-result ${notice.levelUp?'level-up':''}`}><span aria-hidden="true">✦</span><p>{notice.text}</p></div>
         <div className="adv-actions">{notice.levelUp && <button className="btn" onClick={()=>{dismissNotice();onSheet();}}>Distribuir pontos</button>}<button className="btn primary" onClick={dismissNotice}>Continuar</button></div>
-      </> : tab==='guide' ? <>
-        <p className="adv-caption">O guia acompanha suas ações e pode ser consultado novamente em Jornada.</p>
-        <ol className="adv-steps">{STEPS.map((step,index)=><li key={step.key} className={a.tutorial[step.key]?'done':''}><span>{a.tutorial[step.key]?'✓':index+1}</span><div><h3>{step.title}</h3><p>{step.description}</p></div></li>)}</ol>
-        <div className="adv-actions"><RestartButton/><button className="btn" onClick={()=>tutorialFlag('hidden',!a.tutorial.hidden)}>{a.tutorial.hidden?'Mostrar dicas no mapa':'Ocultar dicas no mapa'}</button><button className="btn primary" onClick={onClose}>Voltar ao mapa</button></div>
       </> : tab==='contracts' ? <>
         {contract ? <article className="adv-contract active"><span className="adv-eyebrow">Contrato em andamento · {CAREER_LABEL[contract.career]}</span><h3>{contract.title}</h3><p>{contract.description}</p><p className="adv-route">{poiById.get(contract.sourceId)?.name} → <b>{poiById.get(contract.destinationId)?.name}</b></p><p>Prazo restante: {formatDuration(remainingContractHours(game))}</p><Gains reward={contract.reward}/><div className="adv-actions">
           {isPresent(contract.destinationId,game)?<button className="btn primary" onClick={completeContract}>Entregar e receber</button>:<button className="btn primary" disabled={!!game.journey?.destinationId} onClick={()=>onNavigate(contract.destinationId)}>{game.journey?.destinationId?'Viagem em andamento':'Viajar ao destino'}</button>}
@@ -131,20 +117,9 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
         </article>;})}
       </> : <>
         <p className="adv-caption">{a.history.filter(c=>c.status==='completed').length} contratos concluídos · {a.eventCount} encontros na estrada</p>
-        {a.chronicle.length===0?<p className="empty">Sua crônica começa com o primeiro passo.</p>:a.chronicle.map(entry=><article className="adv-log" key={entry.id}><small>Dia {Math.floor(entry.hours/24)+1} · {Math.floor(entry.hours%24)}h</small><p>{entry.text}</p></article>)}
+        <div className="adv-actions"><RestartButton/></div>
+        {a.chronicle.length===0?<p className="empty">Sua crônica começa com o primeiro passo.</p>:a.chronicle.slice(0,5).map(entry=><article className="adv-log" key={entry.id}><small>Dia {Math.floor(entry.hours/24)+1} · {Math.floor(entry.hours%24)}h</small><p>{entry.text}</p></article>)}
       </>}
     </div>
   </div></div>;
-}
-
-export function JourneyTracker({onOpen}:{onOpen:(view:AdventureView)=>void}) {
-  const game=useGame(),a=game.adventure;
-  const next=tutorialNext(a.tutorial);
-  if(!a.tutorial.introSeen)return null;
-  if(!a.contract && (a.tutorial.hidden || !next)) return null;
-  return <button className="journey-tracker" onClick={()=>onOpen({tab:a.contract?'contracts':'guide'})}>
-    <small>{a.contract?'Contrato ativo':'Primeiros passos'}</small>
-    <strong>{a.contract?.title??next?.title}</strong>
-    <span>{a.contract ? isPresent(a.contract.destinationId,game)?'Você chegou · toque para entregar':`Destino: ${poiById.get(a.contract.destinationId)?.name}` : 'Toque para ver o guia'}</span>
-  </button>;
 }

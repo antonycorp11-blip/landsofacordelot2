@@ -7,118 +7,6 @@
 
 /* ---------------------------- escolha inicial --------------------------- */
 
-.hero-select {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
-  background: radial-gradient(circle at 50% 30%, #1b2a2e, #0b1113 70%);
-  color: #f1e7cc;
-  font-family: inherit;
-  overflow-y: auto;
-}
-.hs-head { text-align: center; display: flex; flex-direction: column; gap: 5px; }
-.hs-kicker { font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; color: #b19a5e; }
-.hs-title { font-size: 27px; font-weight: 600; margin: 0; }
-.hs-sub { font-size: 13.5px; color: #a9b0a4; max-width: 56ch; margin: 0 auto; }
-
-.hs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 12px;
-  max-width: 1080px;
-  width: 100%;
-  margin: 0 auto;
-  align-items: stretch;
-}
-
-.hs-card {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 14px;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  background: #161d1cc7;
-  border: 1px solid #c8af6e33;
-  border-top: 3px solid var(--arch);
-  border-radius: 4px;
-  transition: border-color 120ms, transform 120ms, background 120ms;
-}
-.hs-card:hover { background: #1b2423d9; }
-.hs-card[aria-pressed="true"] { border-color: #d8b85c; background: #1e2725; transform: translateY(-2px); }
-.hs-card:focus-visible { outline: 2px solid #d8b85c; outline-offset: 2px; }
-
-/*
- * A arte já é um card inteiro: moldura, brasão de classe e uma faixa de
- * pergaminho em branco na base, feita para receber o nome. Então a imagem
- * entra sem borda nem fundo por baixo — seria moldura dentro de moldura — e o
- * nome é escrito NA faixa, que é onde ele foi desenhado para ficar.
- */
-.hs-figure { position: relative; aspect-ratio: 420 / 634; }
-.hs-figure img { width: 100%; height: 100%; object-fit: contain; display: block; }
-
-.hs-plate {
-  position: absolute;
-  left: 16%; right: 16%;
-  top: 71.5%; height: 15%;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  pointer-events: none;
-}
-.hs-plate b {
-  font-size: clamp(11px, 2.1vw, 15px);
-  line-height: 1.1;
-  font-weight: 600;
-  color: #3a2f1d;
-  letter-spacing: 0.01em;
-}
-
-.hs-portrait {
-  aspect-ratio: 420 / 634;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 3px;
-  background: #0d1413;
-  border: 1px solid #c8af6e2b;
-}
-.hs-portrait-empty { color: var(--arch); font-size: 34px; font-weight: 600; letter-spacing: 0.06em; }
-.hs-portrait-note { font-size: 10px; color: #7d8a86; letter-spacing: 0.08em; text-transform: uppercase; }
-
-.hs-name { font-size: 18px; font-weight: 600; line-height: 1.15; }
-.hs-role { font-size: 11px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--arch); }
-.hs-tag { font-size: 13px; color: #c9bfa0; font-style: italic; }
-.hs-strengths { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: #bcc4b8; }
-.hs-strengths span::before { content: "· "; color: var(--arch); }
-
-.hs-attrs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: auto; padding-top: 8px; border-top: 1px solid #c8af6e24; }
-.hs-attr { display: flex; flex-direction: column; align-items: center; gap: 1px; }
-.hs-attr b { font-size: 16px; font-variant-numeric: tabular-nums; }
-.hs-attr span { font-size: 9px; letter-spacing: 0.07em; text-transform: uppercase; color: #8e968c; }
-
-.hs-confirm { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 6px; }
-.hs-confirm p { margin: 0; font-size: 15px; }
-.hs-confirm b { color: #f0dea2; }
-.hs-actions { display: flex; gap: 8px; }
-
-.btn {
-  font: inherit; font-size: 13.5px; line-height: 1;
-  padding: 0 16px; height: 40px;
-  border-radius: 3px; border: 1px solid #c8af6e3d;
-  background: #ffffff0f; color: #ded3b4; cursor: pointer;
-}
-.btn:hover:not(:disabled) { background: #ffffff1c; color: #f6eed6; }
-.btn:disabled { opacity: 0.4; cursor: default; }
-.btn.primary { background: #c9a84c; border-color: #e6cd87; color: #221b06; font-weight: 600; }
-.btn.primary:hover:not(:disabled) { background: #d8b85c; }
-
 /* ---------------------------- ficha completa ---------------------------- */
 
 .sheet {
@@ -232,8 +120,141 @@
   .id-portrait { max-width: 200px; }
 }
 @media (max-width: 560px) {
-  .hs-title { font-size: 22px; }
-  .hs-grid { grid-template-columns: 1fr; }
-  .hs-portrait { max-height: 210px; }
   .sheet-tab { padding: 10px 9px; font-size: 12px; }
 }
+
+/* ========================= ESCOLHA DA ORIGEM =============================
+ * Deitada e sem rolagem: quatro retratos sempre visíveis numa fileira, e o
+ * que se lê sobre o escolhido numa coluna ao lado. Comparar as quatro origens
+ * é o ponto da tela — rolar para ver a quarta destruiria isso.
+ */
+.hero-select {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+           max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: radial-gradient(ellipse at 50% 0%, #30404680, transparent 62%),
+              linear-gradient(135deg, #121d23, #0d181c 65%, #202d29);
+  color: #f1e7cc;
+  font-family: inherit;
+  overflow: hidden;
+}
+
+.hs-head { text-align: center; display: flex; flex-direction: column; gap: 2px; flex: none; }
+.hs-kicker { font: 9px var(--ui-small); letter-spacing: 0.26em; text-transform: uppercase; color: #c3a96a; }
+.hs-title { font-size: clamp(19px, 2.6vw, 30px); font-weight: 400; margin: 0; letter-spacing: -0.02em; color: #f4e8c6; }
+
+.hs-stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.hs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  min-height: 0;
+}
+
+.hs-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 0;
+  padding: 8px 6px 9px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: linear-gradient(160deg, #29353966, #15222599);
+  border: 1px solid #a9936542;
+  border-top: 2px solid var(--arch);
+  border-radius: 7px;
+  transition: border-color 120ms, background 120ms, transform 120ms;
+}
+.hs-card:hover { border-color: #cab780; background: #26363880; }
+.hs-card[aria-pressed="true"] {
+  border-color: #dec281;
+  background: linear-gradient(160deg, #39433b, #1e2c2d);
+  box-shadow: 0 0 0 1px #c4a565, 0 10px 26px #0005;
+}
+.hs-card:focus-visible { outline: 2px solid #d8b85c; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .hs-card { transition: none; } }
+
+/* A arte já é uma moldura com faixa de pergaminho na base: entra sem borda
+   nem fundo por baixo, e o nome vai dentro da faixa que ela reservou. */
+.hs-figure { position: relative; display: block; min-height: 0; flex: 1; width: 100%; }
+.hs-figure img {
+  display: block;
+  width: auto; height: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 9px #0007);
+}
+.hs-plate {
+  position: absolute;
+  left: 50%; bottom: 6.5%;
+  transform: translateX(-50%);
+  width: 62%;
+  text-align: center;
+}
+.hs-plate b { font-size: clamp(8px, 1vw, 11px); font-weight: 600; color: #4a3a22; letter-spacing: 0.01em; }
+.hs-portrait-empty { flex: 1; display: grid; place-items: center; font-size: 34px; color: #b5a882; }
+.hs-role { font: 600 9px var(--ui-small); letter-spacing: 0.07em; color: var(--arch); text-align: center; }
+
+/* ------------------------------- detalhe -------------------------------- */
+
+.hs-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 0;
+  padding: 13px 14px;
+  border: 1px solid #a9936542;
+  border-left: 2px solid var(--arch, #a99365);
+  border-radius: 7px;
+  background: linear-gradient(160deg, #22323680, #12212499);
+}
+.hs-detail-head { display: flex; flex-direction: column; gap: 2px; }
+.hs-detail-head b { font-size: 19px; font-weight: 400; color: #f2e5c1; line-height: 1.15; }
+.hs-detail-head span { font: 9px var(--ui-small); letter-spacing: 0.14em; text-transform: uppercase; color: var(--arch); }
+.hs-tag { margin: 0; font-family: Georgia, serif; font-style: italic; font-size: 14px; line-height: 1.45; color: #e6dabb; }
+.hs-strengths { display: flex; flex-direction: column; gap: 2px; font: 11px/1.55 var(--ui-small); color: #b3bdb0; }
+.hs-strengths span::before { content: "+ "; color: #c9ab68; font-weight: 700; }
+.hs-attrs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #c8b37940;
+  text-align: center;
+}
+.hs-attr b { display: block; font-size: 19px; font-weight: 400; color: #edd8a4; }
+.hs-attr span { font: 7.5px var(--ui-small); letter-spacing: 0.02em; color: #a9b3a6; }
+.hs-go { width: 100%; }
+.hs-empty { margin: auto 0; font: 12.5px/1.8 var(--ui-small); color: #9fae9f; text-align: center; }
+
+/* Em pé (tablet ou janela estreita): a coluna de detalhe vai para baixo. */
+@media (orientation: portrait), (max-width: 700px) {
+  .hs-stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .hs-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hs-detail { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+  .hs-detail-head { flex: none; }
+  .hs-tag { flex: 1; min-width: 150px; font-size: 13px; }
+  .hs-strengths { display: none; }
+  .hs-attrs { margin: 0; padding: 0; border: 0; flex: none; width: 180px; }
+  .hs-go { width: auto; flex: none; }
+  .hs-empty { margin: 0 auto; }
+}
+

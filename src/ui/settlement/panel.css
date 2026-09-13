@@ -185,3 +185,4 @@
 .recruit-buttons { display: flex; flex-direction: column; gap: 4px; flex: none; }
 .recruit-buttons .btn { height: 26px; font-size: 11.5px; padding: 0 9px; min-width: 52px; }
 .recruit-note { margin: 8px 0 0; font-size: 12px; color: #e0b394; }
+

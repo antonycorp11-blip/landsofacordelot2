@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { UNITS_PER_HOUR, findPath, nodeBoundaries, routeEdgeById } from '../world/navgraph';
+import { UNITS_PER_HOUR, routeEdgeById } from '../world/navgraph';
 import { crossingByNodeId, routeNodeById } from '../world/valdoria';
+import { nodeStop, pathBetween, saveStop, stopAlong, type RoadStop } from '../world/roadStops';
 import type { Point, RegionId, TravelEvents, TravelPath } from '../world/types';
 import { getState, flushGameSave } from '../game/store';
 import { saveJourney, tutorialFlag } from '../game/adventure';
@@ -11,16 +12,28 @@ const WORLD_HOURS_PER_SECOND=4;
 /**
  * O RELÓGIO DO MUNDO NÃO PARA.
  *
- * Parado numa cidade o tempo corre devagar — uma hora do mundo a cada dois
- * segundos, um dia inteiro em pouco menos de um minuto. Na estrada ele corre
- * como sempre correu. Isso é o que permite que renda, prazo de contrato e
- * qualquer coisa que dependa de calendário andem sem obrigar o jogador a
- * cavalgar em círculos para o dia virar.
+ * Parado o tempo corre devagar — uma hora do mundo a cada dois segundos. Na
+ * estrada corre como sempre correu. É o que permite que prazo e calendário
+ * andem sem obrigar o jogador a cavalgar em círculos para o dia virar.
  */
 const IDLE_HOURS_PER_SECOND=0.5;
+
 export type TravelState='idle'|'traveling'|'arrived';
 type Options={startNodeId:string;events?:TravelEvents;blocked?:boolean;onFrame?:(pos:Point,regionId:RegionId)=>void};
 
+/**
+ * A VIAGEM.
+ *
+ * O destino é uma PARADA, e uma parada pode ser uma cidade ou um ponto
+ * qualquer de estrada. Isso vale também para a origem: quem para no meio do
+ * caminho parte dali, sem voltar para a cidade anterior — é o que torna
+ * possível desviar de uma rota já começada em vez de assistir ao próprio
+ * cavalo andar até o fim.
+ *
+ * O trajeto é percorrido por TRECHOS (`legAt`/`legEnd`), não por nós: um
+ * trecho parcial no começo ou no fim não termina em lugar nenhum, e o loop
+ * precisa saber disso para não anunciar chegada num nó que não existe.
+ */
 export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
   const [initial]=useState(()=>restoreJourney(startNodeId));
   const markerRef=useRef<SVGGElement|null>(null);
@@ -29,9 +42,9 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
   const pathRef=useRef(initial.path);
   const boundariesRef=useRef(initial.boundaries);
   const progressRef=useRef(initial.distance);
-  const nodeCursorRef=useRef(initial.cursor);
-  const nodeRef=useRef(initial.node.id);
-  const regionRef=useRef<RegionId>(initial.node.regionId);
+  const legCursorRef=useRef(initial.cursor);
+  const stopRef=useRef<RoadStop>(initial.stop);
+  const regionRef=useRef<RegionId>(initial.regionId);
   const hoursRef=useRef(initial.hours);
   const speedRef=useRef(initial.speed);
   const pausedRef=useRef(initial.paused);
@@ -45,8 +58,8 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
   const lastUiRef=useRef(0);
   const [state,setState]=useState<TravelState>(initial.path?'traveling':'idle');
   const [path,setPath]=useState<TravelPath|null>(initial.path);
-  const [currentNodeId,setCurrentNodeId]=useState(initial.node.id);
-  const [regionId,setRegionId]=useState(initial.node.regionId);
+  const [stop,setStopState]=useState<RoadStop>(initial.stop);
+  const [regionId,setRegionId]=useState(initial.regionId);
   const [worldHours,setWorldHours]=useState(initial.hours);
   const [speed,setSpeedState]=useState(initial.speed);
   const [paused,setPaused]=useState(initial.paused);
@@ -55,27 +68,41 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     markerRef.current?.setAttribute('transform',`translate(${posRef.current.x.toFixed(2)} ${posRef.current.y.toFixed(2)})`);
     onFrame?.(posRef.current,regionRef.current);
   },[onFrame]);
+
   const checkpoint=useCallback(()=>{
     const p=pathRef.current;
-    saveJourney({currentNodeId:nodeRef.current,fromNodeId:p?.nodeIds[0]??nodeRef.current,
-      destinationId:p?.nodeIds[p.nodeIds.length-1]??null,distance:progressRef.current,
+    const here=stopRef.current;
+    saveJourney({
+      currentNodeId:here.kind==='node'?here.id:null,
+      destinationId:p?.endStop?.kind==='node'?p.endStop.id:null,
+      at:saveStop(here),
+      from:p?saveStop(initialStopOf(p,here)):null,
+      to:p?.endStop?saveStop(p.endStop):null,
+      distance:progressRef.current,
       hours:hoursRef.current,speed:speedRef.current,paused:pausedRef.current,
     });
   },[]);
-  const stop=useCallback(()=>{
+
+  const stopLoop=useCallback(()=>{
     cancelAnimationFrame(rafRef.current);
     rafRef.current=0;
   },[]);
+
+  const setStop=useCallback((next:RoadStop)=>{
+    stopRef.current=next;
+    setStopState(next);
+  },[]);
+
   const frame=useCallback((now:number)=>{
     rafRef.current=0;
     const p=pathRef.current;
     if (pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice) return;
     const dt=Math.min(.05,(now-lastTimeRef.current)/1000);
     lastTimeRef.current=now;
+
     if (!p) {
       // Parado: só o relógio anda. A barra mostra horas inteiras, então a
-      // interface só é avisada quando a hora vira — e não 60 vezes por
-      // segundo, o que redesenharia o mapa à toa.
+      // interface só é avisada quando a hora vira.
       const before=Math.floor(hoursRef.current);
       hoursRef.current+=IDLE_HOURS_PER_SECOND*speedRef.current*dt;
       if (Math.floor(hoursRef.current)!==before) setWorldHours(hoursRef.current);
@@ -83,11 +110,14 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
       rafRef.current=requestAnimationFrame(frame);
       return;
     }
+
+    const boundaries=boundariesRef.current;
     const before=progressRef.current;
-    const edge=routeEdgeById.get(p.edgeIds[nodeCursorRef.current]);
+    const edge=routeEdgeById.get(p.edgeIds[legCursorRef.current]);
     const modifier=edge?.movementModifier??1;
-    // Stop exactly at checkpoints; no untravelled distance is credited on an event pause.
-    const nextBoundary=boundariesRef.current[nodeCursorRef.current+1]??p.totalDistance;
+    // Para exatamente nas fronteiras; nenhuma distância não percorrida é
+    // creditada quando um encontro interrompe a viagem.
+    const nextBoundary=boundaries[legCursorRef.current+1]??p.totalDistance;
     const after=Math.min(nextBoundary,p.totalDistance,before+WORLD_HOURS_PER_SECOND*speedRef.current*dt*UNITS_PER_HOUR/modifier);
     progressRef.current=after;
     const at=samplePath(p,after);
@@ -98,56 +128,76 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
       lastUiRef.current=now;
       setWorldHours(hoursRef.current);
     }
-    const reached=nodeCursorRef.current<p.nodeIds.length-1 && after>=nextBoundary;
-    if (reached) {
+
+    const arrived=after>=p.totalDistance-1e-6;
+    const crossed=after>=nextBoundary-1e-6 && legCursorRef.current<p.edgeIds.length-1;
+
+    if (crossed||arrived) {
       setWorldHours(hoursRef.current);
-      nodeCursorRef.current++;
-      const node=routeNodeById.get(p.nodeIds[nodeCursorRef.current])!;
-      nodeRef.current=node.id;
-      setCurrentNodeId(node.id);
-      const crossing=crossingByNodeId.get(node.id);
-      const nextRegion=routeEdgeById.get(p.edgeIds[nodeCursorRef.current])?.regionId;
-      const entered=nextRegion??node.regionId;
-      if (entered!==regionRef.current) {
-        regionRef.current=entered;
-        setRegionId(entered);
+      const reachedNode=p.legEnd?.[legCursorRef.current];
+      if (crossed) legCursorRef.current++;
+
+      const nextRegion=routeEdgeById.get(p.edgeIds[Math.min(legCursorRef.current,p.edgeIds.length-1)])?.regionId;
+      const entered=nextRegion??regionRef.current;
+      if (entered!==regionRef.current) { regionRef.current=entered; setRegionId(entered); }
+
+      if (arrived) {
+        pathRef.current=null;
+        setPath(null);
+        setState('arrived');
+        setStop(p.endStop ?? stopAlong(p,after) ?? stopRef.current);
+      } else if (reachedNode) {
+        const node=routeNodeById.get(reachedNode);
+        if (node) setStop({kind:'node',id:node.id,x:node.x,y:node.y});
       }
-      const arrived=nodeCursorRef.current===p.nodeIds.length-1;
-      if (arrived) { pathRef.current=null; setPath(null); setState('arrived'); }
+
       checkpoint();
-      eventsRef.current?.onRouteNodeReached?.(node.id,node);
-      if (crossing) eventsRef.current?.onBorderCrossed?.(crossing);
+      if (reachedNode) {
+        const node=routeNodeById.get(reachedNode);
+        if (node) eventsRef.current?.onRouteNodeReached?.(node.id,node);
+        const crossing=crossingByNodeId.get(reachedNode);
+        if (crossing) eventsRef.current?.onBorderCrossed?.(crossing);
+      }
       if (edge && entered!==edge.regionId) eventsRef.current?.onRegionEntered?.(entered);
-      if (edge) eventsRef.current?.onRandomEventCheck?.(edge,Math.random());
-      if (arrived) eventsRef.current?.onDestinationReached?.(node.id);
+      if (edge && !arrived) eventsRef.current?.onRandomEventCheck?.(edge,Math.random());
+      if (arrived) eventsRef.current?.onArrival?.(p.endStop ?? stopRef.current);
     } else if (now-lastSaveRef.current>1000) {
       lastSaveRef.current=now;
       checkpoint();
     }
+
     writeMarker();
     if (!getState().adventure.event && !getState().adventure.notice) rafRef.current=requestAnimationFrame(frame);
-  },[checkpoint,writeMarker]);
+  },[checkpoint,setStop,writeMarker]);
 
   useEffect(()=>{
-    stop();
+    stopLoop();
     if (!blocked && !paused && !document.hidden) {
       lastTimeRef.current=performance.now();
       rafRef.current=requestAnimationFrame(frame);
     }
-    return stop;
-  },[blocked,paused,frame,stop]);
+    return stopLoop;
+  },[blocked,paused,frame,stopLoop]);
 
-  const travelTo=useCallback((destinationNodeId:string)=>{
+  /**
+   * Parte para uma parada qualquer — e PODE ser chamada no meio de uma
+   * viagem: o trajeto novo começa exatamente onde o viajante está, sem
+   * voltar a nenhum nó. É assim que se foge de alguma coisa.
+   */
+  const travelTo=useCallback((destination:RoadStop|string)=>{
     if (blockedRef.current || getState().adventure.event || getState().adventure.notice) return null;
-    // Changing destination halfway through a road used to teleport back to a node.
-    if (pathRef.current) return null;
-    const found=findPath(nodeRef.current,destinationNodeId);
+    const target=typeof destination==='string'?nodeStop(destination):destination;
+    if (!target) return null;
+    const p=pathRef.current;
+    const here=p ? (stopAlong(p,progressRef.current) ?? stopRef.current) : stopRef.current;
+    const found=pathBetween(here,target);
     if (!found || found.totalDistance<=0) return null;
-    stop();
+    stopLoop();
+    setStop(here);
     pathRef.current=found;
-    boundariesRef.current=nodeBoundaries(found);
+    boundariesRef.current=found.legAt??[0,found.totalDistance];
     progressRef.current=0;
-    nodeCursorRef.current=0;
+    legCursorRef.current=0;
     setPath(found);
     setState('traveling');
     pausedRef.current=false;
@@ -158,13 +208,32 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     lastTimeRef.current=performance.now();
     rafRef.current=requestAnimationFrame(frame);
     return found;
-  },[checkpoint,frame,stop]);
+  },[checkpoint,frame,setStop,stopLoop]);
+
+  const halt=useCallback(()=>{
+    const p=pathRef.current;
+    if (!p) return;
+    const here=stopAlong(p,progressRef.current)??stopRef.current;
+    stopLoop();
+    pathRef.current=null;
+    setPath(null);
+    setState('idle');
+    setStop(here);
+    posRef.current={x:here.x,y:here.y};
+    progressRef.current=0;
+    checkpoint();
+    writeMarker();
+    lastTimeRef.current=performance.now();
+    rafRef.current=requestAnimationFrame(frame);
+  },[checkpoint,frame,setStop,stopLoop,writeMarker]);
+
   const setSpeed=useCallback((value:number)=>{
     if (![1,2,4].includes(value)) return;
     speedRef.current=value;
     setSpeedState(value);
     checkpoint();
   },[checkpoint]);
+
   const togglePause=useCallback(()=>{
     if (blockedRef.current) return;
     pausedRef.current=!pausedRef.current;
@@ -177,22 +246,29 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     checkpoint();
     const persist=()=>{checkpoint();flushGameSave();};
     const visibility=()=>{
-      if (document.hidden) {stop();persist();}
+      if (document.hidden) {stopLoop();persist();}
       else if (!pausedRef.current && !blockedRef.current) {
         // Volta sem creditar o tempo em que a aba esteve escondida.
         lastTimeRef.current=performance.now();
-        stop();rafRef.current=requestAnimationFrame(frame);
+        stopLoop();rafRef.current=requestAnimationFrame(frame);
       }
     };
     window.addEventListener('pagehide',persist);
     document.addEventListener('visibilitychange',visibility);
     return ()=>{
-      stop();persist();
+      stopLoop();persist();
       window.removeEventListener('pagehide',persist);
       document.removeEventListener('visibilitychange',visibility);
     };
-  },[checkpoint,frame,stop,writeMarker]);
+  },[checkpoint,frame,stopLoop,writeMarker]);
 
-  return {markerRef,posRef,headingRef,state,path,currentNodeId,regionId,worldHours,speed,setSpeed,
-    paused:paused||blocked,togglePause,progressRef,travelTo};
+  return {markerRef,posRef,headingRef,state,path,stop,
+    currentNodeId:stop.kind==='node'?stop.id:null,
+    regionId,worldHours,speed,setSpeed,
+    paused:paused||blocked,togglePause,progressRef,travelTo,halt};
+}
+
+/** De onde o trajeto guardado partiu, para poder ser refeito igual. */
+function initialStopOf(path:TravelPath,fallback:RoadStop):RoadStop {
+  return stopAlong(path,0) ?? fallback;
 }

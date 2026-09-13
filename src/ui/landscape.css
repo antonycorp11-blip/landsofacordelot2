@@ -1,0 +1,309 @@
+/**
+ * DEITADO.
+ *
+ * A tela de um telefone na horizontal tem largura de sobra e ~430 px de
+ * altura. Este arquivo é o único lugar onde essa forma é tratada, e ele é
+ * carregado DEPOIS de todos os outros de propósito: as folhas de componente e
+ * o tema disputam os mesmos elementos, e sem uma ordem declarada quem vence é
+ * o acaso da ordem de importação.
+ *
+ * Regra da casa: aqui dentro, nada rola. Se um conteúdo não cabe, ele é
+ * reorganizado ou encurtado — nunca empurrado para fora da tela.
+ */
+/* ------------------------------- deitado --------------------------------
+ * A tela deitada de um telefone tem largura de sobra e altura nenhuma: ~430 px
+ * do topo à base. Então tudo do HUD entra numa FAIXA SÓ — identidade, recursos
+ * e controles lado a lado — e o resto da altura fica para o mapa.
+ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .hud-layer { gap: 4px; padding: max(4px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); }
+
+  /* O bloco de cima deixa de ser uma coluna: vira a faixa inteira. */
+  .hud-top {
+    align-self: stretch;
+    max-width: none;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    padding-right: 3px;
+  }
+  .hud-bar { flex: 0 1 auto; padding: 3px 8px 3px 4px; gap: 7px; }
+  .hud-place { flex: 0 1 auto; }
+  .hud-place b { font-size: 12px; }
+  .hud-place span { font-size: 9.5px; }
+  .hud-hero { width: 32px; height: 32px; }
+  .hero-avatar { inset: 3px; line-height: 26px; font-size: 12px; }
+  .hero-level-badge { min-width: 15px; height: 15px; font-size: 8.5px; }
+  .hud-resources { gap: 9px; }
+  .hud-resource b { font-size: 11.5px; }
+
+  /* A doca perde o fundo próprio: já está dentro da faixa. */
+  .hud-dock {
+    background: none;
+    border: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    margin-left: auto;
+    padding: 0;
+    flex: none;
+  }
+  .hud-dock::before {
+    content: "";
+    width: 1px; align-self: stretch; margin: 4px 5px 4px 2px;
+    background: #c8af6e33;
+  }
+  .hud-btn { height: 28px; min-width: 28px; padding: 0 7px; font-size: 11px; }
+  .hud-speed .hud-btn { min-width: 25px; padding: 0 5px; }
+  .hud-dock .sep { margin: 4px 3px; }
+  .desktop-only { display: none; }
+
+  /* A viagem vira uma linha fina abaixo da faixa, alinhada à esquerda. */
+  .hud-journey {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: min(300px, 46vw);
+    padding: 5px 9px 6px;
+    border: 1px solid #c8af6e33;
+    border-radius: 6px;
+    background: #12191ac2;
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+  }
+  .hud-top { position: relative; }
+
+  .hud-journal {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    width: 260px;
+    max-height: calc(100dvh - 90px);
+  }
+  .hud-layer { position: absolute; }
+}
+
+/* ------------------------------- deitado --------------------------------
+ * Coluna à direita, do fim da faixa do HUD até a base. O menu de um lugar tem
+ * meia dúzia de linhas: cabe inteiro, e não deve rolar.
+ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .settlement-panel {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px);
+    right: max(6px, env(safe-area-inset-right));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    left: auto;
+    width: 310px;
+    max-height: none;
+    border-radius: 7px;
+    animation: sp-in 160ms ease-out;
+  }
+  .sp-head { padding: 9px 11px; gap: 9px; }
+  .sp-title h2 { font-size: 15.5px; }
+  .sp-sub { font-size: 8px; margin: 3px 0 4px; }
+  .sp-owner { font-size: 10.5px; }
+  .sp-crest .house-crest { width: 30px !important; height: 36px !important; }
+  .sp-body { padding: 8px 9px; }
+  .sp-menu-item { padding: 8px 10px; }
+  .sp-menu-label { font-size: 13px; }
+  .sp-menu-hint { font-size: 10px; }
+  .sp-preview { font-size: 10.5px; margin-bottom: 7px; }
+}
+
+/* Deitado: coluna à direita, abaixo da faixa do HUD, sem rolagem. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .agent-panel {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px);
+    right: max(6px, env(safe-area-inset-right));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    left: auto;
+    width: 300px;
+    max-height: none;
+  }
+  .agent-head { padding: 9px 11px; }
+  .agent-head h2 { font-size: 15.5px; }
+  .agent-sub { font-size: 8px; margin-top: 4px; }
+  .agent-body { padding: 7px 11px; }
+  .agent-body .pair { font-size: 11px; }
+  .agent-actions { padding: 8px 11px; }
+  .agent-actions .btn { min-height: 32px; font-size: 11px; }
+  .realm-rumor { font-size: 10.5px; }
+}
+
+/* ------------------------------- deitado --------------------------------
+ * Uma conversa deitada é uma coluna estreita no meio da tela, com a fala em
+ * cima e as respostas embaixo. Tudo cabe: por isso quem atende tem dois
+ * serviços para oferecer, e não uma lista.
+ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .dlg-backdrop { padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .dlg-scene {
+    width: min(620px, 100%);
+    height: auto;
+    max-height: 100%;
+    border-radius: 9px;
+    border-left: 1px solid #c1a96a66;
+    border-right: 1px solid #c1a96a66;
+    border-bottom: 1px solid #c1a96a66;
+    padding: 0;
+  }
+  .dlg-speaker { padding: 9px 11px; gap: 10px; }
+  .dlg-portrait { width: 44px; height: 44px; border-width: 1.5px; }
+  .dlg-plate b { font-size: 15px; }
+  .dlg-plate span { font-size: 8.5px; }
+  .dlg-close { width: 27px; height: 27px; font-size: 15px; }
+  .dlg-line { flex: 0 1 auto; padding: 11px 13px; font-size: 14px; line-height: 1.5; }
+  .dlg-options { padding: 0 8px 8px; max-height: none; }
+  .dlg-option { padding: 8px 10px; gap: 9px; }
+  .dlg-text { font-size: 13px; gap: 2px; }
+  .dlg-text em { font-size: 10px; }
+  .dlg-number { width: 18px; height: 18px; font-size: 9px; }
+}
+
+/* ========================= FICHA DEITADA =================================
+ * Numa tela de 430 px de altura a ficha não pode ser uma coluna comprida. As
+ * três caixas ficam lado a lado, os textos de efeito saem (o número e o nome
+ * bastam para comparar) e o conteúdo passa a caber sem rolagem.
+ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .sheet-backdrop { padding: max(5px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .sheet { width: 100%; height: 100%; max-height: 100%; border-radius: 8px; }
+
+  .sheet-heading { padding: 8px 13px 5px; }
+  .sheet-heading h1 { font-size: 18px; margin: 2px 0 1px; }
+  .sheet-heading p { font-size: 9px; }
+  .sheet-close { width: 28px; height: 28px; }
+  .sheet-bar { padding: 0 13px; gap: 14px; }
+  .sheet-tab { min-height: 0; padding: 5px 2px 7px; font-size: 10.5px; }
+  .sheet-body { padding: 9px 13px 11px; overflow: hidden; }
+
+  .panel { padding: 9px 10px; gap: 7px; border-radius: 6px; }
+  .panel-title { font-size: 8.5px; padding-bottom: 5px; }
+
+  /* Visão geral: identidade | medidores + atributos | carreiras */
+  .sheet-inner.cols { grid-template-columns: 150px minmax(0, 1.1fr) minmax(0, 1fr); gap: 9px; align-content: start; }
+  .sheet-inner.cols > .panel:first-child { padding: 8px; gap: 7px; }
+  .sheet .id-portrait { max-width: 96px; }
+  .id-line { font-size: 9.5px; line-height: 1.5; }
+  .sheet-core { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+  /* Carreiras: quatro num 2×2, não quatro empilhadas. */
+  .sheet-inner.cols > .panel:last-child { grid-column: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; align-content: start; }
+  .sheet-inner.cols > .panel:last-child > .panel-title { grid-column: 1 / -1; }
+
+  .meter { gap: 4px; }
+  .meter-head { font-size: 9.5px; }
+  .meter-bar { height: 4px; }
+  .pair { padding: 3px 0; font-size: 10px; }
+  .pair .big { font-size: 17px; }
+
+  /* Atributo: o número e o nome. O que ele faz está no guia, não aqui. */
+  .attr-row { padding: 4px 0; gap: 8px; }
+  .attr-val { width: 28px; height: 29px; font-size: 17px; }
+  .attr-name { font-size: 12px; }
+  .attr-eff { display: none; }
+  .attr-plus, .skill-up { min-width: 26px; height: 26px; }
+
+  .career { padding: 5px 0; gap: 4px; }
+  .career-name { font-size: 8px; }
+  .career-rank { font-size: 12px; }
+
+  /* Habilidades: quatro famílias lado a lado, uma linha por habilidade. */
+  .sheet-inner { gap: 9px; }
+  .skill-groups { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+  .skill { padding: 4px 0; gap: 3px; }
+  .skill-name { font-size: 11.5px; }
+  .skill-val { font-size: 9.5px; }
+  .skill-eff { display: none; }
+  .perk { font-size: 8.5px; padding: 2px 5px; }
+
+  .comp-portrait { width: 52px; height: 74px; }
+  .comp-name { font-size: 13px; }
+  .party-view, .companions-view { gap: 9px; }
+}
+
+/* Atributos e carreiras em duas colunas: quatro linhas empilhadas estouravam
+   a altura, e quatro é justamente o número que fica bom num 2×2. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .sheet .panel:has(.attr-row) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; align-content: start; }
+  .sheet .panel:has(.attr-row) > .panel-title { grid-column: 1 / -1; }
+  .sheet .panel:has(.career) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; align-content: start; }
+  .sheet .panel:has(.career) > .panel-title { grid-column: 1 / -1; }
+  .sheet-inner.cols { align-items: start; }
+}
+
+/* As vinte habilidades em quatro colunas de cinco: cabem, desde que a linha
+   seja uma linha e não um parágrafo. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .skill { padding: 2px 0; gap: 2px; }
+  .skill-name { font-size: 11px; }
+  .skill-head { gap: 6px; }
+  .skill-groups > .panel { padding: 7px 8px; gap: 3px; }
+  .sheet-inner > .panel:first-child { padding: 6px 9px; }
+  .perk { display: none; }
+}
+
+/* Companheiros lado a lado: são três, e três cartões numa fileira cabem onde
+   três empilhados não cabiam. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .companions-view > .panel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; align-content: start; }
+  .companions-view > .panel > .panel-title { grid-column: 1 / -1; }
+  .comp { flex-direction: column; align-items: flex-start; gap: 4px; padding: 0; border: 0; }
+  .comp-portrait { width: 40px; height: 56px; }
+  .comp-body { min-width: 0; }
+  .comp-line { font-size: 9.5px; line-height: 1.4; }
+  .comp-state { font-size: 9px; }
+  .comp-actions { margin-left: 0; }
+  .comp-actions .btn { min-height: 28px; font-size: 10.5px; padding: 0 9px; }
+}
+
+/* ------------------------- registro da jornada ---------------------------
+ * A janela de jornada é larga e baixa como tudo mais aqui, e o que ela mostra
+ * é curto por natureza: um encargo em curso, ou as últimas linhas da crônica.
+ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .adv-backdrop { padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .adv-dialog { width: min(720px, 100%); max-height: 100%; border-radius: 9px; }
+  .adv-head { padding: 10px 13px 8px; }
+  .adv-head h2 { font-size: 17px; margin: 3px 0 0; }
+  .adv-head .hs-kicker { font-size: 8px; }
+  .adv-tabs { padding: 3px 11px 0; }
+  .adv-tabs button { padding: 7px 8px; font-size: 10.5px; }
+  .adv-body { padding: 11px 13px 13px; }
+  .adv-body .adv-story { font-size: 13.5px; line-height: 1.5; }
+  .adv-body h3 { font-size: 14.5px; margin: 3px 0 6px; }
+  .adv-body p { font-size: 11px; line-height: 1.5; margin: 5px 0 8px; }
+  .adv-contract { padding: 10px 12px; margin-bottom: 8px; }
+  .adv-gains { padding-top: 8px; margin: 8px 0; }
+  .adv-actions { gap: 7px; margin-top: 10px; }
+  .adv-actions .btn { min-height: 34px; padding: 7px 12px; font-size: 11px; }
+  .adv-result { padding: 4px 0; }
+  .adv-result > span { font-size: 24px; }
+  .adv-result p { font-size: 13px; margin: 8px auto; }
+  .adv-choices { gap: 8px; margin-top: 10px; }
+  .adv-choice { padding: 9px 11px; gap: 5px; }
+  .adv-choice strong { font-size: 14px; }
+  .adv-choice span { font-size: 10.5px; line-height: 1.45; }
+  .adv-log { margin-bottom: 9px; padding-left: 11px; }
+  .adv-log p { margin: 2px 0 0; }
+  .adv-steps li { padding: 7px 0; gap: 10px; }
+  .adv-steps li > span { width: 24px; height: 24px; font-size: 11px; }
+  .adv-steps h3 { font-size: 13px; margin: 1px 0 3px; }
+  .adv-steps p { font-size: 10.5px; margin: 0; }
+}
+
+/* Companheiros e crônica na janela de jornada: três colunas e linhas curtas,
+   pelo mesmo motivo de sempre — aqui dentro nada rola. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .adv-body .adv-companion:first-of-type { padding-top: 0; }
+  .adv-companion:last-of-type { border-bottom: 0; padding-bottom: 0; }
+  .adv-companion { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 8px; padding: 4px 0; align-items: start; }
+  .adv-companion > img { width: 42px; max-width: none; }
+  .adv-companion .btn { min-height: 28px; font-size: 10.5px; padding: 0 10px; }
+  .adv-companion h3 { font-size: 13px; margin: 0 0 2px; }
+  .adv-companion p { font-size: 10px; margin: 0 0 2px; line-height: 1.35; }
+  .adv-companion .adv-actions { margin-top: 4px; gap: 5px; }
+  .adv-log { margin-bottom: 6px; padding: 0 0 0 9px; }
+  .adv-log small { font-size: 9px; }
+  .adv-log p { font-size: 10.5px; line-height: 1.45; }
+  .adv-caption { margin: 0 0 7px !important; }
+}

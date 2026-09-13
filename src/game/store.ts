@@ -15,6 +15,7 @@
  * jogo precisa cabe em cem linhas e não justifica uma dependência.
  */
 import { useSyncExternalStore } from "react";
+import { openingStop, saveStop } from "../world/roadStops";
 import { heroById, heroes, type Attributes } from "../data/heroes";
 import { startingSkills, type SkillValues } from "./progression";
 import { emptyCareerXp, type CareerXp } from "./careers";
@@ -232,6 +233,20 @@ export function startCampaign(heroId: string) {
     // Humilde de propósito: a primeira tropa tem de ser conquistada.
     gold: 120,
     companions,
+    // A campanha não começa num salão: começa num trecho de estrada dentro
+    // do bosque, sem título e sem rumo. Gravar a parada inicial aqui é o que
+    // faz o mapa abrir lá em vez de num portão de castelo.
+    journey: {
+      currentNodeId: null,
+      destinationId: null,
+      at: saveStop(openingStop()),
+      from: null,
+      to: null,
+      distance: 0,
+      hours: 6,
+      speed: 1,
+      paused: false,
+    },
   }));
 }
 
