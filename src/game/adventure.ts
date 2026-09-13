@@ -20,6 +20,8 @@ import { goodById, type GoodId } from '../data/goods';
 import type { AgentClass, RouteEdge } from '../world/types';
 import type { JournalKind } from '../ui/journal';
 import { troopTotal } from '../data/troops';
+import type { RegionId, TerrainType } from '../world/types';
+import { aggressionCost, wandererById } from './worldForces';
 
 export const COMPANION_RELATION = 10;
 const round = (n: number) => Math.round(n * 10) / 10;
@@ -121,13 +123,15 @@ export function checkRoadEvent(edge: RouteEdge, roll: number) {
   if (hours<a.nextEventHour) return;
   // Estrada perigosa cospe bando. É a razão de existir tropa — e a razão de
   // uma rota curta e arriscada não ser automaticamente a melhor.
-  if (edge.danger>0.12 && roll<edge.danger*0.55) {
+  const security=s.regionSecurity[edge.regionId]??0;
+  const effectiveDanger=Math.max(.04,edge.danger*(1-security/80));
+  if (effectiveDanger>0.12 && roll<effectiveDanger*0.55) {
     const day=Math.floor(hours/24)+1;
-    const raid=makeRaid(edge.id,edge.danger,day,edge.terrain);
+    const raid=makeRaid(edge.id,effectiveDanger,day,edge.terrain);
     update(g=>({...g,adventure:{...g.adventure,raid,nextEventHour:hours+10}}));
     return;
   }
-  if (a.eventCount>0 && roll>Math.min(.7,.25+edge.eventChance+edge.danger*.2)) return;
+  if (a.eventCount>0 && roll>Math.min(.7,.25+edge.eventChance+effectiveDanger*.2)) return;
   const candidates=roadEvents.filter(e=>e.id!==a.lastEventId);
   const def=a.eventCount===0 ? roadEvents[0] : candidates[Math.floor(Math.random()*candidates.length)];
   update(g=>({...g,adventure:{...g.adventure,
@@ -303,6 +307,23 @@ export function startRaidBattle(): boolean {
   return true;
 }
 
+/** Inicia combate contra um grupo alcançado no mapa e registra a agressão. */
+export function startWorldForceBattle(forceId:string,regionId:RegionId,terrain:TerrainType="plain"):boolean {
+  const s=getState(),force=s.worldForces[forceId],wanderer=wandererById.get(forceId);
+  if(!force||force.status!=="active"||!wanderer||s.adventure.battle||troopTotal(s.troops)===0)return false;
+  const cost=aggressionCost(wanderer.routine);
+  update(g=>{
+    const prepared:GameState={...g,
+      influence:g.influence-cost,
+      pursuedForceId:null,
+      regionSecurity:{...g.regionSecurity,[regionId]:Math.max(-30,(g.regionSecurity[regionId]??0)-(cost?4:0))},
+      adventure:{...g.adventure,tutorial:{...g.adventure.tutorial,forceAttacked:true}},
+    };
+    return {...prepared,adventure:{...prepared.adventure,battle:startBattle(prepared,force.troops,wanderer.name,terrain,{forceId,regionId,routine:wanderer.routine})}};
+  });
+  return true;
+}
+
 /** Uma rodada de batalha. Quando ela termina, o resultado cai na campanha. */
 export function giveOrder(order: Order): boolean {
   const s=getState(), battle=s.adventure.battle;
@@ -343,13 +364,39 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
       careerXp:{MILITARY:won?60:20},
       skillXp:{tatica:won?3:1},
     });
+    if(battle.worldForce){
+      const source=battle.worldForce;
+      const old=g.worldForces[source.forceId];
+      if(old){
+        const hostile=source.routine==='pilhagem';
+        const worldForces={...next.worldForces,[source.forceId]:{
+          ...old,
+          troops:{...battle.theirs},
+          status:won?'defeated' as const:'active' as const,
+          returnsAt:won?(g.journey?.hours??0)+(hostile?96:72):0,
+        }};
+        const delta=won?(hostile?12:-10):0;
+        next={...next,worldForces,pursuedForceId:null,
+          regionSecurity:{...next.regionSecurity,[source.regionId]:Math.max(-30,Math.min(30,(next.regionSecurity[source.regionId]??0)+delta))},
+          adventure:{...next.adventure,tutorial:{...next.adventure.tutorial,forceDefeated:next.adventure.tutorial.forceDefeated||(won&&hostile)}}};
+        if(won&&hostile)next=withReward(next,{influence:3,food:2});
+      }
+    }
     const levelUp=next.level>g.level;
 
     let text=battle.log[battle.log.length-1]??'';
     if (won) text+=` Dos seus, ${battle.myDead??battle.myLosses} morreram e ${battle.myWounded??0} ficaram feridos. Você fez ${troopTotal(captured)} prisioneiro(s). Despojos: ${battle.loot} moedas.`;
     else text+=` Dos seus, ${battle.myDead??battle.myLosses} morreram e ${battle.myWounded??0} ficaram feridos.${battle.tribute?` A passagem custou ${battle.tribute} moedas.`:''}`;
 
-    if (fromQuest && beat?.kind==='batalha') {
+    if (battle.worldForce) {
+      const hostile=battle.worldForce.routine==='pilhagem';
+      if(won) text+=hostile?' A estrada fica mais segura; mercados da região sentem o caminho abrir. +3 influência · +2 comida.':' Atacar viajantes e homens da lei abala a segurança e custa influência.';
+      else if(battle.result==='derrota'){
+        const robbed=Math.round(next.gold*.3);
+        next={...next,gold:next.gold-robbed};
+        text+=` Levaram ${robbed} moedas.`;
+      }
+    } else if (fromQuest && beat?.kind==='batalha') {
       text+=` ${won?beat.onWin:beat.onLose}`;
       if (!won && beat.loseReward) next=withReward(next,beat.loseReward);
       const quest=next.adventure.quest!;

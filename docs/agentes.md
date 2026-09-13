@@ -150,8 +150,11 @@ mandar. Uma linha por agente:
 - `dwell` — horas paradas em cada destino, `[mínimo, máximo]`.
 
 Eles usam o **mesmo `findPath`** do jogador: nunca cortam mato, nunca
-atravessam rio fora da ponte, nunca teleportam. Seguem a velocidade e a pausa
-do HUD, mas **não escrevem no relógio do mundo** — é ambiente, não simulação.
+atravessam rio fora da ponte, nunca teleportam. Posição, destino, sobreviventes
+e tempo de retorno ficam no save. O jogador pode ler a força, persegui-la,
+interceptá-la, abordar ou atacar. Vencer saqueadores melhora a segurança e os
+preços da região; atacar viajantes ou homens da lei cobra influência e piora a
+rota.
 
 ## 5. Ordem das linhas
 

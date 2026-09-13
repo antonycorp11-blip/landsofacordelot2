@@ -11,6 +11,7 @@
 - Eventos aleatórios, bandos, chamados com prazo e simulação diária de salário, comida, renda, deserção, guerra e conquista.
 - Arena de combate 32-bit com terreno, ordens de formação, moral, mortos, feridos recuperáveis, prisioneiros, rendição, saque e retirada.
 - Mercados regionais com estoque, reposição, preço, provisões, oito mercadorias, capacidade de carga, lucro real e contratos que exigem compra e entrega física.
+- Forças persistentes no mapa: patrulhas, caravanas, correios, peregrinos, cortejos e saqueadores podem ser lidos, perseguidos, interceptados, abordados e atacados.
 
 ## O que mudou no ciclo principal
 
@@ -26,9 +27,13 @@ O combate tático agora conecta a estrada à campanha:
 4. Mortos saem da campanha; feridos recuperam com tempo e comida.
 5. Rendição usa Diplomacia e Persuasão; prisioneiros ocupam carga e rendem resgate no mercado.
 
+## Marco de forças no mapa concluído
+
+Cada grupo guarda posição, destino, tropas e baixas no save. A perseguição recalcula a rota até a interceptação; o painel mostra risco, alcance, recompensa e custo político antes do ataque. Saqueadores derrotados desaparecem por quatro dias e aumentam a segurança regional, reduzindo emboscadas e pressão sobre preços. Agressões contra grupos neutros ou legais removem influência e pioram segurança. O tutorial conduz leitura, perseguição, interceptação e vitória contra um bando.
+
 ## Próximo marco recomendado
 
-Fazer bandos, patrulhas e caravanas existirem como forças persistentes no mundo. Derrotar um bando deve aumentar segurança e fluxo comercial; perder uma caravana deve retirar mercadoria do mercado; bloquear uma estrada deve mudar preço, rota e oferta de missões. Em seguida entram equipamento do herói e companheiros, cercos por etapas e campanhas militares das Casas.
+Dar inventário e objetivo próprio a caravanas e exércitos. Uma caravana derrotada deve derramar carga como saque e reduzir estoque no destino; uma patrulha deve caçar bandos; um exército de Casa deve reunir tropas, cercar uma posição em etapas e mudar de objetivo conforme guerra, suprimento e relação política.
 
 Depois disso, o melhor arco de retenção é **subir de viajante para senhor**: reputação local abre audiência, audiência abre juramento ou independência, terra abre guarnição, imposto, oficina e guerra. A campanha principal deve reagir à Casa apoiada, às cartas lidas, às pessoas traídas e aos senhorios controlados, criando finais políticos diferentes.
 

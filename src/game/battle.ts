@@ -4,6 +4,7 @@ import type { TerrainType } from "../world/types";
 import { morale, partySpeed, partyStrength } from "./progression";
 import { derivedInput } from "./experience";
 import type { GameState } from "./store";
+import type { WorldForceBattleSource } from "./worldForces";
 
 export type Order = "avancar" | "segurar" | "saraivada" | "flanquear" | "reserva" | "recuar";
 export type ParleyKind = "exigir" | "retirada";
@@ -36,6 +37,8 @@ export type Battle = {
   log: string[];
   result: "andamento" | "vitoria" | "derrota" | "retirada";
   loot: number;
+  /** Preenchido quando o confronto nasceu de uma força visível no mapa. */
+  worldForce?: WorldForceBattleSource;
 };
 
 export const ORDERS: { id: Order; name: string; blurb: string }[] = [
@@ -71,14 +74,14 @@ export const BATTLE_TERRAINS: Record<TerrainType,TerrainRule> = {
 const ATTACK: Record<Order,number>={avancar:1.28,segurar:.82,saraivada:1,flanquear:1.42,reserva:.66,recuar:.32};
 const DEFEND: Record<Order,number>={avancar:.8,segurar:1.42,saraivada:.94,flanquear:.7,reserva:1.22,recuar:.58};
 
-export function startBattle(s:GameState,enemy:TroopCount,enemyName:string,terrain:TerrainType="plain"):Battle {
+export function startBattle(s:GameState,enemy:TroopCount,enemyName:string,terrain:TerrainType="plain",worldForce?:WorldForceBattleSource):Battle {
   return {
     id:`batalha-${Date.now()}`,enemyName,terrain,round:1,mine:{...s.troops},theirs:{...enemy},
     myLosses:0,theirLosses:0,myDead:0,myWounded:0,theirDead:0,theirWounded:0,
     myWoundedTroops:{},prisoners:{},myMorale:morale(derivedInput(s)),theirMorale:72,
     lastMyLosses:0,lastTheirLosses:0,lastOrder:null,enemyLastOrder:null,
     parleyRoll:Math.random(),parleyAttempted:false,surrendered:false,tribute:0,
-    log:[],result:"andamento",loot:0,
+    log:[],result:"andamento",loot:0,worldForce,
   };
 }
 

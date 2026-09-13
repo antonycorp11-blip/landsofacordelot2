@@ -10,9 +10,9 @@
  * viajante — estes agentes usam exatamente a mesma malha de estradas e o mesmo
  * `findPath`, então nunca aparecem cortando mato nem atravessando rio.
  *
- * NADA disto entra na simulação: não há economia, combate nem encontro ainda.
- * É ambiente, e está deliberadamente isolado para que, quando cada um ganhar
- * mecânica própria, só esta lista precise mudar.
+ * A parte mutável vive em `game/worldForces.ts`: posição, sobreviventes,
+ * derrota e retorno são persistidos. Esta lista continua sendo apenas a
+ * identidade e a escalação original de cada grupo.
  */
 import { makeRng } from "./geo";
 import type { TroopCount } from "../data/troops";

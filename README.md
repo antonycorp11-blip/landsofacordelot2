@@ -314,4 +314,4 @@ abre a ficha.
 
 Veja [como jogar e as regras atuais](docs/jornada.md) e a
 [combate entre grupos](docs/combate.md) e [economia regional](docs/economia.md).
-Provisões, salários, mercado, carga e combate já alteram o estado persistente da campanha.
+Provisões, salários, mercado, carga e combate já alteram o estado persistente da campanha. Os grupos que circulam também persistem: podem ser perseguidos, interceptados, abordados e atacados, com efeitos sobre influência, segurança, emboscadas e preços regionais.

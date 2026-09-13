@@ -23,14 +23,14 @@ import type { Point, PointOfInterest, RegionId, TravelEvents } from "../world/ty
 import { borderCrossingById } from "../world/borderCrossings";
 import { poiById, regionById, regions, valdoria } from "../world/valdoria";
 import { useTravel } from "../travel/useTravel";
-import { useWanderers } from "../travel/useWanderers";
+import { useWanderers, type WandererRuntime } from "../travel/useWanderers";
 import { WanderersLayer } from "../render/layers/WanderersLayer";
 import { PoliticalLayer } from "../render/layers/PoliticalLayer";
 import { SettlementPanel } from "../ui/settlement/SettlementPanel";
 import { CharacterScreen } from "../ui/hero/CharacterScreen";
 import { AgentPanel } from "../ui/agent/AgentPanel";
-import { useGame } from "../game/store";
-import { checkOffer, checkOfferArrival, checkRoadEvent, checkStory, recordJourney, tutorialFlag } from "../game/adventure";
+import { update, useGame } from "../game/store";
+import { checkOffer, checkOfferArrival, checkRoadEvent, checkStory, recordJourney, startWorldForceBattle, tutorialFlag } from "../game/adventure";
 import { AdventurePanel, type AdventureView } from "../ui/adventure/AdventurePanel";
 import { Coach } from "../ui/coach/Coach";
 import { StoryScene } from "../ui/story/StoryScene";
@@ -38,7 +38,6 @@ import { OfferCard } from "../ui/offer/OfferCard";
 import { restoreJourney } from "../travel/journey";
 import { heroById } from "../data/heroes";
 import { troopTotal } from "../data/troops";
-import type { Wanderer } from "../world/wanderers";
 import { FrontierLayer } from "../render/layers/FrontierLayer";
 import { FrontierPanel } from "../ui/frontier/FrontierPanel";
 import { PoliticalLegend } from "../ui/PoliticalLegend";
@@ -47,6 +46,8 @@ import { FiefLayer } from "../render/layers/FiefLayer";
 import { FiefPanel } from "../ui/fief/FiefPanel";
 import type { Fief } from "../world/fiefs";
 import { nearestRoadStop, nodeStop, type RoadStop } from "../world/roadStops";
+import { routeEdgeById } from "../world/navgraph";
+import { routeNodeById } from "../world/valdoria";
 import { useCamera } from "./useCamera";
 import { Hud } from "../ui/Hud";
 import type { JournalKind } from "../ui/journal";
@@ -78,7 +79,7 @@ export function WorldMap() {
   const [panelPoiId, setPanelPoiId] = useState<string | null>(null);
   /** Ficha do personagem e leitura de um grupo no mapa — ambas contextuais. */
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [readAgent, setReadAgent] = useState<Wanderer | null>(null);
+  const [readAgentId, setReadAgentId] = useState<string | null>(null);
   const [realm, setRealm] = useState<ForeignRealm | null>(null);
   const [fief, setFief] = useState<Fief | null>(null);
   /**
@@ -228,6 +229,44 @@ export function WorldMap() {
   // Agentes de ambiente: seguem a mesma malha de estradas, a mesma velocidade
   // e a mesma pausa do viajante, mas não escrevem no relógio do mundo.
   const wanderers = useWanderers({ speed: travel.speed, paused: travel.paused });
+  const readAgent = readAgentId ? wanderers.find((agent) => agent.wanderer.id === readAgentId) ?? null : null;
+  const pursuitAimRef = useRef<Point | null>(null);
+
+  const pursue = useCallback((agent:WandererRuntime) => {
+    tutorialFlag("pursuitStarted");
+    update((state)=>({...state,pursuedForceId:agent.wanderer.id}));
+    setReadAgentId(null);
+    const stop=agent.currentStop();
+    if(stop)travel.travelTo(stop);
+  },[travel.travelTo]);
+
+  // A rota de perseguição acompanha o alvo. Quando os dois grupos entram em
+  // alcance, a viagem para e a decisão volta ao jogador.
+  useEffect(()=>{
+    const id=game.pursuedForceId;
+    if(!id)return;
+    const timer=window.setInterval(()=>{
+      const target=wanderers.find((agent)=>agent.wanderer.id===id);
+      if(!target){ update((state)=>({...state,pursuedForceId:null})); return; }
+      const here=travel.posRef.current,there=target.positionRef.current;
+      if(!here||!there)return;
+      const distance=Math.hypot(here.x-there.x,here.y-there.y);
+      if(distance<=250){
+        travel.halt();
+        update((state)=>({...state,pursuedForceId:null}));
+        setReadAgentId(id);
+        pushLog("evento",`Você interceptou ${target.wanderer.name}.`);
+        pursuitAimRef.current=null;
+        return;
+      }
+      const last=pursuitAimRef.current;
+      if(!last||travel.state!=="traveling"||Math.hypot(last.x-there.x,last.y-there.y)>300){
+        const stop=target.currentStop();
+        if(stop){ pursuitAimRef.current={...there}; travel.travelTo(stop); }
+      }
+    },650);
+    return()=>window.clearInterval(timer);
+  },[game.pursuedForceId,pushLog,travel.halt,travel.posRef,travel.state,travel.travelTo,wanderers]);
 
   const zoom = camera.zoom;
 
@@ -352,9 +391,11 @@ export function WorldMap() {
             <WanderersLayer
               agents={wanderers}
               pxPerUnit={camera.baseScale() * zoom}
-              onSelect={(w) => {
+              pursuedForceId={game.pursuedForceId}
+              onSelect={(agent) => {
                 if (camera.wasDragged()) return;
-                setReadAgent(w);
+                tutorialFlag("agentInspected");
+                setReadAgentId(agent.wanderer.id);
               }}
             />
           )}
@@ -426,7 +467,19 @@ export function WorldMap() {
       )}
       {realm && <FrontierPanel realm={realm} onClose={() => setRealm(null)} />}
       {fief && !realm && politicalView === "fiefs" && <FiefPanel fief={fief} onClose={() => setFief(null)} />}
-      {readAgent && !realm && !fief && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
+      {readAgent && !realm && !fief && <AgentPanel
+        agent={readAgent}
+        playerPositionRef={travel.posRef}
+        pursuing={game.pursuedForceId===readAgent.wanderer.id}
+        onPursue={()=>pursue(readAgent)}
+        onAttack={()=>{
+          const stop=readAgent.currentStop();
+          const edge=stop?.kind==="road"?routeEdgeById.get(stop.edgeId):null;
+          const node=stop?.kind==="node"?routeNodeById.get(stop.id):null;
+          if(startWorldForceBattle(readAgent.wanderer.id,edge?.regionId??node?.regionId??readAgent.wanderer.home,edge?.terrain??"plain"))setReadAgentId(null);
+        }}
+        onClose={() => setReadAgentId(null)}
+      />}
       {/* A campanha principal fala por cima de tudo: é a linha da partida. */}
       <StoryScene />
 

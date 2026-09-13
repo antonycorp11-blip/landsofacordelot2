@@ -132,6 +132,43 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
       };
     }
 
+    /* ---------------------- forças no mapa -------------------------- */
+    if (troops > 0 && !tutorial.agentInspected) {
+      return {
+        id:"inspect-force",
+        title:"A estrada tem outros grupos",
+        body:"Toque numa figura que anda pelo mapa. Bandos armados têm um anel vermelho; o número acima mostra quantos homens viajam juntos.",
+      };
+    }
+    if (troops > 0 && !tutorial.pursuitStarted) {
+      return {
+        id:"pursue-force",
+        title:"Eles não vão esperar por você",
+        body:"Na leitura do grupo, toque em Perseguir. Sua rota acompanhará o alvo até que os dois grupos estejam perto o bastante.",
+      };
+    }
+    if (game.pursuedForceId) {
+      return {
+        id:"intercept-force",
+        title:"Perseguição em andamento",
+        body:"O anel amarelo marca o alvo. A rota se corrige enquanto ele anda; ao alcançar, você decide abordar, atacar ou deixá-lo seguir.",
+      };
+    }
+    if (troops > 0 && !tutorial.forceAttacked) {
+      return {
+        id:"attack-force",
+        title:"O grupo foi interceptado",
+        body:"Ataque quando estiver ao alcance. Antes da ordem, a tela mostra risco, recompensa e a perda de influência caso você agrida viajantes ou homens da lei.",
+      };
+    }
+    if (troops > 0 && tutorial.forceAttacked && !tutorial.forceDefeated) {
+      return {
+        id:"defeat-force",
+        title:"A estrada lembra o resultado",
+        body:"Vença um bando de anel vermelho. Ele sai do mapa por alguns dias, a segurança sobe e emboscadas e preços da região melhoram.",
+      };
+    }
+
     /* -------------------- influência e o tabuleiro -------------------- */
     if (!tutorial.politicsSeen) {
       return {

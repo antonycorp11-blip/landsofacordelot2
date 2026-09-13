@@ -25,6 +25,7 @@ import type { AgentClass, FiefOwner, HouseId } from "../world/types";
 
 import { freshAdventure, type AdventureState, type JourneySave } from "./adventureState";
 import type { War } from "./worldSim";
+import type { WorldForceState } from "./worldForces";
 
 /**
  * A versão faz parte da chave de propósito: quando uma mudança altera o
@@ -88,6 +89,12 @@ export type GameState = {
   wounded: TroopCount;
   /** Capturados que podem ser libertados, recrutados ou resgatados depois. */
   prisoners: TroopCount;
+  /** Grupos visíveis no mapa, incluindo posição, sobreviventes e tempo de retorno. */
+  worldForces: Record<string, WorldForceState>;
+  /** Grupo que o jogador está tentando interceptar. */
+  pursuedForceId: string | null;
+  /** Efeito acumulado de patrulhamento ou banditismo sobre estradas e mercados. */
+  regionSecurity: Partial<Record<import("../world/types").RegionId, number>>;
   companions: Record<string, CompanionState>;
 
   /** Recrutas ainda disponíveis por estrutura, e o dia da última reposição. */
@@ -143,6 +150,9 @@ function blank(): GameState {
     troops: {},
     wounded: {},
     prisoners: {},
+    worldForces: {},
+    pursuedForceId: null,
+    regionSecurity: {},
     companions: {},
     recruitPools: {},
     poolRefreshDay: {},

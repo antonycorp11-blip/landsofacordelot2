@@ -2,9 +2,7 @@ import { memo } from "react";
 import { MapAgentSprite } from "../agents/MapAgentSprite";
 import { agentSheets } from "../agents/agentSheets";
 import type { WandererRuntime } from "../../travel/useWanderers";
-import { partyOf } from "../../world/wanderers";
 import { troopTotal } from "../../data/troops";
-import type { Wanderer } from "../../world/wanderers";
 
 /**
  * A gente que anda pelo reino sem o jogador mandar.
@@ -16,11 +14,13 @@ import type { Wanderer } from "../../world/wanderers";
 export const WanderersLayer = memo(function WanderersLayer({
   agents,
   pxPerUnit,
+  pursuedForceId,
   onSelect,
 }: {
   agents: WandererRuntime[];
   pxPerUnit: number;
-  onSelect: (w: Wanderer) => void;
+  pursuedForceId: string | null;
+  onSelect: (agent: WandererRuntime) => void;
 }) {
   return (
     <g>
@@ -32,9 +32,10 @@ export const WanderersLayer = memo(function WanderersLayer({
           pxPerUnit={pxPerUnit}
           moving={a.moving}
           headingRef={a.headingRef}
-          locator={false}
-          partySize={troopTotal(partyOf(a.wanderer))}
-          onSelect={() => onSelect(a.wanderer)}
+          locator={a.wanderer.id === pursuedForceId || a.wanderer.routine === "pilhagem"}
+          colors={a.wanderer.id === pursuedForceId ? { primary: "#e6b84f", secondary: "#78402e" } : a.wanderer.routine === "pilhagem" ? { primary: "#d45c4e", secondary: "#562a26" } : undefined}
+          partySize={troopTotal(a.troops)}
+          onSelect={() => onSelect(a)}
         />
       ))}
     </g>

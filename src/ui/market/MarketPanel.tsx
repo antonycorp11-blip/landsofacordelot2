@@ -22,6 +22,8 @@ export function MarketPanel({ poi, onClose }: { poi: PointOfInterest; onClose: (
   const used = cargoUsed(game);
   const limit = cargoLimit(game);
   const prisonerCount=troopTotal(game.prisoners);
+  const security=game.regionSecurity[poi.regionId]??0;
+  const securityLabel=security>=8?"rota segura":security<=-8?"rota perigosa":"rota estável";
 
   const act = (id: GoodId, amount: number, side: "buy" | "sell") => {
     const result = trade(poi.id, id, amount, side);
@@ -41,6 +43,7 @@ export function MarketPanel({ poi, onClose }: { poi: PointOfInterest; onClose: (
       <span><ResourceIcon name="gold" size={22}/><b>{game.gold}</b> ouro</span>
       <span><b>{used}/{limit}</b> carga</span>
       <span><b>{game.tradeProfit >= 0 ? "+" : ""}{game.tradeProfit}</b> lucro acumulado</span>
+      <span><b>{security>0?"+":""}{security}</b> {securityLabel}</span>
     </div>
 
     {contractCargo && <div className="market-order">
