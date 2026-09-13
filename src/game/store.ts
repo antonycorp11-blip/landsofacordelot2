@@ -16,6 +16,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { openingStop, saveStop } from "../world/roadStops";
+import { openingCarriage } from "./scenes/spawn";
 import { heroById, heroes, type Attributes } from "../data/heroes";
 import { startingSkills, type SkillValues } from "./progression";
 import { emptyCareerXp, type CareerXp } from "./careers";
@@ -27,6 +28,7 @@ import { freshAdventure, type AdventureState, type JourneySave } from "./adventu
 import type { War } from "./worldSim";
 import type { Estate } from "./estates";
 import { freshAllegiance, type Allegiance } from "./allegiance";
+import type { WorldEventInstance } from "./worldEvents";
 import { normalizeForceState, type WorldForceState } from "./worldForces";
 
 /**
@@ -35,9 +37,9 @@ import { normalizeForceState, type WorldForceState } from "./worldForces";
  * exemplo —, subir o número descarta o save antigo em vez de ressuscitar um
  * estado que o jogo novo não sabe ler.
  */
-const SAVE_KEY = "acordelot.campanha.v3";
+const SAVE_KEY = "acordelot.campanha.v4";
 /** Chaves de versões anteriores, apagadas ao carregar. */
-const OLD_KEYS = ["acordelot.campanha.v1", "acordelot.campanha.v2"];
+const OLD_KEYS = ["acordelot.campanha.v1", "acordelot.campanha.v2", "acordelot.campanha.v3"];
 
 export type CompanionStatus = "IN_PARTY" | "AVAILABLE" | "TRAVELING" | "CAPTURED" | "WOUNDED";
 
@@ -114,6 +116,19 @@ export type GameState = {
   /** De quem você é: livre, vassalo de uma Casa, ou soberano. */
   allegiance: Allegiance;
 
+  /**
+   * O QUE VOCÊ SABE.
+   *
+   * O centro da campanha nova. Não é um contador de progresso: é o que o
+   * jogador descobriu, o que ele ainda não entendeu, e o que tem na mão para
+   * provar. A ordem em que chega não importa.
+   */
+  knowledge: { facts: string[]; questions: string[]; evidence: string[] };
+  /** Marcas deixadas pelas escolhas, lidas por cenas futuras. */
+  storyFlags: string[];
+  /** Coisas paradas no mapa: carroças, acampamentos, campos de batalha. */
+  worldEvents: Record<string, WorldEventInstance>;
+
   /** Guerras entre Casas, movidas pelo mundo e não pelo jogador. */
   wars: War[];
   /** Último dia em que o tabuleiro se mexeu. */
@@ -170,6 +185,9 @@ function blank(): GameState {
     fiefOwners: {},
     fiefEstates: {},
     allegiance: freshAllegiance(),
+    knowledge: { facts: [], questions: [], evidence: [] },
+    storyFlags: [],
+    worldEvents: {},
     wars: [],
     worldTickDay: 0,
     dayProcessed: 0,
@@ -314,6 +332,14 @@ export function startCampaign(heroId: string) {
       paused: false,
     },
     dayProcessed: 1,
+    /**
+     * A CARRUAGEM.
+     *
+     * Nasce a poucos minutos de cavalgada do ponto inicial e FORA da estrada,
+     * de propósito: o jogador a encontra porque estava olhando o mapa, não
+     * porque uma seta o mandou. Ignorá-la é permitido — e é uma escolha.
+     */
+    worldEvents: (() => { const c = openingCarriage(); return { [c.id]: c }; })(),
   }));
 }
 

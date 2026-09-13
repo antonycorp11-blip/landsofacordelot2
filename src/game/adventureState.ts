@@ -81,6 +81,8 @@ export type AdventureState = {
   battlesWon: number;
   /** Chamado com prazo que apareceu sozinho. Um por vez. */
   offer: Offer | null;
+  /** Cena em curso: qual, em que momento, e sobre qual evento do mundo. */
+  cinematic: { sceneId: string; beatId: string; eventId: string | null } | null;
   /** Hora do mundo em que o próximo chamado pode aparecer. */
   nextOfferHour: number;
   /** A linha que atravessa a partida inteira. */
@@ -94,7 +96,7 @@ export type AdventureState = {
 export function freshAdventure(): AdventureState {
   return {
     tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, agentInspected:false, pursuitStarted:false, forceAttacked:false, forceDefeated:false, escortAccepted:false, escortCompleted:false, interventionStarted:false, armyInspected:false, politicsSeen:false },
-    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, escort:null, eventCount:0, battlesWon:0, offer:null, nextOfferHour:20, story:freshStory(),
+    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, escort:null, eventCount:0, battlesWon:0, offer:null, cinematic:null, nextOfferHour:20, story:freshStory(),
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
 }

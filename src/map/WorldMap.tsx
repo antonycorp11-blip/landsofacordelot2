@@ -35,6 +35,10 @@ import { AdventurePanel, type AdventureView } from "../ui/adventure/AdventurePan
 import { Coach } from "../ui/coach/Coach";
 import { StoryScene } from "../ui/story/StoryScene";
 import { OfferCard } from "../ui/offer/OfferCard";
+import { CinematicScene } from "../ui/cinematic/CinematicScene";
+import { WorldEventLayer } from "../render/layers/WorldEventLayer";
+import { NOTICE_RADIUS } from "../game/worldEvents";
+import { discoverNearbyEvent } from "../game/worldEventRunner";
 import { restoreJourney } from "../travel/journey";
 import { heroById } from "../data/heroes";
 import { troopTotal } from "../data/troops";
@@ -94,7 +98,7 @@ export function WorldMap() {
   const [adventureView, setAdventureView] = useState<AdventureView | null>(null);
   const [queuedDestination, setQueuedDestination] = useState<RoadStop | null>(null);
   const [initialPosition] = useState(() => restoreJourney(startNode).position);
-  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.notice || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending || !!game.adventure.story.pending;
+  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.notice || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending || !!game.adventure.story.pending || !!game.adventure.cinematic;
 
   const followRef = useRef(follow);
   followRef.current = follow;
@@ -136,6 +140,9 @@ export function WorldMap() {
     onFrame: useCallback(
       (pos: Point) => {
         if (followRef.current) centerOn(pos);
+        // Chegar perto de uma coisa do mundo É a interação. Roda no quadro
+        // porque a posição é escrita imperativamente, mas com folga por dentro.
+        discoverNearbyEvent(pos, NOTICE_RADIUS);
       },
       [centerOn],
     ),
@@ -359,6 +366,7 @@ export function WorldMap() {
           <RoadsLayer zoom={zoom} />
           <BordersLayer zoom={zoom} onCrossingClick={handleCrossingClick} />
           <RouteHighlight path={travel.path} zoom={zoom} />
+          <WorldEventLayer events={Object.values(game.worldEvents)} zoom={zoom} />
           <PoiLayer
             zoom={zoom}
             view={view}
@@ -503,6 +511,9 @@ export function WorldMap() {
         }}
         onClose={() => setReadAgentId(null)}
       />}
+      {/* Uma cena para o jogo por um momento: fala mais alto que tudo. */}
+      <CinematicScene />
+
       {/* A campanha principal fala por cima de tudo: é a linha da partida. */}
       <StoryScene />
 

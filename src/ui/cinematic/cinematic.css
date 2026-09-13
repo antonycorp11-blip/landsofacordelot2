@@ -1,0 +1,140 @@
+/**
+ * A CENA.
+ *
+ * O mapa fica atrás, escurecido — não é outra tela, é o jogo parando. Nenhuma
+ * moldura de painel: só uma faixa de conteúdo sobre o escuro, com o texto em
+ * serifa e as escolhas em linhas finas. Nada aqui pode parecer formulário.
+ */
+.cine {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
+           max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  /* Vinheta: o mundo continua lá, mais escuro nas bordas. */
+  background:
+    radial-gradient(ellipse at 50% 45%, #05090ac4 0%, #04070899 42%, #020405f2 100%);
+  backdrop-filter: blur(2.5px) saturate(0.75);
+  -webkit-backdrop-filter: blur(2.5px) saturate(0.75);
+  animation: cine-in 420ms ease-out;
+}
+@keyframes cine-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cine { animation: none; } }
+
+.cine-frame {
+  width: min(680px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #e9dec3;
+  font-family: inherit;
+}
+
+.cine-where {
+  font: 9px var(--ui-small);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #9a8b63;
+}
+.cine-dot { margin: 0 7px; opacity: 0.6; }
+
+.cine-body { display: flex; flex-direction: column; gap: 11px; min-height: 0; }
+
+.cine-speaker { display: flex; align-items: center; gap: 11px; }
+.cine-face { border-radius: 50%; flex: none; box-shadow: 0 3px 14px #0008; }
+.cine-speaker span { display: flex; flex-direction: column; gap: 2px; }
+.cine-speaker b { font-size: 17px; font-weight: 400; color: #f2e5c1; }
+.cine-speaker em {
+  font: 9.5px var(--ui-small); font-style: normal;
+  letter-spacing: 0.12em; text-transform: uppercase; color: #9a8b63;
+}
+
+.cine-text { display: flex; flex-direction: column; gap: 7px; min-height: 0; overflow: hidden; }
+.cine-text p {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 17px;
+  line-height: 1.55;
+  color: #e9dec3;
+  text-wrap: pretty;
+}
+/* A primeira linha puxa o olho, como abertura de capítulo. */
+.cine-text p:first-child { color: #f4e9cd; }
+
+.cine-outcome {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #e9dec3;
+  white-space: pre-line;
+  max-width: 62ch;
+}
+
+/* ------------------------------- escolhas ------------------------------- */
+
+.cine-choices { display: flex; flex-direction: column; gap: 1px; flex: none; }
+.cine-choice {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: #cbd2c4;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 120ms, color 120ms, background 120ms;
+}
+.cine-choice:hover { border-left-color: #c9a85c; color: #f6ecd2; background: #ffffff08; }
+.cine-choice:focus-visible { outline: 1px solid #d8b85c; outline-offset: -1px; }
+.cine-choice.continue { border-left-color: #c9a85c; color: #f3dc9b; }
+@media (prefers-reduced-motion: reduce) { .cine-choice { transition: none; } }
+
+.cine-number {
+  flex: none;
+  font: 10px var(--ui-small);
+  color: #8a7d5c;
+  width: 12px;
+}
+.cine-label { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: 15.5px; line-height: 1.3; }
+.cine-label em { font: 10.5px/1.4 var(--ui-small); font-style: normal; color: #8e9488; }
+.cine-check {
+  flex: none;
+  display: flex; align-items: baseline; gap: 7px;
+  font: 9.5px var(--ui-small);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: #8aa0a8;
+}
+.cine-check b { font-size: 12px; color: #d7c088; letter-spacing: 0; }
+
+.cine-escape {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 5px;
+  background: none; color: #6f7568;
+  font: inherit; font-size: 17px; line-height: 1; cursor: pointer; padding: 0;
+}
+.cine-escape:hover { color: #cbbf9d; background: #ffffff0d; }
+
+/* ------------------------------- deitado -------------------------------- */
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .cine-frame { width: min(640px, 100%); gap: 10px; }
+  .cine-text p, .cine-outcome { font-size: 15px; line-height: 1.5; }
+  .cine-speaker b { font-size: 15px; }
+  .cine-face { width: 44px !important; height: 44px !important; }
+  .cine-choice { padding: 7px 9px; }
+  .cine-label { font-size: 14px; }
+  .cine-label em { font-size: 10px; }
+  .cine-where { font-size: 8.5px; }
+}
