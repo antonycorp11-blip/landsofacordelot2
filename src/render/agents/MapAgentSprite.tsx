@@ -160,7 +160,7 @@ export const MapAgentSprite = memo(
     const badgeY = -height - badgeFont * 0.55;
 
     return (
-      <g ref={ref} pointerEvents={onSelect ? "auto" : "none"} style={onSelect ? { cursor: "pointer" } : undefined} onClick={onSelect}>
+      <g ref={ref} pointerEvents={onSelect ? "auto" : "none"} style={onSelect ? { cursor: "pointer" } : undefined} onClick={onSelect && ((e) => { e.stopPropagation(); onSelect(); })}>
         {onSelect && (
           <circle r={Math.max(height * 0.5, 20 / pxPerUnit)} cy={-height * 0.45} fill="transparent" />
         )}

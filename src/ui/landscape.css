@@ -307,3 +307,76 @@
   .adv-log p { font-size: 10.5px; line-height: 1.45; }
   .adv-caption { margin: 0 0 7px !important; }
 }
+
+/* ------------------------------- legenda --------------------------------
+ * Coluna à direita como os outros painéis, e linhas de uma altura só: dez
+ * Casas ou sete regiões com uma aberta precisam caber sem rolagem.
+ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .legend {
+    top: calc(max(4px, env(safe-area-inset-top)) + 42px);
+    right: max(6px, env(safe-area-inset-right));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    width: 268px;
+    max-height: none;
+    display: flex;
+    flex-direction: column;
+  }
+  .legend-head { padding: 7px 10px; flex: none; }
+  .legend-title { font-size: 9px; }
+  .legend-close { width: 26px; height: 26px; }
+  .legend-switch { margin: 0 10px 5px; }
+  .legend-switch button { font-size: 9.5px; padding: 4px 3px; }
+  .legend-list { padding: 0 10px 6px; flex: 1; min-height: 0; overflow: hidden; }
+  .legend-row { gap: 7px; padding: 3px 4px; align-items: center; }
+  .legend-crest { width: 17px !important; height: 21px !important; }
+  .legend-name { font-size: 11px; line-height: 1.2; }
+  .legend-sub, .legend-rel { font-size: 8.5px; line-height: 1.3; }
+  .legend-foot { padding: 6px 10px; font-size: 9px; flex: none; }
+}
+
+/* Uma linha é UMA linha: o nome das regiões que uma Casa controla é longo e
+   quebrava em três, o que transformava dez Casas numa lista para rolar. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .legend-body { min-width: 0; }
+  .legend-name, .legend-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .legend-rel { white-space: nowrap; flex: none; }
+  .legend-row { min-height: 0; }
+}
+
+/* Última compressão da legenda: dez Casas, ou sete regiões com uma aberta em
+   cinco senhorios, têm de caber nos ~280 px que sobram. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .legend-row { padding: 1px 4px; gap: 6px; }
+  .legend-name { font-size: 10.5px; }
+  .legend-sub, .legend-rel { font-size: 8px; }
+  .legend-crest { width: 15px !important; height: 19px !important; }
+  .legend-swatch { width: 7px; height: 7px; }
+  .legend-swatch.small { width: 5px; height: 5px; }
+  .legend-row.fief { padding-left: 11px; }
+  .legend-caret { width: 12px; font-size: 12px; }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .legend-row.fief { padding: 0 4px 0 11px; }
+  .legend-row.fief .legend-name { font-size: 10px; }
+  .legend-row.fief .legend-sub { font-size: 7.5px; }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .legend-row.region .legend-sub { font-size: 7.5px; }
+  .legend-list { padding-bottom: 3px; }
+  .legend-switch { margin-bottom: 4px; }
+}
+
+/* Encontro na estrada: as escolhas trazem teste, custo, ganho e perda. É
+   muita linha para 430 px — aqui elas viram colunas e o texto encolhe. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .adv-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
+  .adv-choice { padding: 8px 10px; gap: 3px; }
+  .adv-choice strong { font-size: 13px; }
+  .adv-choice span { font-size: 9.5px; line-height: 1.4; }
+  .adv-choice .adv-check { padding: 5px 0; gap: 4px 10px; }
+  .adv-check em { padding: 1px 5px; }
+  .adv-body .adv-caption { font-size: 9.5px; margin: 0 0 4px; }
+}

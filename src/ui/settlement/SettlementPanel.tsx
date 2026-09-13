@@ -2,7 +2,7 @@ import { isPresent } from "../../game/presence";
 import { useGame } from "../../game/store";
 import { completeContract } from "../../game/adventure";
 import { memo, useState } from "react";
-import { charactersAt, characterById } from "../../data/characters";
+import { charactersAt } from "../../data/characters";
 import { holdingFor } from "../../data/holdings";
 import { houseById } from "../../data/houses";
 import type { PointOfInterest } from "../../world/types";
@@ -12,7 +12,7 @@ import { SettlementHeader } from "./SettlementHeader";
 import { SettlementStats } from "./SettlementStats";
 import { RecruitPanel } from "./RecruitPanel";
 import { TownTalk } from "../dialogue/TownTalk";
-import { notableFor } from "../dialogue/notables";
+import { notablesAt } from "../../data/notables";
 import "./panel.css";
 
 /**
@@ -47,11 +47,10 @@ export const SettlementPanel = memo(function SettlementPanel({
   const controller = houseById.get(holding.controllerHouseId);
   const here = isPresent(poi.id, game);
 
-  // Mesmo critério da conversa: a pessoa de nome que está aqui vem primeiro.
-  const lord = present[0] ?? (holding.localLordId ? characterById.get(holding.localLordId) : undefined);
-  const speaker = lord
-    ? lord.name.split(" ").slice(0, 2).join(" ")
-    : notableFor(poi.id, holding.kind).name.split(" ")[0];
+  // Quem atende: quem quer que responda por este lugar. Com mais de uma
+  // pessoa o menu não escolhe por você — a conversa é que pergunta.
+  const people = notablesAt(poi.id, holding.kind);
+  const speaker = people.length > 1 ? "quem atende" : people[0].name.split(" ")[0];
 
   const contract = game.adventure.contract;
   const canDeliver = !!contract && contract.destinationId === poi.id;

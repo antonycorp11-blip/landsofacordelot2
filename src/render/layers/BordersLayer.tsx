@@ -32,7 +32,7 @@ export const BordersLayer = memo(function BordersLayer({
 
       {zoom >= lod(1.1) &&
         borderCrossings.map((c) => (
-          <g key={c.id} style={{ cursor: "pointer" }} onClick={() => onCrossingClick(c.id)}>
+          <g key={c.id} style={{ cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); onCrossingClick(c.id); }}>
             <circle cx={c.x} cy={c.y} r={26 * S} fill="transparent" />
             <MapSymbol assetKey={c.assetKey} x={c.x} y={c.y} scale={0.85} />
             {zoom >= lod(2.2) && (

@@ -40,3 +40,59 @@
 @media (max-width: 720px) {
   .legend { right: max(8px, env(safe-area-inset-right)); width: auto; max-height: 40vh; }
 }
+
+/* Alternador entre as duas leituras do tabuleiro. */
+.legend-switch {
+  display: flex;
+  gap: 2px;
+  margin: 0 11px 6px;
+  padding: 2px;
+  border: 1px solid #b99c5f33;
+  border-radius: 6px;
+  background: #0a1518a6;
+  flex: none;
+}
+.legend-switch button {
+  flex: 1;
+  font: 600 10.5px var(--ui-small);
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: #a4ae9f;
+  cursor: pointer;
+}
+.legend-switch button:hover { color: #e6dcbc; }
+.legend-switch button[aria-selected="true"] { background: #c9a84c33; color: #f3dc9b; }
+
+/* Uma linha de senhorio é um botão: tocar nela acende o senhorio no mapa. */
+.legend-row.fief {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.legend-row.fief:hover { background: #ffffff0f; }
+.legend-row.fief[aria-pressed="true"] { background: #c9a84c26; border-color: #d8b85c59; }
+.legend-row.fief .legend-rel { font-variant-numeric: tabular-nums; color: #cbbf9d; }
+
+.legend-group { display: contents; }
+.legend-row.region {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.legend-row.region:hover { background: #ffffff0d; }
+.legend-row.region[aria-expanded="true"] .legend-name { color: #f3dc9b; }
+.legend-caret { flex: none; width: 14px; text-align: center; color: #9d947c; font-size: 13px; }
+.legend-row.fief { padding-left: 13px; }
+.legend-swatch.small { width: 7px; height: 7px; }

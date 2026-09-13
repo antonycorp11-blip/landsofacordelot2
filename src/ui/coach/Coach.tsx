@@ -1,21 +1,27 @@
 import { useGame } from "../../game/store";
-import { locationId } from "../../game/presence";
+import { locationId, isPresent } from "../../game/presence";
 import { poiById, allPois } from "../../world/valdoria";
 import { holdingFor } from "../../data/holdings";
 import { tutorialFlag } from "../../game/adventure";
+import { troopTotal } from "../../data/troops";
 import type { RoadStop } from "../../world/roadStops";
 import "./coach.css";
 
 /**
  * O JOGO SE ENSINA FAZENDO.
  *
- * Nada de manual, nada de aula: uma linha por vez, dizendo a PRÓXIMA ação, e
- * ela some sozinha quando a ação acontece. O jogador começa perdido numa
- * estrada de floresta e a primeira coisa que aprende é andar — porque é a
- * primeira coisa que ele precisa fazer.
+ * Nada de manual: uma linha por vez, dizendo a PRÓXIMA ação, e ela some
+ * sozinha quando a ação acontece. O jogador começa perdido numa estrada de
+ * floresta e a primeira coisa que aprende é andar — porque é a primeira coisa
+ * que ele precisa fazer.
  *
- * Cada passo é lido do estado do jogo, não de um contador próprio: se o
- * jogador descobrir sozinho e pular etapas, o guia pula junto.
+ * A ordem das lições segue a ordem em que as coisas passam a importar: andar,
+ * chegar, conversar, cumprir, RECEBER, gastar, crescer, e só então olhar o
+ * tabuleiro político. Dinheiro e influência não são notas de rodapé — são dois
+ * passos com nome próprio, porque são o motor de tudo que vem depois.
+ *
+ * Cada passo é lido do estado do jogo, não de um contador próprio: quem
+ * descobrir sozinho e pular etapas vê o guia pular junto.
  */
 type Step = { id: string; title: string; body: string };
 
@@ -24,13 +30,18 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
   const tutorial = game.adventure.tutorial;
   if (tutorial.hidden) return null;
 
+  // PRESENÇA, não último nó pisado: passar por uma vila a caminho de outra
+  // não é ter chegado, e o guia dizia que sim.
   const here = locationId(game);
-  const atPlace = here ? poiById.get(here) : undefined;
+  const atPlace = here && isPresent(here, game) ? poiById.get(here) : undefined;
+  const contract = game.adventure.contract;
+  const troops = troopTotal(game.troops);
 
   const step = nextStep();
   if (!step) return null;
 
   function nextStep(): Step | null {
+    /* ------------------------------ andar ----------------------------- */
     if (!tutorial.departed) {
       return {
         id: "move",
@@ -40,37 +51,72 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
           : "Toque em qualquer ponto da estrada para caminhar até lá.",
       };
     }
-    if (!atPlace) {
+
+    /* ------------------------------ chegar ---------------------------- */
+    if (!atPlace && !contract) {
       const target = nearestPlace(stop);
       return {
         id: "reach",
         title: target ? `Há fumaça adiante: ${target.name}` : "Siga a estrada",
         body: target
-          ? `Toque em ${target.name} para seguir até lá. Um toque num lugar é partir para ele.`
+          ? `Toque em ${target.name}. Um toque num lugar é partir para ele, e o menu abre na chegada.`
           : "Siga a estrada até encontrar gente.",
       };
     }
-    if (!tutorial.accepted) {
+
+    /* ----------------------------- conversar -------------------------- */
+    if (!contract && !tutorial.accepted) {
       return {
         id: "talk",
-        title: `Você chegou a ${atPlace.name}`,
-        body: "No menu do lugar, toque em Falar. Quem manda aqui tem trabalho — e diz o preço antes.",
+        title: `Você chegou a ${atPlace?.name ?? "um lugar"}`,
+        body: "Toque em Falar. Ninguém prega serviço em mural: quem manda aqui conta o que precisa, e só então oferece.",
       };
     }
-    if (!tutorial.completed) {
+
+    /* ------------------------------ cumprir --------------------------- */
+    if (contract) {
+      const target = poiById.get(contract.destinationId);
+      if (isPresent(contract.destinationId, game)) {
+        return {
+          id: "deliver",
+          title: "Você chegou ao destino",
+          body: "Fale com quem atende e diga que trouxe o que pediram. O pagamento é na conversa — é assim que entra ouro.",
+        };
+      }
       return {
-        id: "deliver",
-        title: "Você tem um encargo",
-        body: "Toque no destino no mapa e vá até lá. Na chegada, o menu abre com Entregar.",
+        id: "carry",
+        title: `Leve o encargo a ${target?.name ?? "seu destino"}`,
+        body: "Toque no destino no mapa. O prazo corre mesmo com você parado, então não demore.",
       };
     }
+
+    /* ------------------------------ o ouro ---------------------------- */
+    if (tutorial.completed && troops === 0) {
+      return {
+        id: "gold",
+        title: `Você tem ${game.gold} moedas`,
+        body: "Ouro vem de encargo cumprido, e serve para comprar gente. No menu de uma cidade ou castelo: Recrutar tropas.",
+      };
+    }
+
+    /* ----------------------------- a ficha ---------------------------- */
     if (!tutorial.sheetViewed) {
       return {
         id: "sheet",
         title: "Você aprendeu alguma coisa",
-        body: "Toque no seu retrato, no canto. O anel em volta dele é o quanto falta para o próximo nível.",
+        body: "Toque no seu retrato. O anel em volta é o próximo nível, e cada nível dá um ponto para distribuir.",
       };
     }
+
+    /* -------------------- influência e o tabuleiro -------------------- */
+    if (!tutorial.politicsSeen) {
+      return {
+        id: "influence",
+        title: `Influência: ${game.influence.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}`,
+        body: "Ouro compra homens; influência faz uma Casa ouvir você — e sem ela não se compra terra. Toque no estandarte para ver quem manda em quê.",
+      };
+    }
+
     return null;
   }
 

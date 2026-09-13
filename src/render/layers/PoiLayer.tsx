@@ -60,7 +60,14 @@ export const PoiLayer = memo(function PoiLayer({
             ? crestUrl(house.crestAssetKey)
             : undefined;
         return (
-          <g key={poi.id} style={{ cursor: "pointer" }} onClick={() => onPoiClick(poi)}>
+          <g
+            key={poi.id}
+            style={{ cursor: "pointer" }}
+            /* `stopPropagation` não é detalhe: sem ele o mesmo toque chega ao
+               POI e depois ao <svg>, que trata toque no mapa como movimento —
+               o menu abria e fechava no mesmo quadro. */
+            onClick={(e) => { e.stopPropagation(); onPoiClick(poi); }}
+          >
             {(selected || here) && (
               <circle
                 cx={poi.x}

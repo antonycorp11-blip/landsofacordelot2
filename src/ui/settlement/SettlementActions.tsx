@@ -36,7 +36,7 @@ export function menuFor(holding: Holding, opts: { here: boolean; speaker: string
 
   list.push({
     id: "talk",
-    label: `Falar com ${speaker}`,
+    label: speaker === "quem atende" ? "Falar com quem atende" : `Falar com ${speaker}`,
     hint: here ? "Trabalho, notícias e o que se passa por aqui" : "É preciso estar no local",
     enabled: here,
     primary: !canDeliver,

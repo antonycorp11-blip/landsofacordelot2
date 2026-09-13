@@ -1,37 +1,39 @@
 import { useState } from "react";
 import { DialogueScreen, type DialogueOption, type DialogueScene } from "./DialogueScreen";
-import { lordGreeting, notableFor } from "./notables";
-import { charactersAt, characterById } from "../../data/characters";
+import { greetingOf, notablesAt, type Notable } from "../../data/notables";
+import { charactersAt } from "../../data/characters";
 import { portraitUrl } from "../../data/characterAssets";
 import { holdingFor } from "../../data/holdings";
 import { houseById } from "../../data/houses";
 import { poiById } from "../../world/valdoria";
 import { formatDuration } from "../../world/time";
-import { contractsAt } from "../../game/contracts";
+import { issueOf, issuesAt, type Issue } from "../../game/issues";
 import { acceptContract, completeContract, rewardSummary } from "../../game/adventure";
-import { CAREER_LABEL } from "../../game/careers";
 import { isPresent } from "../../game/presence";
 import { useGame } from "../../game/store";
-import type { AgentClass, PointOfInterest } from "../../world/types";
-
-/** Como se pede serviço em cada ofício. Quatro pedidos iguais não é conversa. */
-const ASK: Record<AgentClass, string> = {
-  MILITARY: "Há serviço para quem carrega aço?",
-  TRADE: "Tem carga precisando de quem a leve?",
-  POLITICS: "Alguma palavra que precise viajar longe?",
-  RELIGION: "Posso ser útil aos que peregrinam?",
-};
+import type { PointOfInterest } from "../../world/types";
 
 /**
  * A CONVERSA DE UMA LOCALIDADE.
  *
- * É daqui que sai trabalho. Você chega a um lugar, procura quem manda ali, e
- * ouve o que ele tem a oferecer — com prazo, destino e paga ditos na fala,
- * antes de aceitar. Nada de quadro de contratos aberto do meio do nada.
+ * É daqui que sai trabalho, e trabalho aqui é um PEDIDO DE ALGUÉM. Você chega,
+ * escolhe com quem falar, ouve o que a pessoa tem — duas ou três falas, um
+ * motivo, gente com nome que você nunca vai ver — e só então o serviço é
+ * oferecido, com destino, prazo e paga ditos em voz alta.
  *
- * Quem fala é o governante do sítio, se ele estiver; senão, quem recebe
- * forasteiros naquele tipo de estrutura.
+ * Quem está de fato presente (um lorde em casa, um líder de Casa) fala antes
+ * dos figurantes; e quando o lugar tem duas pessoas que recebem, escolher com
+ * qual falar é escolher que tipo de serviço você quer.
  */
+type Node =
+  | { at: "who" }
+  | { at: "talk"; person: string }
+  | { at: "story"; person: string; issue: string; beat: number }
+  | { at: "offer"; person: string; issue: string }
+  | { at: "taken"; issue: string }
+  | { at: "about"; person: string }
+  | { at: "none"; person: string };
+
 export function TownTalk({
   poi,
   onClose,
@@ -44,151 +46,186 @@ export function TownTalk({
   onTravel: (poiId: string) => void;
 }) {
   const game = useGame();
-  const [node, setNode] = useState<string>("greet");
-
   const holding = holdingFor(poi);
-  // Quem recebe: a pessoa de nome que está aqui — o lorde do sítio, um líder
-  // de Casa em casa — e, na falta dela, quem atende forasteiros neste tipo de
-  // estrutura. Nunca um quadro de avisos.
-  const lord = charactersAt(poi.id)[0]
-    ?? (holding.localLordId ? characterById.get(holding.localLordId) : undefined);
-  const notable = notableFor(poi.id, holding.kind);
+  const people = notablesAt(poi.id, holding.kind);
+  const [node, setNode] = useState<Node>(() => ({ at: people.length > 1 ? "who" : "talk", person: people[0]?.id ?? "" } as Node));
+
   const house = houseById.get(holding.controllerHouseId);
-
-  const speakerName = lord ? lord.name : notable.name;
-  const speakerRole = lord ? lord.title : notable.role;
-  const portrait = lord ? portraitUrl(lord.portraitAssetKey) : undefined;
-
   const here = isPresent(poi.id, game);
   const contract = game.adventure.contract;
-  /**
-   * Quem recebe tem POUCO a oferecer — dois serviços, não um catálogo. É como
-   * funciona quando se pergunta a uma pessoa em vez de ler um mural, e é o que
-   * faz a conversa caber na tela sem rolagem.
-   */
-  const offers = contractsAt(poi.id, game)
-    .slice()
-    .sort((a, b) => a.travelHours - b.travelHours)
-    .slice(0, 2);
+  const offers = here ? issuesAt(poi.id, game) : [];
+  // Um nome de verdade morando aqui fala por si; o resto do lugar tem os seus.
+  const resident = charactersAt(poi.id)[0];
 
   const leave: DialogueOption = { id: "leave", label: "Fique bem.", onPick: onClose };
+  const person = (id: string): Notable | undefined => people.find((p) => p.id === id);
 
-  function greetScene(): DialogueScene {
+  function base(speaker: { name: string; role: string; portrait?: string }): Omit<DialogueScene, "text" | "options"> {
+    return { speakerName: speaker.name, speakerRole: speaker.role, portraitUrl: speaker.portrait, accent: house?.color, placeName: poi.name };
+  }
+
+  /* ----------------------------- as cenas ------------------------------ */
+
+  function scene(): DialogueScene {
+    if (!here) {
+      return {
+        ...base({ name: poi.name, role: "de longe" }),
+        text: "Daqui não se conversa com ninguém. Chegue até lá e então se fala.",
+        options: [
+          { id: "travel", label: "Estou a caminho.", onPick: () => { onTravel(poi.id); onClose(); } },
+          leave,
+        ],
+      };
+    }
+
+    // Quem procurar, quando há mais de uma pessoa que recebe.
+    if (node.at === "who") {
+      return {
+        ...base({ name: poi.name, role: `${people.length} pessoas atendem aqui` }),
+        text: `Você entra em ${poi.name}. Há quem responda por este lugar — e cada um responde por uma parte dele.`,
+        options: [
+          ...people.map((p) => ({
+            id: p.id,
+            label: `Procurar ${p.name}`,
+            hint: p.role,
+            onPick: () => setNode({ at: "talk", person: p.id }),
+          })),
+          ...(resident ? [{
+            id: "resident",
+            label: `Pedir audiência a ${resident.name}`,
+            hint: "Ainda não disponível",
+            disabled: true,
+            onPick: () => {},
+          }] : []),
+          leave,
+        ],
+      };
+    }
+
+    const who = person("person" in node ? node.person : "") ?? people[0];
+    const speaker = { name: who.name, role: who.role, portrait: resident && people.length === 1 ? portraitUrl(resident.portraitAssetKey) : undefined };
+
+    if (node.at === "story") {
+      const issue = offers.find((i) => i.contract.id === node.issue) ?? offers[0];
+      if (!issue) return { ...base(speaker), text: greetingOf(who), options: [leave] };
+      const last = node.beat >= issue.beats.length - 1;
+      return {
+        ...base(speaker),
+        text: issue.beats[node.beat],
+        options: [
+          {
+            id: "on",
+            label: last ? "O que precisa que eu faça?" : "Continue.",
+            onPick: () => setNode(last
+              ? { at: "offer", person: who.id, issue: issue.contract.id }
+              : { at: "story", person: who.id, issue: issue.contract.id, beat: node.beat + 1 }),
+          },
+          { id: "back", label: "Não é assunto meu.", onPick: () => setNode({ at: "talk", person: who.id }) },
+        ],
+      };
+    }
+
+    if (node.at === "offer") {
+      const issue = offers.find((i) => i.contract.id === node.issue);
+      if (!issue) return { ...base(speaker), text: greetingOf(who), options: [leave] };
+      const c = issue.contract;
+      return {
+        ...base(speaker),
+        text: `${issue.ask}\n\nPrazo de ${formatDuration(c.deadline - c.acceptedAt)}. A paga: ${rewardSummary(c.reward)}.`,
+        options: [
+          {
+            id: "accept",
+            label: "Pode contar comigo.",
+            hint: `${poiById.get(c.destinationId)?.name} · ${formatDuration(c.travelHours)}`,
+            disabled: !!contract,
+            onPick: () => { acceptContract(c.id, poi.id); setNode({ at: "taken", issue: c.id }); },
+          },
+          { id: "no", label: "Não é para mim.", onPick: () => setNode({ at: "talk", person: who.id }) },
+        ],
+      };
+    }
+
+    if (node.at === "taken") {
+      const c = game.adventure.contract;
+      return {
+        ...base(speaker),
+        text: c
+          ? `Então está combinado. ${poiById.get(c.destinationId)?.name}, e o prazo começa a correr agora.`
+          : "Então está combinado.",
+        options: [
+          ...(c ? [{
+            id: "go",
+            label: "Parto agora mesmo.",
+            hint: `Viajar até ${poiById.get(c.destinationId)?.name}`,
+            onPick: () => { onTravel(c.destinationId); onClose(); },
+          }] : []),
+          { id: "stay", label: "Antes tenho o que resolver aqui.", onPick: () => setNode({ at: "talk", person: who.id }) },
+        ],
+      };
+    }
+
+    if (node.at === "about") {
+      return {
+        ...base(speaker),
+        text: `${poi.name} responde a ${house?.name ?? "ninguém que se declare"}. Somos ${holding.population.toLocaleString("pt-BR")} almas e a prosperidade anda em ${Math.round(holding.prosperity)}. Já foi melhor. Já foi bem pior.`,
+        options: [{ id: "back", label: "Entendo.", onPick: () => setNode({ at: "talk", person: who.id }) }, leave],
+      };
+    }
+
+    if (node.at === "none") {
+      return {
+        ...base(speaker),
+        text: "Por ora não tenho nada para você. O que havia já tem quem leve. Volte em alguns dias — sempre aparece coisa.",
+        options: [{ id: "back", label: "Voltarei.", onPick: () => setNode({ at: "talk", person: who.id }) }, leave],
+      };
+    }
+
+    /* --------------------------- a conversa --------------------------- */
+
     const options: DialogueOption[] = [];
 
-    if (contract && contract.destinationId === poi.id && here) {
+    // Entrega: se o encargo em curso termina aqui, é a primeira coisa a dizer.
+    if (contract && contract.destinationId === poi.id) {
+      const origin = issueOf(contract);
       options.push({
         id: "deliver",
         label: "Trago o que me pediram.",
         hint: rewardSummary(contract.reward),
         onPick: () => { completeContract(); onClose(); },
       });
+      void origin;
     } else if (contract) {
       options.push({
         id: "busy",
         label: "Já carrego um encargo.",
         hint: `${contract.title} · destino ${poiById.get(contract.destinationId)?.name}`,
-        onPick: () => setNode("busy"),
+        onPick: () => setNode({ at: "none", person: who.id }),
       });
-    } else if (offers.length) {
-      for (const c of offers) {
-        options.push({
-          id: c.id,
-          label: ASK[c.career],
-          hint: `${c.title} · até ${poiById.get(c.destinationId)?.name} · ${formatDuration(c.travelHours)}`,
-          disabled: !here,
-          onPick: () => setNode(`offer:${c.id}`),
-        });
-      }
     } else {
-      options.push({ id: "nowork", label: "Há trabalho por aqui?", onPick: () => setNode("nowork") });
+      const mine = offers.filter((i) => i.notable.id === who.id);
+      if (mine.length) {
+        for (const issue of mine) {
+          options.push({
+            id: issue.contract.id,
+            label: "Procuro trabalho.",
+            hint: issue.title,
+            onPick: () => setNode({ at: "story", person: who.id, issue: issue.contract.id, beat: 0 }),
+          });
+        }
+      } else {
+        options.push({ id: "nowork", label: "Há trabalho por aqui?", onPick: () => setNode({ at: "none", person: who.id }) });
+      }
     }
 
-    options.push({
-      id: "recruit",
-      label: "Preciso de homens que saibam marchar.",
-      disabled: !here,
-      hint: here ? undefined : "É preciso estar no local.",
-      onPick: onRecruit,
-    });
-    options.push({ id: "about", label: "Fale-me deste lugar.", onPick: () => setNode("about") });
+    options.push({ id: "recruit", label: "Preciso de homens que saibam marchar.", onPick: onRecruit });
+    options.push({ id: "about", label: "Fale-me deste lugar.", onPick: () => setNode({ at: "about", person: who.id }) });
+    if (people.length > 1) options.push({ id: "who", label: "Preciso falar com outra pessoa.", onPick: () => setNode({ at: "who" }) });
     options.push(leave);
 
-    return {
-      speakerName, speakerRole, portraitUrl: portrait, accent: house?.color, placeName: poi.name,
-      text: here
-        ? (lord ? lordGreeting(lord.primaryClass, lord.relationWithPlayer) : notable.greeting)
-        : "Daqui não se conversa. Venha até nós e então falaremos.",
-      options: here ? options : [
-        { id: "travel", label: "Estou a caminho.", onPick: () => { onTravel(poi.id); onClose(); } },
-        leave,
-      ],
-    };
-  }
-
-  function scene(): DialogueScene {
-    const base = { speakerName, speakerRole, portraitUrl: portrait, accent: house?.color, placeName: poi.name };
-
-    if (node.startsWith("offer:")) {
-      const c = offers.find((o) => o.id === node.slice(6));
-      if (!c) return greetScene();
-      const destination = poiById.get(c.destinationId)?.name ?? "outro lugar";
-      return {
-        ...base,
-        text: `${CAREER_LABEL[c.career]}. ${c.description} Leve isso a ${destination} — ${formatDuration(c.travelHours)} de estrada, e o prazo é de ${formatDuration(c.deadline - c.acceptedAt)}. A paga: ${rewardSummary(c.reward)}.`,
-        options: [
-          {
-            id: "accept",
-            label: "Aceito o encargo.",
-            disabled: !here,
-            onPick: () => { acceptContract(c.id, poi.id); setNode("accepted"); },
-          },
-          { id: "back", label: "Deixe-me pensar.", onPick: () => setNode("greet") },
-          leave,
-        ],
-      };
-    }
-
-    if (node === "accepted") {
-      const c = game.adventure.contract;
-      return {
-        ...base,
-        text: c
-          ? `Então está feito. ${poiById.get(c.destinationId)?.name} espera por você, e o prazo corre a partir de agora.`
-          : "Está feito.",
-        options: [
-          ...(c ? [{ id: "go", label: "Parto agora mesmo.", hint: `Viajar até ${poiById.get(c.destinationId)?.name}`, onPick: () => { onTravel(c.destinationId); onClose(); } }] : []),
-          { id: "stay", label: "Antes tenho o que resolver aqui.", onPick: () => setNode("greet") },
-        ],
-      };
-    }
-
-    if (node === "busy") {
-      return {
-        ...base,
-        text: "Termine o que começou. Ninguém confia encargo a quem deixa o primeiro pelo caminho.",
-        options: [{ id: "back", label: "Tem razão.", onPick: () => setNode("greet") }, leave],
-      };
-    }
-
-    if (node === "nowork") {
-      return {
-        ...base,
-        text: "Por ora, nada. O que havia já tem quem leve. Procure em outra praça — e volte em alguns dias, sempre aparece coisa nova.",
-        options: [{ id: "back", label: "Voltarei.", onPick: () => setNode("greet") }, leave],
-      };
-    }
-
-    if (node === "about") {
-      return {
-        ...base,
-        text: `${poi.name} responde a ${house?.name ?? "ninguém que se declare"}.${lord ? ` Quem governa é ${lord.name}.` : ""} Somos ${holding.population.toLocaleString("pt-BR")} almas, e a prosperidade anda em ${Math.round(holding.prosperity)}.`,
-        options: [{ id: "back", label: "Entendo.", onPick: () => setNode("greet") }, leave],
-      };
-    }
-
-    return greetScene();
+    return { ...base(speaker), text: greetingOf(who), options };
   }
 
   return <DialogueScreen scene={scene()} onClose={onClose} />;
 }
+
+export type { Issue };

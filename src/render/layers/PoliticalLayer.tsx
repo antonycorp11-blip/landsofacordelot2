@@ -27,6 +27,8 @@ import { regions } from "../../world/valdoria";
 const TINT = {
   normal: { base: 0.1, hovered: 0.16, selected: 0.2, edge: 0.55, inner: 0.35 },
   political: { base: 0.44, hovered: 0.54, selected: 0.62, edge: 0.95, inner: 0.6 },
+  /* Vista de senhorios: a província vira pano de fundo do dono da terra. */
+  muted: { base: 0.14, hovered: 0.18, selected: 0.22, edge: 0.55, inner: 0.25 },
 };
 
 const CENTROIDS = regions.map((r) => ({ id: r.id, at: centroid(r.polygon) }));
@@ -36,16 +38,19 @@ export const PoliticalLayer = memo(function PoliticalLayer({
   selectedRegion,
   hoveredRegion,
   political = false,
+  muted = false,
 }: {
   zoom: number;
   selectedRegion: RegionId | null;
   hoveredRegion: RegionId | null;
   /** Vista política: a cor manda, e cada senhorio ganha brasão e nome. */
   political?: boolean;
+  /** Recua a cor da região para a camada de senhorios ficar legível. */
+  muted?: boolean;
 }) {
   // Só para reagir a uma troca de controlador; o valor em si não é usado.
   useTerritories();
-  const tint = political ? TINT.political : TINT.normal;
+  const tint = muted ? TINT.muted : political ? TINT.political : TINT.normal;
 
   return (
     <g pointerEvents="none">
@@ -85,7 +90,7 @@ export const PoliticalLayer = memo(function PoliticalLayer({
         );
       })}
 
-      {political &&
+      {political && !muted &&
         CENTROIDS.map(({ id, at }) => {
           const house = houseById.get(controllerOf(id));
           if (!house) return null;

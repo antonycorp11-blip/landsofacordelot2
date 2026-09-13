@@ -80,10 +80,15 @@ export function WorldMap() {
   const [realm, setRealm] = useState<ForeignRealm | null>(null);
   const [fief, setFief] = useState<Fief | null>(null);
   /**
-   * Vista política: o mapa vira tabuleiro. O cenário sai da frente para que a
-   * cor das Casas possa ser comparada de fronteira a fronteira.
+   * VISTA POLÍTICA — duas leituras do mesmo tabuleiro.
+   *
+   * `houses` pinta as REGIÕES pela Casa que as controla: é o mapa da guerra,
+   * quem manda em que pedaço do reino. `fiefs` pinta os SENHORIOS pelo dono:
+   * é o mapa da posse, onde se compra, se negocia e se vê a terra de quem.
+   * São perguntas diferentes, e por isso são duas vistas e não uma.
    */
-  const [political, setPolitical] = useState(false);
+  const [politicalView, setPoliticalView] = useState<"off" | "houses" | "fiefs">("off");
+  const political = politicalView !== "off";
   const [adventureView, setAdventureView] = useState<AdventureView | null>(null);
   const [queuedDestination, setQueuedDestination] = useState<RoadStop | null>(null);
   const [initialPosition] = useState(() => restoreJourney(startNode).position);
@@ -265,6 +270,9 @@ export function WorldMap() {
               selectedRegion={selectedRegion}
               hoveredRegion={hoveredRegion}
               political={political}
+              /* Na vista de senhorios a cor da região recua: quem tem de
+                 saltar aos olhos é o dono da terra, não o da província. */
+              muted={politicalView === "fiefs"}
             />
           )}
           <RiversLayer zoom={zoom} />
@@ -274,11 +282,11 @@ export function WorldMap() {
               passo dado seria o contrário de jogar. */}
           <FiefLayer
             zoom={zoom}
-            political={political}
+            view={politicalView === "off" ? "normal" : politicalView}
             selectedFiefId={fief?.id ?? null}
             onFiefClick={(f) => {
-              if (camera.wasDragged() || !political) return;
-              setFief(f);
+              if (camera.wasDragged()) return;
+              setFief((current) => (current?.id === f.id ? null : f));
             }}
           />
           <RoadsLayer zoom={zoom} />
@@ -380,7 +388,11 @@ export function WorldMap() {
         level={game.level}
         onOpenSheet={openSheet}
         political={political}
-        onTogglePolitical={() => setPolitical((p) => !p)}
+        onTogglePolitical={() => setPoliticalView((v) => {
+          if (v !== "off") return "off";
+          tutorialFlag("politicsSeen");
+          return "houses";
+        })}
       />
 
       <SettlementPanel
@@ -391,9 +403,17 @@ export function WorldMap() {
         onClose={() => setPanelPoiId(null)}
       />
 
-      {political && <PoliticalLegend onClose={() => setPolitical(false)} />}
+      {political && (
+        <PoliticalLegend
+          view={politicalView === "fiefs" ? "fiefs" : "houses"}
+          onView={(v) => { setPoliticalView(v); if (v === "houses") setFief(null); }}
+          selectedFiefId={fief?.id ?? null}
+          onSelectFief={setFief}
+          onClose={() => { setPoliticalView("off"); setFief(null); }}
+        />
+      )}
       {realm && <FrontierPanel realm={realm} onClose={() => setRealm(null)} />}
-      {fief && !realm && <FiefPanel fief={fief} onClose={() => setFief(null)} />}
+      {fief && !realm && politicalView === "fiefs" && <FiefPanel fief={fief} onClose={() => setFief(null)} />}
       {readAgent && !realm && !fief && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
       {/* O guia não é uma tela: é uma linha dizendo a próxima ação, que some
           quando a ação acontece. */}

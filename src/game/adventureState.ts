@@ -39,6 +39,8 @@ export type Tutorial = {
   completed: boolean;
   sheetViewed: boolean;
   recruited: boolean;
+  /** Abriu a vista política ao menos uma vez. */
+  politicsSeen: boolean;
 };
 export type AdventureState = {
   tutorial: Tutorial;
@@ -55,7 +57,7 @@ export type AdventureState = {
 };
 export function freshAdventure(): AdventureState {
   return {
-    tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false },
+    tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, politicsSeen:false },
     contract:null, history:[], finishedOffers:{}, event:null, eventCount:0,
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
