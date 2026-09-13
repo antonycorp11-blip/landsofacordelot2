@@ -49,3 +49,16 @@ Resultados estruturais: `art-validation.json`.
 Verificação no navegador: viagem até Cidade Alta concluída, passagem automática
 de noite para amanhecer, prévias de dia/crepúsculo/noite e controles em 390 × 844.
 Sem erros ou avisos no console durante a revisão final.
+
+## Revisão da interface — 12/09/2026
+
+O registro acima descreve a primeira entrega do mapa. Desde então, o Claude
+adicionou personagens, retratos, política e otimizações para celular.
+A revisão atual está concentrada em `src/ui/theme.css`: superfícies verde-escuras,
+ouro envelhecido, hierarquia de títulos, retratos inteiros e painéis responsivos.
+Os três ícones de recursos em `src/assets/ui/` são SVGs próprios, sem dependências
+adicionais. Ouro e influência usam os valores da campanha; comida aguarda estoque.
+
+Build e 32 verificações de dados passaram. Nesta revisão de interface, o navegador
+integrado estava indisponível; a validação visual em celular ainda é necessária.
+O diagnóstico funcional e o próximo marco estão em [Próximos passos](proximos-passos.md).

@@ -14,7 +14,7 @@
 button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
 .btn { min-height:42px; border-color:#bba36d66; background:#253438; color:var(--ui-text); border-radius:5px; font-family:var(--ui-small); font-size:12px; font-weight:600; }
 .btn.primary { background:linear-gradient(#e0c68a,#b89754); color:#252416; border:1px solid #e9d5a5; box-shadow:0 2px 0 #6d5731,0 4px 12px #0005; letter-spacing:.03em; }
-.btn.primary:hover:not(:disabled) { background:linear-gradient(#eddaa6,#c7a761); }
+.btn.primary:hover:not(:disabled) { background:linear-gradient(#eddaa6,#c7a761); color:#252416; }
 .btn:disabled { opacity:.45; }
 
 /* Initial choice: the portraits are the artwork; the surrounding panel stays restrained. */
@@ -45,7 +45,7 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
 
 /* Character sheet: identity and progress read before individual statistics. */
 .sheet { background:radial-gradient(ellipse at 15% 10%,#263837,#101c20 75%); backdrop-filter:none; }
-.sheet-heading { width:100%; max-width:1160px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:26px 28px 18px; }
+.sheet-heading { flex:none; width:100%; max-width:1160px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:max(26px,env(safe-area-inset-top)) 28px 18px; }
 .sheet-heading h1 { margin:8px 0 4px; color:#f0e4c6; font-size:32px; font-weight:400; letter-spacing:-.03em; }
 .sheet-heading p { margin:0; color:#aeb7ac; font:11px var(--ui-small); }
 .sheet-bar { width:100%; max-width:1104px; margin:0 auto; padding:0; gap:22px; border-color:#baa46b4d; }
@@ -53,7 +53,7 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
 .sheet-tab[aria-selected="true"] { color:#f4daa0; border-color:#dcc080; }
 .sheet-close,.sp-close { width:36px; height:36px; display:grid; place-items:center; padding:0; border:1px solid #ae98654d; border-radius:4px; background:#ffffff06; color:#e2d5b4; flex:none; }
 .sheet-close:hover,.sp-close:hover { background:#d8bb7922; }
-.sheet-body { padding:24px 28px 40px; }
+.sheet-body { min-height:0; padding:24px 28px max(40px,env(safe-area-inset-bottom)); }
 .sheet-inner { max-width:1104px; gap:20px; }
 .sheet-inner.cols { grid-template-columns:220px minmax(280px,1fr) 290px; gap:20px; }
 .panel { padding:20px; gap:15px; border:1px solid var(--ui-line); background:linear-gradient(150deg,#2636399c,#16262a); border-radius:7px; box-shadow:0 5px 20px #0002; }
@@ -160,6 +160,16 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
 .agent-hint { font:11px/1.7 var(--ui-small); color:#b4bdae; }
 .agent-actions { padding:14px 18px; }
 .agent-actions .btn { min-height:40px; }
+.legend { width:310px; background:#15282ff2; border-color:#baa16a66; border-radius:7px; }
+.legend-head { padding:10px 13px; }
+.legend-title { font:600 10px var(--ui-small); color:#d5bc85; letter-spacing:.1em; }
+.legend-close { width:32px; height:32px; color:#e2d5b4; }
+.legend-list { padding:0 13px 10px; }
+.legend-row { gap:9px; padding:9px 0; }
+.legend-crest { width:26px; height:32px; }
+.legend-name { font-size:14px; }
+.legend-sub,.legend-rel { font:10px/1.6 var(--ui-small); color:#b4bdae; }
+.legend-foot { padding:10px 13px; font:11px var(--ui-small); }
 
 @media (max-width:1120px) {
   .hud-btn .label-long { display:none; }
@@ -200,7 +210,7 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
   .sp-actions { padding:12px 14px; }
   .sp-action { min-height:40px; }
   .agent-panel { left:7px; right:7px; width:auto; max-height:65dvh; overflow-y:auto; }
-  .sheet-heading { padding:20px 18px 16px; }
+  .sheet-heading { padding:max(20px,env(safe-area-inset-top)) 18px 16px; }
   .sheet-heading h1 { font-size:27px; }
   .sheet-bar { padding:0 16px; gap:18px; overflow-x:auto; flex:none; }
   .sheet-tab { white-space:nowrap; font-size:11px; }
@@ -216,9 +226,10 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
   .comp-portrait { width:66px; height:94px; }
   .comp-name { font-size:18px; }
   .comp-actions { margin-left:auto; }
+  .legend { width:auto; }
 }
 @media (max-width:460px) {
-  .hero-select { padding:22px 12px max(16px,env(safe-area-inset-bottom)); gap:20px; }
+  .hero-select { padding:max(22px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom)); gap:20px; }
   .hs-title { font-size:29px; }
   .hs-sub { font-size:11px; }
   .hs-card { padding:11px; gap:9px; }
