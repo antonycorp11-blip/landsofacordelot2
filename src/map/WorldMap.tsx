@@ -30,7 +30,7 @@ import { SettlementPanel } from "../ui/settlement/SettlementPanel";
 import { CharacterScreen } from "../ui/hero/CharacterScreen";
 import { AgentPanel } from "../ui/agent/AgentPanel";
 import { update, useGame } from "../game/store";
-import { checkOffer, checkOfferArrival, checkRoadEvent, checkStory, recordJourney, startWorldForceBattle, tutorialFlag } from "../game/adventure";
+import { checkForceEscort, checkOffer, checkOfferArrival, checkRoadEvent, checkStory, recordJourney, startForceEscort, startWorldForceBattle, supportArmySiege, tutorialFlag } from "../game/adventure";
 import { AdventurePanel, type AdventureView } from "../ui/adventure/AdventurePanel";
 import { Coach } from "../ui/coach/Coach";
 import { StoryScene } from "../ui/story/StoryScene";
@@ -243,15 +243,23 @@ export function WorldMap() {
   // A rota de perseguição acompanha o alvo. Quando os dois grupos entram em
   // alcance, a viagem para e a decisão volta ao jogador.
   useEffect(()=>{
-    const id=game.pursuedForceId;
+    const escorting=game.adventure.escort;
+    const id=game.pursuedForceId??escorting?.forceId;
     if(!id)return;
     const timer=window.setInterval(()=>{
       const target=wanderers.find((agent)=>agent.wanderer.id===id);
-      if(!target){ update((state)=>({...state,pursuedForceId:null})); return; }
+      if(!target){
+        if(escorting)checkForceEscort(id,false);
+        else update((state)=>({...state,pursuedForceId:null}));
+        return;
+      }
       const here=travel.posRef.current,there=target.positionRef.current;
       if(!here||!there)return;
       const distance=Math.hypot(here.x-there.x,here.y-there.y);
-      if(distance<=250){
+      if(escorting){
+        if(checkForceEscort(id,distance<=420))return;
+        if(distance<=320)return;
+      }else if(distance<=250){
         travel.halt();
         update((state)=>({...state,pursuedForceId:null}));
         setReadAgentId(id);
@@ -266,7 +274,7 @@ export function WorldMap() {
       }
     },650);
     return()=>window.clearInterval(timer);
-  },[game.pursuedForceId,pushLog,travel.halt,travel.posRef,travel.state,travel.travelTo,wanderers]);
+  },[game.pursuedForceId,game.adventure.escort,pushLog,travel.halt,travel.posRef,travel.state,travel.travelTo,wanderers]);
 
   const zoom = camera.zoom;
 
@@ -391,7 +399,7 @@ export function WorldMap() {
             <WanderersLayer
               agents={wanderers}
               pxPerUnit={camera.baseScale() * zoom}
-              pursuedForceId={game.pursuedForceId}
+              pursuedForceId={game.pursuedForceId??game.adventure.escort?.forceId??null}
               onSelect={(agent) => {
                 if (camera.wasDragged()) return;
                 tutorialFlag("agentInspected");
@@ -472,6 +480,13 @@ export function WorldMap() {
         playerPositionRef={travel.posRef}
         pursuing={game.pursuedForceId===readAgent.wanderer.id}
         onPursue={()=>pursue(readAgent)}
+        onEscort={readAgent.wanderer.routine==="comércio"?()=>{if(startForceEscort(readAgent.wanderer.id))setReadAgentId(null);}:undefined}
+        onSupport={game.worldForces[readAgent.wanderer.id]?.targetForceId||game.worldForces[readAgent.wanderer.id]?.objective==="siege"?()=>{
+          const force=game.worldForces[readAgent.wanderer.id];
+          if(force?.objective==="siege"){supportArmySiege(readAgent.wanderer.id);return;}
+          const target=wanderers.find((agent)=>agent.wanderer.id===force?.targetForceId);
+          if(target){tutorialFlag("interventionStarted");pursue(target);}
+        }:undefined}
         onAttack={()=>{
           const stop=readAgent.currentStop();
           const edge=stop?.kind==="road"?routeEdgeById.get(stop.edgeId):null;

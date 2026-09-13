@@ -125,8 +125,8 @@ src/
 ## Agentes do mapa
 
 Um **agente** é qualquer figura que anda pelas estradas: o viajante do jogador
-e mais dezesseis que circulam sozinhos — patrulhas, caravanas, mensageiros,
-peregrinos, bandos e cortejos. O componente não sabe de nenhum deles:
+e mais vinte e três que circulam sozinhos — patrulhas, caravanas, mensageiros,
+peregrinos, bandos, cortejos e as sete hostes das Casas territoriais. O componente não sabe de nenhum deles:
 recebe uma folha de sprites, um rumo e se está andando. Lordes, mensageiros,
 caravanas, patrulhas e exércitos pequenos usam o mesmo componente com outra
 folha e outras cores.

@@ -1,11 +1,13 @@
 import { useEffect, useState, type RefObject } from "react";
 import { troops as troopTypes, troopTotal } from "../../data/troops";
 import { readForce, strengthWord } from "../../game/estimate";
-import { aggressionCost } from "../../game/worldForces";
+import { aggressionCost, wandererById } from "../../game/worldForces";
 import { tutorialFlag } from "../../game/adventure";
 import { useGame } from "../../game/store";
 import type { WandererRuntime } from "../../travel/useWanderers";
 import type { Point } from "../../world/types";
+import { goodById } from "../../data/goods";
+import { houseById } from "../../data/houses";
 import "./agent.css";
 
 export const FORCE_INTERCEPT_DISTANCE = 250;
@@ -13,7 +15,7 @@ export const FORCE_INTERCEPT_DISTANCE = 250;
 const RISK_LABEL: Record<string, string> = { baixo:"Baixo", moderado:"Moderado", alto:"Alto", temerário:"Temerário" };
 const ROUTINE_KIND: Record<string, string> = {
   patrulha:"Patrulha", comércio:"Caravana", correio:"Mensageiro",
-  peregrinação:"Peregrinos", pilhagem:"Bando armado", cortejo:"Cortejo",
+  peregrinação:"Peregrinos", pilhagem:"Bando armado", cortejo:"Cortejo", exército:"Exército de Casa",
 };
 const APPROACH: Record<string,string> = {
   pilhagem:"Os batedores respondem com ameaças. Eles só vão ceder pela força ou numa negociação durante a batalha.",
@@ -22,6 +24,7 @@ const APPROACH: Record<string,string> = {
   correio:"O mensageiro não pode parar por muito tempo. Ferir um correio custa palavra e influência.",
   peregrinação:"Os peregrinos pedem passagem e contam rumores do caminho. Atacá-los mancha a sua reputação.",
   cortejo:"A guarda exige que você declare intenção. Um ataque terá peso político imediato.",
+  exército:"Os oficiais falam apenas de ordens, suprimento e campanha. A hoste pode ser seguida, apoiada ou enfrentada.",
 };
 
 type Props = {
@@ -30,10 +33,12 @@ type Props = {
   pursuing: boolean;
   onPursue: () => void;
   onAttack: () => void;
+  onEscort?: () => void;
+  onSupport?: () => void;
   onClose: () => void;
 };
 
-export function AgentPanel({agent,playerPositionRef,pursuing,onPursue,onAttack,onClose}:Props) {
+export function AgentPanel({agent,playerPositionRef,pursuing,onPursue,onAttack,onEscort,onSupport,onClose}:Props) {
   const game=useGame();
   const {wanderer,troops}=agent;
   const measure=()=>{
@@ -47,8 +52,11 @@ export function AgentPanel({agent,playerPositionRef,pursuing,onPursue,onAttack,o
   const near=distance<=FORCE_INTERCEPT_DISTANCE;
   const own=troopTotal(game.troops);
   const influenceCost=aggressionCost(wanderer.routine);
+  const force=game.worldForces[wanderer.id];
+  const cargo=Object.entries(force?.cargo??{}).filter(([,amount])=>(amount??0)>0);
+  const target=force?.targetForceId?wandererById.get(force.targetForceId)?.name:null;
 
-  useEffect(()=>{ tutorialFlag("agentInspected"); },[]);
+  useEffect(()=>{ tutorialFlag("agentInspected");if(wanderer.routine==="exército")tutorialFlag("armyInspected"); },[wanderer.routine]);
   useEffect(()=>{
     const timer=window.setInterval(()=>setDistance(measure()),300);
     return()=>window.clearInterval(timer);
@@ -65,6 +73,10 @@ export function AgentPanel({agent,playerPositionRef,pursuing,onPursue,onAttack,o
       <div className="pair"><span>Comparação</span><b>{reading.verdict}</b></div>
       <div className="pair"><span>Risco</span><b className={`risk ${reading.risk}`}>{RISK_LABEL[reading.risk]}</b></div>
       <div className="pair"><span>Situação</span><b>{pursuing?"Sendo perseguido":near?"Interceptado":"Fora de alcance"}</b></div>
+      {force?.ownerHouseId&&<div className="pair"><span>Comando</span><b>{houseById.get(force.ownerHouseId)?.shortName}</b></div>}
+      {force&&<div className="agent-objective"><b>Objetivo atual</b><span>{force.objectiveLabel}</span>{target&&<small>Alvo: {target}</small>}</div>}
+      {wanderer.routine==="exército"&&force&&<div className="pair"><span>Suprimentos</span><b>{force.food} carga(s)</b></div>}
+      {cargo.length>0&&<div className="agent-cargo"><b>Carga</b>{cargo.map(([id,amount])=><span key={id}>{amount} {goodById.get(id as Parameters<typeof goodById.get>[0])?.name.toLowerCase()}</span>)}</div>}
 
       {reading.confidence==="preciso"&&<div className="agent-breakdown">{troopTypes.map((troop)=>{
         const amount=troops[troop.id]??0;
@@ -76,7 +88,7 @@ export function AgentPanel({agent,playerPositionRef,pursuing,onPursue,onAttack,o
       {conversation&&<p className="agent-dialogue">{APPROACH[wanderer.routine]}</p>}
     </div>
     <div className="agent-actions">
-      <button className="btn" disabled={!near} onClick={()=>setConversation(true)} title={near?"Conversar com o grupo":"Primeiro intercepte o grupo"}>Abordar</button>
+      {wanderer.routine==="comércio"&&onEscort?<button className="btn" disabled={!near||!!game.adventure.escort} onClick={onEscort}>Escoltar</button>:onSupport&&(force?.targetForceId||force?.objective==="siege")?<button className="btn" disabled={force?.objective==="siege"&&!near} onClick={onSupport}>{force?.objective==="siege"?"Apoiar cerco":"Intervir"}</button>:<button className="btn" disabled={!near} onClick={()=>setConversation(true)} title={near?"Conversar com o grupo":"Primeiro intercepte o grupo"}>Abordar</button>}
       <button className="btn" onClick={onPursue}>{pursuing?"Recalcular rota":"Perseguir"}</button>
       <button className="btn danger" disabled={!near||own===0} onClick={onAttack} title={own===0?"Recrute tropas antes de atacar":near?"Entrar em combate":"Primeiro intercepte o grupo"}>Atacar</button>
     </div>

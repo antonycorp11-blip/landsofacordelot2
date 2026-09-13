@@ -39,3 +39,8 @@ Um contrato comercial informa quantidade e mercadoria. A carga não aparece grat
 
 O estado persiste inventário, custo médio, estoques locais, dia da reposição, lucro acumulado e quantidade de negócios. Reabrir a campanha não repõe mercadoria nem apaga prejuízo.
 
+## Comércio que acontece no mapa
+
+Caravanas usam os mesmos estoques do jogador. Elas retiram a produção do mercado de origem, escolhem o destino que melhor paga e carregam os volumes fisicamente. Na chegada, a carga entra no estoque local e melhora um pouco a segurança da rota. Se um saqueador ou o jogador vencer a caravana antes disso, o destino permanece sem os produtos e os preços reagem à escassez; no ataque do jogador, a carga abandonada entra em seu inventário.
+
+Hostes também pressionam a economia. Ao se reunir em sua capital, um exército retira provisões do mercado. Marchando ou cercando, consome suprimento diariamente; sem comida, perde homens e retorna. Assim, uma guerra afeta preço e disponibilidade antes mesmo de mudar uma fronteira.

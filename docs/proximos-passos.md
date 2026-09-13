@@ -11,7 +11,7 @@
 - Eventos aleatórios, bandos, chamados com prazo e simulação diária de salário, comida, renda, deserção, guerra e conquista.
 - Arena de combate 32-bit com terreno, ordens de formação, moral, mortos, feridos recuperáveis, prisioneiros, rendição, saque e retirada.
 - Mercados regionais com estoque, reposição, preço, provisões, oito mercadorias, capacidade de carga, lucro real e contratos que exigem compra e entrega física.
-- Forças persistentes no mapa: patrulhas, caravanas, correios, peregrinos, cortejos e saqueadores podem ser lidos, perseguidos, interceptados, abordados e atacados.
+- Forças persistentes no mapa: patrulhas, caravanas, correios, peregrinos, cortejos, saqueadores e hostes podem ser lidos, perseguidos, interceptados, abordados e atacados.
 
 ## O que mudou no ciclo principal
 
@@ -33,7 +33,9 @@ Cada grupo guarda posição, destino, tropas e baixas no save. A perseguição r
 
 ## Próximo marco recomendado
 
-Dar inventário e objetivo próprio a caravanas e exércitos. Uma caravana derrotada deve derramar carga como saque e reduzir estoque no destino; uma patrulha deve caçar bandos; um exército de Casa deve reunir tropas, cercar uma posição em etapas e mudar de objetivo conforme guerra, suprimento e relação política.
+O mundo estratégico agora está ativo. Caravanas retiram carga de um mercado e abastecem outro; saqueá-las entrega a carga ao vencedor e cria escassez. Patrulhas caçam bandidos, bandidos seguem caravanas e os confrontos podem acontecer sem o jogador. As sete Casas territoriais possuem hostes que recrutam, retiram provisões do mercado, consomem suprimento, sofrem atrito, marcham durante guerras e precisam cumprir três etapas de cerco antes de tomar um senhorio. O jogador pode escoltar, intervir numa caçada, atacar qualquer lado ou reforçar um cerco.
+
+O próximo marco recomendado é aprofundar a progressão de viajante para senhor: equipamento individual, oficina, guarnição e administração de terra; juramento, serviço mercenário e independência; diplomacia de paz, tributo e aliança. A campanha principal deve passar a escolher cenas e finais a partir das Casas ajudadas ou atacadas neste tabuleiro vivo.
 
 Depois disso, o melhor arco de retenção é **subir de viajante para senhor**: reputação local abre audiência, audiência abre juramento ou independência, terra abre guarnição, imposto, oficina e guerra. A campanha principal deve reagir à Casa apoiada, às cartas lidas, às pessoas traídas e aos senhorios controlados, criando finais políticos diferentes.
 

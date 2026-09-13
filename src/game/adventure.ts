@@ -22,6 +22,8 @@ import type { JournalKind } from '../ui/journal';
 import { troopTotal } from '../data/troops';
 import type { RegionId, TerrainType } from '../world/types';
 import { aggressionCost, wandererById } from './worldForces';
+import { advanceWorldForces } from './forceSimulation';
+import { destinationsFor } from '../world/wanderers';
 
 export const COMPANION_RELATION = 10;
 const round = (n: number) => Math.round(n * 10) / 10;
@@ -148,9 +150,14 @@ export function resolveRoadEvent(eventId: string, choiceId: string): boolean {
   const success=event.roll<choiceChance(choice,s);
   const reward=success ? choice.reward : choice.failure??{};
   update(g=>{
-    const next=withReward(g,{...reward,gold:(reward.gold??0)-(choice.cost??0)});
+    let next=withReward(g,{...reward,gold:(reward.gold??0)-(choice.cost??0)});
+    let discovery="";
+    if(success&&(definition?.id==='scouts'||definition?.id==='villager_hideout')){
+      const raider=Object.keys(next.worldForces).find((id)=>next.worldForces[id].status==='active'&&wandererById.get(id)?.routine==='pilhagem');
+      if(raider){next={...next,pursuedForceId:raider,adventure:{...next.adventure,tutorial:{...next.adventure.tutorial,pursuitStarted:true}}};discovery=` ${wandererById.get(raider)?.name} foi marcado no mapa; a perseguição já começou.`;}
+    }
     const levelUp=next.level>g.level;
-    const text=`${success?choice.successText:choice.failureText} ${rewardSummary(reward)}${choice.cost?` · ${choice.cost} ouro gasto.`:''}${levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''}`;
+    const text=`${success?choice.successText:choice.failureText}${discovery} ${rewardSummary(reward)}${choice.cost?` · ${choice.cost} ouro gasto.`:''}${levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''}`;
     return logged({...next,adventure:{...next.adventure,event:null,
       tutorial:{...next.adventure.tutorial,eventResolved:true},
       notice:{title:success?'Sua decisão fez diferença':'Nem tudo saiu como esperado',text,levelUp},
@@ -200,6 +207,9 @@ export function settleDays(upToDay: number) {
       deserted += result.report.deserted;
       const line = reportLine(result.report, next.troops);
       if (line) next = logged(next, 'evento', line);
+      const forceStep=advanceWorldForces(next,result.report.day);
+      next=forceStep.state;
+      for(const item of forceStep.news)next=logged(next,item.kind,item.text);
     }
     // O tabuleiro se mexe de poucos em poucos dias, e o que muda vira notícia.
     if (upToDay - (next.worldTickDay || 0) >= WORLD_TICK_DAYS) {
@@ -313,13 +323,58 @@ export function startWorldForceBattle(forceId:string,regionId:RegionId,terrain:T
   if(!force||force.status!=="active"||!wanderer||s.adventure.battle||troopTotal(s.troops)===0)return false;
   const cost=aggressionCost(wanderer.routine);
   update(g=>{
+    const owner=force.ownerHouseId;
     const prepared:GameState={...g,
       influence:g.influence-cost,
+      houseRelations:owner?{...g.houseRelations,[owner]:Math.max(-100,(g.houseRelations[owner]??0)-(cost?18:0))}:g.houseRelations,
       pursuedForceId:null,
       regionSecurity:{...g.regionSecurity,[regionId]:Math.max(-30,(g.regionSecurity[regionId]??0)-(cost?4:0))},
       adventure:{...g.adventure,tutorial:{...g.adventure.tutorial,forceAttacked:true}},
     };
     return {...prepared,adventure:{...prepared.adventure,battle:startBattle(prepared,force.troops,wanderer.name,terrain,{forceId,regionId,routine:wanderer.routine})}};
+  });
+  return true;
+}
+
+/** Ajuda direta numa etapa de cerco, consumindo suprimento do grupo do jogador. */
+export function supportArmySiege(forceId:string):boolean {
+  const s=getState(),force=s.worldForces[forceId],wanderer=wandererById.get(forceId);
+  if(!force||force.status!=="active"||force.objective!=="siege"||force.at!==force.targetPoiId||wanderer?.routine!=="exército"||s.food<2||troopTotal(s.troops)===0)return false;
+  update(g=>{
+    const owner=force.ownerHouseId;
+    return logged({...g,food:g.food-2,influence:g.influence+3,
+      houseRelations:owner?{...g.houseRelations,[owner]:Math.min(100,(g.houseRelations[owner]??0)+5)}:g.houseRelations,
+      worldForces:{...g.worldForces,[forceId]:{...g.worldForces[forceId],siegeProgress:Math.min(3,g.worldForces[forceId].siegeProgress+1),objectiveLabel:`Cerco reforçado por você · etapa ${Math.min(3,g.worldForces[forceId].siegeProgress+1)}/3`}},
+      adventure:{...g.adventure,notice:{title:"Você entrou no cerco",text:`Seus homens reforçam ${wanderer.name}. −2 comida · +3 influência${owner?" · +5 de relação com a Casa":""}. A hoste ganhou uma etapa de cerco.`,levelUp:false}}},'fronteira',`Você reforçou o cerco conduzido por ${wanderer.name}.`);
+  });
+  return true;
+}
+
+/** A escolta se prende à própria caravana e ao destino que ela está levando carga. */
+export function startForceEscort(forceId:string):boolean {
+  const s=getState(),force=s.worldForces[forceId],wanderer=wandererById.get(forceId);
+  if(!force||force.status!=="active"||wanderer?.routine!=="comércio"||s.adventure.escort)return false;
+  const destination=force.targetPoiId??destinationsFor(wanderer).find((id)=>id!==force.at);
+  if(!destination)return false;
+  const reward:Reward={gold:110,food:6,influence:4,xp:80,careerXp:{TRADE:65},skillXp:{logistica:2}};
+  update(g=>logged({...g,pursuedForceId:null,worldForces:{...g.worldForces,[forceId]:{...g.worldForces[forceId],targetPoiId:destination,objective:"trade",objectiveLabel:`Sob sua escolta até ${poiName(destination)}`}},
+    adventure:{...g.adventure,escort:{forceId,destinationId:destination,acceptedAt:g.journey?.hours??0,reward},tutorial:{...g.adventure.tutorial,escortAccepted:true}}},'evento',`Você aceitou escoltar ${wanderer.name} até ${poiName(destination)}.`));
+  return true;
+}
+
+/** Conferida no mapa porque a distância real entre os dois grupos importa. */
+export function checkForceEscort(forceId:string,near:boolean):boolean {
+  const s=getState(),escort=s.adventure.escort;
+  if(!escort||escort.forceId!==forceId)return false;
+  const force=s.worldForces[forceId],wanderer=wandererById.get(forceId);
+  if(!force||force.status==="defeated"){
+    update(g=>logged({...g,adventure:{...g.adventure,escort:null,notice:{title:"A escolta fracassou",text:"A caravana foi vencida antes de chegar. A mercadoria desapareceu da rota e nenhum pagamento será feito.",levelUp:false}}},'evento',"A caravana sob sua escolta foi perdida."));
+    return true;
+  }
+  if(force.at!==escort.destinationId||!near)return false;
+  update(g=>{
+    const next=withReward(g,escort.reward),levelUp=next.level>g.level;
+    return logged({...next,adventure:{...next.adventure,escort:null,tutorial:{...next.adventure.tutorial,escortCompleted:true},notice:{title:"Escolta concluída",text:`${wanderer?.name} chegou com a carga. ${rewardSummary(escort.reward)}.`,levelUp}}},'evento',`Escolta concluída em ${poiName(escort.destinationId)}.`);
   });
   return true;
 }
@@ -364,19 +419,26 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
       careerXp:{MILITARY:won?60:20},
       skillXp:{tatica:won?3:1},
     });
+    let capturedCargo=0;
     if(battle.worldForce){
       const source=battle.worldForce;
       const old=g.worldForces[source.forceId];
       if(old){
         const hostile=source.routine==='pilhagem';
+        let inventory={...next.inventory},food=next.food;
+        if(won){for(const [id,amount] of Object.entries(old.cargo??{}) as [GoodId,number][]){
+          capturedCargo+=amount;
+          if(id==='provisions')food+=amount;else inventory[id]=(inventory[id]??0)+amount;
+        }}
         const worldForces={...next.worldForces,[source.forceId]:{
           ...old,
           troops:{...battle.theirs},
+          cargo:won?{}:old.cargo,
           status:won?'defeated' as const:'active' as const,
           returnsAt:won?(g.journey?.hours??0)+(hostile?96:72):0,
         }};
         const delta=won?(hostile?12:-10):0;
-        next={...next,worldForces,pursuedForceId:null,
+        next={...next,worldForces,pursuedForceId:null,inventory,food,
           regionSecurity:{...next.regionSecurity,[source.regionId]:Math.max(-30,Math.min(30,(next.regionSecurity[source.regionId]??0)+delta))},
           adventure:{...next.adventure,tutorial:{...next.adventure.tutorial,forceDefeated:next.adventure.tutorial.forceDefeated||(won&&hostile)}}};
         if(won&&hostile)next=withReward(next,{influence:3,food:2});
@@ -387,6 +449,7 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
     let text=battle.log[battle.log.length-1]??'';
     if (won) text+=` Dos seus, ${battle.myDead??battle.myLosses} morreram e ${battle.myWounded??0} ficaram feridos. Você fez ${troopTotal(captured)} prisioneiro(s). Despojos: ${battle.loot} moedas.`;
     else text+=` Dos seus, ${battle.myDead??battle.myLosses} morreram e ${battle.myWounded??0} ficaram feridos.${battle.tribute?` A passagem custou ${battle.tribute} moedas.`:''}`;
+    if(won&&capturedCargo>0)text+=` A carga abandonada soma ${capturedCargo} volumes e agora está com o seu grupo.`;
 
     if (battle.worldForce) {
       const hostile=battle.worldForce.routine==='pilhagem';
@@ -436,6 +499,21 @@ export function ransomAllPrisoners(): boolean {
     const next=withReward({...g,prisoners:{}},{gold:value,xp:Math.min(45,count*4),careerXp:{TRADE:Math.min(30,count*3)},skillXp:{negociacao:1}});
     return logged(next,'evento',`${count} prisioneiro(s) resgatados por ${value} moedas.`);
   });
+  return true;
+}
+
+export function prisonerIntelChance(s:GameState=getState()):number {
+  return Math.min(.9,.32+s.attributes.conviction*.055+(s.skills.persuasao??0)*.003+(s.skills.tatica??0)*.0015);
+}
+
+/** Uma tentativa por dia: os cativos podem apontar um bando que existe no mapa. */
+export function interrogatePrisoners():boolean {
+  const s=getState(),day=Math.floor((s.journey?.hours??0)/24)+1;
+  if(!troopTotal(s.prisoners)||s.lastPrisonerIntelDay===day)return false;
+  const success=Math.random()<prisonerIntelChance(s);
+  const raider=success?Object.keys(s.worldForces).find((id)=>s.worldForces[id].status==='active'&&wandererById.get(id)?.routine==='pilhagem'):undefined;
+  update(g=>logged({...g,lastPrisonerIntelDay:day,pursuedForceId:raider??g.pursuedForceId,
+    adventure:{...g.adventure,notice:{title:raider?'Um esconderijo revelado':'O cativo não cedeu',text:raider?`${wandererById.get(raider)?.name} foi marcado no mapa. A informação inicia a perseguição.`:'A conversa não produziu um lugar confiável. Você poderá tentar outra vez amanhã.',levelUp:false}}},'evento',raider?'Um prisioneiro revelou o caminho de um bando.':'O interrogatório não trouxe informação útil.'));
   return true;
 }
 
@@ -550,7 +628,7 @@ export function checkOffer(stop: RoadStop) {
   if (!s.started) return;
   const a = s.adventure;
   const hours = s.journey?.hours ?? 0;
-  if (a.offer || a.contract || a.event || a.notice || a.raid || a.battle || a.story.pending) return;
+  if (a.offer || a.contract || a.escort || a.event || a.notice || a.raid || a.battle || a.story.pending) return;
   if (hours < a.nextOfferHour) return;
   const offer = makeOffer(stop, hours);
   if (!offer) return;

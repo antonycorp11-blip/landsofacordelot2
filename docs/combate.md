@@ -44,6 +44,8 @@ Falhar fortalece a moral inimiga e reduz a sua. O dado é criado no começo da b
 
 Inimigos rendidos viram prisioneiros. Eles ocupam carga, consomem provisões em grupo e podem ser resgatados nos mercados por um valor que depende do grau da tropa.
 
-## Próximo avanço
+## Batalhas do mundo e cercos
 
-O próximo estágio militar é fazer bandos, patrulhas e exércitos persistirem como grupos do mundo: perseguir, bloquear estradas, carregar prisioneiros e alterar segurança e estoque ao serem derrotados. Depois entram equipamento individual, cercos por etapas e campanhas entre Casas.
+Patrulhas, saqueadores e hostes resolvem confrontos quando alcançam o mesmo ponto da estrada. O vencedor preserva suas baixas e continua menor; o derrotado desaparece por alguns dias. O diário registra o resultado, a segurança regional muda e cargas perdidas deixam de abastecer mercados.
+
+Em guerra, cada Casa territorial movimenta uma hoste. Ela reúne tropas e provisões, marcha para a sede inimiga e precisa sustentar três etapas de cerco antes de conquistar um senhorio. O jogador pode seguir a hoste, atacar qualquer lado ou, estando presente com tropas e comida, reforçar uma etapa em troca de influência e relação com a Casa.

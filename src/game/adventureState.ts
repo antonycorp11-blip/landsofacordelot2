@@ -55,6 +55,11 @@ export type Tutorial = {
   forceAttacked: boolean;
   /** Já retirou uma força hostil de circulação. */
   forceDefeated: boolean;
+  /** Já aceitou e concluiu uma escolta ligada a uma caravana real. */
+  escortAccepted: boolean;
+  escortCompleted: boolean;
+  interventionStarted: boolean;
+  armyInspected: boolean;
   /** Abriu a vista política ao menos uma vez. */
   politicsSeen: boolean;
 };
@@ -70,6 +75,7 @@ export type AdventureState = {
   quest: QuestState | null;
   /** Batalha em andamento, rodada a rodada. */
   battle: Battle | null;
+  escort: {forceId:string;destinationId:string;acceptedAt:number;reward:Reward} | null;
   eventCount: number;
   /** Batalhas vencidas, para a campanha principal poder pedir uma. */
   battlesWon: number;
@@ -87,8 +93,8 @@ export type AdventureState = {
 };
 export function freshAdventure(): AdventureState {
   return {
-    tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, agentInspected:false, pursuitStarted:false, forceAttacked:false, forceDefeated:false, politicsSeen:false },
-    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, eventCount:0, battlesWon:0, offer:null, nextOfferHour:20, story:freshStory(),
+    tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, agentInspected:false, pursuitStarted:false, forceAttacked:false, forceDefeated:false, escortAccepted:false, escortCompleted:false, interventionStarted:false, armyInspected:false, politicsSeen:false },
+    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, escort:null, eventCount:0, battlesWon:0, offer:null, nextOfferHour:20, story:freshStory(),
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
 }

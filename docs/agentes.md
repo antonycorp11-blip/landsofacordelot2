@@ -156,6 +156,13 @@ interceptá-la, abordar ou atacar. Vencer saqueadores melhora a segurança e os
 preços da região; atacar viajantes ou homens da lei cobra influência e piora a
 rota.
 
+O passo estratégico diário dá objetivos aos grupos. Patrulhas escolhem um
+saqueador e vão atrás dele; saqueadores seguem caravanas; caravanas compram e
+entregam carga real. As sete hostes territoriais obedecem às guerras das Casas:
+reúnem homens e provisões, marcham para a capital inimiga e sustentam três
+etapas de cerco. O objetivo, o alvo, a carga e o suprimento aparecem no painel
+do agente para que o jogador possa escoltar, intervir ou atacar.
+
 ## 5. Ordem das linhas
 
 `NW, NE, SW, SE` — de cima para baixo, como o prompt pede. Se uma folha vier

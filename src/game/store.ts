@@ -25,7 +25,7 @@ import type { AgentClass, FiefOwner, HouseId } from "../world/types";
 
 import { freshAdventure, type AdventureState, type JourneySave } from "./adventureState";
 import type { War } from "./worldSim";
-import type { WorldForceState } from "./worldForces";
+import { normalizeForceState, type WorldForceState } from "./worldForces";
 
 /**
  * A versão faz parte da chave de propósito: quando uma mudança altera o
@@ -89,6 +89,8 @@ export type GameState = {
   wounded: TroopCount;
   /** Capturados que podem ser libertados, recrutados ou resgatados depois. */
   prisoners: TroopCount;
+  /** Último dia em que cativos foram interrogados por informação de estrada. */
+  lastPrisonerIntelDay: number;
   /** Grupos visíveis no mapa, incluindo posição, sobreviventes e tempo de retorno. */
   worldForces: Record<string, WorldForceState>;
   /** Grupo que o jogador está tentando interceptar. */
@@ -150,6 +152,7 @@ function blank(): GameState {
     troops: {},
     wounded: {},
     prisoners: {},
+    lastPrisonerIntelDay: 0,
     worldForces: {},
     pursuedForceId: null,
     regionSecurity: {},
@@ -232,6 +235,7 @@ function load(): GameState | null {
       ...blank(), ...parsed,
       skills: { ...startingSkills({}), ...parsed.skills },
       adventure: { ...adventure, ...parsed.adventure, tutorial: { ...adventure.tutorial, ...parsed.adventure?.tutorial } },
+      worldForces:Object.fromEntries(Object.entries(parsed.worldForces??{}).map(([id,force])=>[id,normalizeForceState(id,force)])),
     };
     // Save anterior à economia diária: começa a cobrar de hoje, e não seis
     // dias de soldo de uma vez por uma regra que não existia quando ele jogou.

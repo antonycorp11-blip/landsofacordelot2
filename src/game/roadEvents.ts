@@ -47,6 +47,14 @@ export const roadEvents: RoadEvent[] = [
     ],
   },
   {
+    id:'villager_hideout',title:'Fumaça onde não há aldeia',
+    text:'Dois camponeses esperam atrás de uma carroça virada. Eles viram homens armados levando sacos para um esconderijo, mas têm medo de apontar o caminho e serem reconhecidos depois.',
+    choices:[
+      {id:'protect',label:'Prometer proteção e pedir o caminho',description:'Sua palavra precisa valer mais que o medo deles.',check:{attribute:'conviction',skill:'lideranca'},reward:{xp:30,influence:2,skillXp:{lideranca:2},careerXp:{MILITARY:20}},failure:{xp:5},successText:'Eles riscam a rota na terra e descrevem o estandarte do bando.',failureText:'Eles agradecem, mas não arriscam a família por uma promessa.'},
+      {id:'pay_witness',label:'Pagar pela informação',description:'Uma recompensa agora e silêncio depois.',cost:14,reward:{xp:18,skillXp:{persuasao:1}},successText:'As moedas vencem o medo. O esconderijo fica marcado no seu mapa.'},pass,
+    ],
+  },
+  {
     id:'dispute',title:'Duas versões da mesma dívida',
     text:'Dois negociantes discutem sobre uma entrega incompleta. Nenhum aceita a conta do outro, e ambos pedem a opinião de alguém de fora.',
     choices:[

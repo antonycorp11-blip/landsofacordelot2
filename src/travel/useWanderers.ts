@@ -143,6 +143,7 @@ export function useWanderers({ speed, paused }: { speed: number; paused: boolean
       if (pausedRef.current) return;
       const hours = WORLD_HOURS_PER_SECOND * speedRef.current * dt;
       let changed = false;
+      let arrived = false;
       const flags = movingRef.current.slice();
 
       states.forEach((state, i) => {
@@ -157,6 +158,7 @@ export function useWanderers({ speed, paused }: { speed: number; paused: boolean
             state.progress = 0;
             const [lo, hi] = state.wanderer.dwell;
             state.resting = lo + state.rng() * (hi - lo);
+            arrived = true;
             if (flags[i]) { flags[i] = false; changed = true; }
           }
           return;
@@ -164,7 +166,14 @@ export function useWanderers({ speed, paused }: { speed: number; paused: boolean
         state.resting -= hours;
         place(state);
         if (state.resting > 0) return;
-        const to = nextDestination(state.wanderer, state.at, state.rng);
+        const force=getState().worldForces[state.wanderer.id];
+        const targetForce=force?.targetForceId?getState().worldForces[force.targetForceId]:undefined;
+        const strategic=targetForce?.status==="active"?targetForce.at:force?.targetPoiId;
+        if(strategic===state.at&&force&&["defend","gather","siege"].includes(force.objective)){
+          state.resting=4;
+          return;
+        }
+        const to = strategic&&strategic!==state.at ? strategic : nextDestination(state.wanderer, state.at, state.rng);
         const found = to ? findPath(state.at, to) : null;
         if (!found) { state.resting = 6; return; }
         state.to = to;
@@ -174,6 +183,7 @@ export function useWanderers({ speed, paused }: { speed: number; paused: boolean
       });
 
       if (changed) setMoving(flags);
+      if(arrived){lastSave=now;persist();}
       if (now - lastSave > 4000) { lastSave = now; persist(); }
     };
 

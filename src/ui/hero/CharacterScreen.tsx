@@ -1,4 +1,4 @@
-import { canRecruitCompanion, recruitCompanion, COMPANION_RELATION } from "../../game/adventure";
+import { canRecruitCompanion, interrogatePrisoners, prisonerIntelChance, recruitCompanion, COMPANION_RELATION } from "../../game/adventure";
 import { ResourceIcon } from "../ResourceIcon";
 import { useEffect, useRef, useState } from "react";
 import { heroById, ATTRIBUTE_EFFECT, ATTRIBUTE_LABEL, type Attributes } from "../../data/heroes";
@@ -89,6 +89,7 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
   const total = troopTotal(game.troops);
   const woundedTotal=troopTotal(game.wounded);
   const prisonerTotal=troopTotal(game.prisoners);
+  const prisonerIntelUsed=game.lastPrisonerIntelDay===Math.floor((game.journey?.hours??0)/24)+1;
   const speed = partySpeed(input);
   const speedWord = speed >= 1.0 ? "Ótima" : speed >= 0.85 ? "Boa" : speed >= 0.7 ? "Moderada" : "Lenta";
   const portrait = heroPortraitUrl(hero.portraitAssetKey);
@@ -338,7 +339,7 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
             {(woundedTotal>0||prisonerTotal>0)&&<div className="panel">
               <div className="panel-title">Depois da batalha</div>
               {woundedTotal>0&&<><div className="pair"><span>Feridos em recuperação</span><b>{woundedTotal}</b></div><span className="empty">Uma parte volta à linha a cada dia em que o grupo consegue comer.</span></>}
-              {prisonerTotal>0&&<><div className="pair"><span>Prisioneiros</span><b>{prisonerTotal}</b></div><span className="empty">Mercados possuem negociantes que pagam resgate.</span></>}
+              {prisonerTotal>0&&<><div className="pair"><span>Prisioneiros</span><b>{prisonerTotal}</b></div><span className="empty">Mercados pagam resgate. Uma vez por dia, cativos podem revelar um bando real no mapa.</span><button className="btn" disabled={prisonerIntelUsed} onClick={interrogatePrisoners}>{prisonerIntelUsed?"Interrogatório usado hoje":`Pedir informação · ${Math.round(prisonerIntelChance(game)*100)}%`}</button></>}
             </div>}
 
             <div className="panel">

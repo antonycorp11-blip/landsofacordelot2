@@ -15,8 +15,6 @@
  * dado rolado enquanto ele viajava.
  */
 import { houses, houseById } from "../data/houses";
-import { fiefs, fiefById } from "../world/fiefs";
-import { regionById } from "../world/valdoria";
 import type { HouseId } from "../world/types";
 import type { GameState } from "./store";
 
@@ -29,20 +27,6 @@ export type WorldNews = { text: string; kind: "guerra" | "paz" | "conquista" };
 
 function pickIndex(n: number, roll: number): number {
   return Math.min(n - 1, Math.floor(roll * n));
-}
-
-/** Senhorios de uma Casa que NÃO são do jogador e não são a sede nobre dela. */
-function takeableFrom(s: GameState, houseId: HouseId): string[] {
-  return fiefs
-    .filter((f) => {
-      const owner = s.fiefOwners[f.id] ?? f.ownerHouseId;
-      return owner === houseId && f.tier !== "nobre";
-    })
-    .map((f) => f.id);
-}
-
-function ownerOfIn(s: GameState, fiefId: string) {
-  return s.fiefOwners[fiefId] ?? fiefById.get(fiefId)?.ownerHouseId ?? "house_valdoria";
 }
 
 /**
@@ -82,24 +66,9 @@ export function advanceWorld(s: GameState, day: number, rolls: number[]): { stat
     }
   }
 
-  /* -------------------- terra que muda de mãos ------------------------ */
-  for (const war of wars) {
-    if (roll() > 0.4) continue;
-    // Quem ataca é sorteado; o alvo é um senhorio menor do outro lado.
-    const attacker = roll() < 0.5 ? war.a : war.b;
-    const defender = attacker === war.a ? war.b : war.a;
-    const targets = takeableFrom({ ...s, fiefOwners }, defender);
-    if (!targets.length) continue;
-    const fiefId = targets[pickIndex(targets.length, roll())];
-    // O que é do jogador não se perde por sorteio.
-    if (ownerOfIn({ ...s, fiefOwners }, fiefId) === "player") continue;
-    fiefOwners = { ...fiefOwners, [fiefId]: attacker };
-    const fief = fiefById.get(fiefId);
-    news.push({
-      kind: "conquista",
-      text: `${houseById.get(attacker)?.shortName} tomou ${fief?.name} de ${houseById.get(defender)?.shortName}, em ${regionById.get(fief?.regionId ?? "heart_of_valdoria")?.name}.`,
-    });
-  }
+  // Conquistas agora são resolvidas pelas hostes visíveis: elas precisam se
+  // reunir, levar suprimento, marchar e sustentar um cerco. Este passo lento
+  // continua responsável por iniciar e encerrar guerras.
 
   return { state: { ...s, wars, fiefOwners, worldTickDay: day }, news };
 }

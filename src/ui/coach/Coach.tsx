@@ -168,6 +168,41 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
         body:"Vença um bando de anel vermelho. Ele sai do mapa por alguns dias, a segurança sobe e emboscadas e preços da região melhoram.",
       };
     }
+    if (tutorial.forceDefeated && !tutorial.escortAccepted) {
+      return {
+        id:"escort-caravan",
+        title:"Mercadoria também anda pelo mapa",
+        body:"Intercepte uma caravana e escolha Escoltar. A carga mostrada na ficha sai de um mercado real e só abastece o destino se chegar inteira.",
+      };
+    }
+    if (game.adventure.escort) {
+      return {
+        id:"escort-follow",
+        title:"Mantenha a caravana por perto",
+        body:`Acompanhe o grupo até ${poiById.get(game.adventure.escort.destinationId)?.name}. Se ele for vencido ou você não estiver próximo na chegada, não há pagamento.`,
+      };
+    }
+    if (tutorial.escortAccepted && !tutorial.escortCompleted) {
+      return {
+        id:"escort-again",
+        title:"A carga não chegou com você",
+        body:"Encontre outra caravana e tente novamente. Patrulhas caçam os mesmos bandidos que ameaçam o comércio.",
+      };
+    }
+    if (tutorial.escortCompleted && !tutorial.interventionStarted) {
+      return {
+        id:"intervene",
+        title:"Grupos também caçam uns aos outros",
+        body:"Abra uma patrulha ou um saqueador que tenha um alvo e toque em Intervir. Você passará a perseguir o outro grupo e poderá mudar o confronto.",
+      };
+    }
+    if (tutorial.interventionStarted && !tutorial.armyInspected) {
+      return {
+        id:"inspect-army",
+        title:"As Casas agora marcham",
+        body:"Abra uma hoste no mapa. Em guerra, ela reúne tropas e comida, marcha até a sede inimiga e precisa sustentar três etapas de cerco.",
+      };
+    }
 
     /* -------------------- influência e o tabuleiro -------------------- */
     if (!tutorial.politicsSeen) {

@@ -18,7 +18,7 @@ import { makeRng } from "./geo";
 import type { TroopCount } from "../data/troops";
 import { adjacency } from "./navgraph";
 import type { AgentSheetId } from "../render/agents/agentSheets";
-import type { RegionId } from "./types";
+import type { HouseId, RegionId } from "./types";
 import { borderCrossings } from "./borderCrossings";
 import { allPois } from "./valdoria";
 
@@ -28,7 +28,8 @@ export type WandererRoutine =
   | "correio"
   | "peregrinação"
   | "pilhagem"
-  | "cortejo";
+  | "cortejo"
+  | "exército";
 
 export type Wanderer = {
   id: string;
@@ -54,15 +55,17 @@ export type Wanderer = {
   band: [number, number];
   /** Mistura de tropa do bando. As frações somam 1. */
   mix: Partial<Record<keyof TroopCount, number>>;
+  /** Casa responsável por patrulhas, cortejos e hostes. */
+  houseId?: HouseId;
 };
 
 export const wanderers: Wanderer[] = [
   // Patrulhas — ficam em casa, é essa a graça de uma patrulha.
-  { id: "patrulha_coracao",   name: "Ronda do Castelo Real", sheet: "outriders",      routine: "patrulha",     home: "heart_of_valdoria", roams: false, pace: 1.0,  dwell: [3, 9],  band: [10, 22], mix: { cavaleiros: 0.35, infantaria: 0.45, arqueiros: 0.2 } },
-  { id: "patrulha_elmwood",   name: "Guarda de Elmwood",     sheet: "patrol_footmen", routine: "patrulha",     home: "elmwood",           roams: false, pace: 0.55, dwell: [5, 14], band: [12, 26], mix: { milicianos: 0.5, arqueiros: 0.35, infantaria: 0.15 } },
-  { id: "patrulha_greystone", name: "Ronda do Passo",        sheet: "patrol_footmen", routine: "patrulha",     home: "greystone",         roams: false, pace: 0.5,  dwell: [6, 16], band: [14, 28], mix: { infantaria: 0.55, milicianos: 0.3, arqueiros: 0.15 } },
-  { id: "leva_karneth",       name: "Coluna de Karneth",     sheet: "levy_column",    routine: "patrulha",     home: "karneth",           roams: false, pace: 0.5,  dwell: [8, 20], band: [34, 72], mix: { infantaria: 0.5, milicianos: 0.28, arqueiros: 0.14, cavaleiros: 0.08 } },
-  { id: "patrulha_campos",    name: "Milícia dos Campos",    sheet: "levy_column",    routine: "patrulha",     home: "greenfields",       roams: false, pace: 0.55, dwell: [6, 15], band: [20, 44], mix: { milicianos: 0.6, camponeses: 0.25, arqueiros: 0.15 } },
+  { id: "patrulha_coracao",   name: "Ronda do Castelo Real", sheet: "outriders",      routine: "patrulha",     home: "heart_of_valdoria", roams: false, pace: 1.0,  dwell: [3, 9],  band: [10, 22], mix: { cavaleiros: 0.35, infantaria: 0.45, arqueiros: 0.2 }, houseId:"house_valdoria" },
+  { id: "patrulha_elmwood",   name: "Guarda de Elmwood",     sheet: "patrol_footmen", routine: "patrulha",     home: "elmwood",           roams: false, pace: 0.55, dwell: [5, 14], band: [12, 26], mix: { milicianos: 0.5, arqueiros: 0.35, infantaria: 0.15 }, houseId:"house_silvarden" },
+  { id: "patrulha_greystone", name: "Ronda do Passo",        sheet: "patrol_footmen", routine: "patrulha",     home: "greystone",         roams: false, pace: 0.5,  dwell: [6, 16], band: [14, 28], mix: { infantaria: 0.55, milicianos: 0.3, arqueiros: 0.15 }, houseId:"house_dravenor" },
+  { id: "leva_karneth",       name: "Coluna de Karneth",     sheet: "levy_column",    routine: "patrulha",     home: "karneth",           roams: false, pace: 0.5,  dwell: [8, 20], band: [34, 72], mix: { infantaria: 0.5, milicianos: 0.28, arqueiros: 0.14, cavaleiros: 0.08 }, houseId:"house_karneth" },
+  { id: "patrulha_campos",    name: "Milícia dos Campos",    sheet: "levy_column",    routine: "patrulha",     home: "greenfields",       roams: false, pace: 0.55, dwell: [6, 15], band: [20, 44], mix: { milicianos: 0.6, camponeses: 0.25, arqueiros: 0.15 }, houseId:"house_elmwood" },
 
   // Comércio — é o que costura o reino, então anda longe.
   { id: "caravana_costa",     name: "Caravana da Costa",     sheet: "caravan_wagon",  routine: "comércio",     home: "golden_coast",      roams: true,  pace: 0.45, dwell: [10, 26], band: [6, 15], mix: { milicianos: 0.6, arqueiros: 0.4 } },
@@ -82,8 +85,17 @@ export const wanderers: Wanderer[] = [
   { id: "bando_pedra",        name: "Bando da Pedra Cinza",  sheet: "raiders",        routine: "pilhagem",     home: "greystone",         roams: false, pace: 0.7,  dwell: [7, 18], band: [6, 20], mix: { camponeses: 0.5, milicianos: 0.4, arqueiros: 0.1 } },
 
   // Nobreza — sai pouco, e quando sai é lento e visível.
-  { id: "cortejo_real",       name: "Cortejo Real",          sheet: "royal_carriage", routine: "cortejo",      home: "heart_of_valdoria", roams: true,  pace: 0.5,  dwell: [16, 40], band: [18, 34], mix: { cavaleiros: 0.5, infantaria: 0.5 } },
-  { id: "lorde_caelmont",     name: "Lorde de Caelmont",     sheet: "lord_rider",     routine: "cortejo",      home: "sacred_vale",       roams: true,  pace: 0.85, dwell: [12, 30], band: [12, 26], mix: { cavaleiros: 0.45, infantaria: 0.4, arqueiros: 0.15 } },
+  { id: "cortejo_real",       name: "Cortejo Real",          sheet: "royal_carriage", routine: "cortejo",      home: "heart_of_valdoria", roams: true,  pace: 0.5,  dwell: [16, 40], band: [18, 34], mix: { cavaleiros: 0.5, infantaria: 0.5 }, houseId:"house_valdoria" },
+  { id: "lorde_caelmont",     name: "Lorde de Caelmont",     sheet: "lord_rider",     routine: "cortejo",      home: "sacred_vale",       roams: true,  pace: 0.85, dwell: [12, 30], band: [12, 26], mix: { cavaleiros: 0.45, infantaria: 0.4, arqueiros: 0.15 }, houseId:"house_caelmont" },
+
+  // Hostes — ganham destino quando a Casa entra em guerra e cercam a sede inimiga.
+  { id:"hoste_valdoria", name:"Hoste Real de Valdória", sheet:"levy_column", routine:"exército", home:"heart_of_valdoria", roams:true, pace:.42, dwell:[10,24], band:[58,92], mix:{infantaria:.42,arqueiros:.22,cavaleiros:.18,milicianos:.18}, houseId:"house_valdoria" },
+  { id:"hoste_karneth", name:"Hoste das Marchas", sheet:"levy_column", routine:"exército", home:"karneth", roams:true, pace:.44, dwell:[10,24], band:[64,104], mix:{infantaria:.48,arqueiros:.16,cavaleiros:.22,milicianos:.14}, houseId:"house_karneth" },
+  { id:"hoste_aurenna", name:"Hoste da Costa Dourada", sheet:"outriders", routine:"exército", home:"golden_coast", roams:true, pace:.46, dwell:[10,24], band:[44,76], mix:{infantaria:.34,arqueiros:.28,cavaleiros:.2,milicianos:.18}, houseId:"house_aurenna" },
+  { id:"hoste_silvarden", name:"Hoste do Bosque", sheet:"levy_column", routine:"exército", home:"elmwood", roams:true, pace:.4, dwell:[10,24], band:[46,80], mix:{infantaria:.3,arqueiros:.36,cavaleiros:.08,milicianos:.26}, houseId:"house_silvarden" },
+  { id:"hoste_dravenor", name:"Hoste de Pedra Cinza", sheet:"levy_column", routine:"exército", home:"greystone", roams:true, pace:.38, dwell:[10,24], band:[60,98], mix:{infantaria:.52,arqueiros:.2,cavaleiros:.1,milicianos:.18}, houseId:"house_dravenor" },
+  { id:"hoste_elmwood", name:"Hoste dos Campos", sheet:"levy_column", routine:"exército", home:"greenfields", roams:true, pace:.4, dwell:[10,24], band:[48,84], mix:{infantaria:.28,arqueiros:.22,cavaleiros:.18,milicianos:.32}, houseId:"house_elmwood" },
+  { id:"hoste_caelmont", name:"Hoste do Vale Sagrado", sheet:"outriders", routine:"exército", home:"sacred_vale", roams:true, pace:.42, dwell:[10,24], band:[38,68], mix:{infantaria:.3,arqueiros:.3,cavaleiros:.16,milicianos:.24}, houseId:"house_caelmont" },
 ];
 
 /* ------------------------------ destinos ------------------------------- */

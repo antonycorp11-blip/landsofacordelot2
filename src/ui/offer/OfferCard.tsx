@@ -6,6 +6,7 @@ import { poiById } from "../../world/valdoria";
 import { formatDuration } from "../../world/time";
 import { DialogueScreen } from "../dialogue/DialogueScreen";
 import "./offer.css";
+import { wandererById } from "../../game/worldForces";
 
 /**
  * O CHAMADO NA TELA.
@@ -21,6 +22,15 @@ export function OfferCard({ onTravel }: { onTravel: (poiId: string) => void }) {
   const game = useGame();
   const [open, setOpen] = useState(false);
   const offer = game.adventure.offer;
+  const escort=game.adventure.escort;
+  if (!offer&&escort) {
+    const caravan=wandererById.get(escort.forceId);
+    return <button className="offer-card caravana" onClick={()=>onTravel(escort.destinationId)}>
+      <small>Escolta em andamento</small>
+      <strong>{caravan?.name??"Caravana"}</strong>
+      <span>Destino: {poiById.get(escort.destinationId)?.name} · mantenha-se por perto</span>
+    </button>;
+  }
   if (!offer) return null;
 
   const hours = game.journey?.hours ?? 0;
