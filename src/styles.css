@@ -64,4 +64,3 @@ html, body, #root {
 /* Luz do dia/noite. `multiply` sobre uma cor sólida dá o mesmo resultado da
    matriz de cor que havia antes, mas é composto pela GPU: o mapa não precisa
    ser rasterizado de novo a cada frame de arrasto. */
-.lighting-tint { position:absolute; inset:0; pointer-events:none; mix-blend-mode:multiply; }

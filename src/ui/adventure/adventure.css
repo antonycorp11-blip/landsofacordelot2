@@ -12,7 +12,6 @@
 .adv-tabs button[aria-pressed="true"] { color:#f1d491; border-color:#ddbf78; }
 .adv-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; margin-top:18px; }
 .adv-actions .btn { min-height:44px; height:auto; padding:12px 16px; line-height:1.35; }
-.adv-intro-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin:22px 0; }
 .adv-intro-grid article { padding:17px; border:1px solid #b7a06a44; border-radius:6px; background:#152a2c; }
 .adv-intro-grid b { color:#e6ce95; font-size:20px; font-weight:400; }
 .adv-steps { list-style:none; padding:0; margin:0; }
@@ -52,10 +51,10 @@
 .adv-companion .adv-actions { justify-content:flex-start; }
 .adv-log { border-left:2px solid #b7a16b66; padding:2px 0 4px 14px; margin-bottom:20px; }
 .adv-log small { color:#c7af78; font:10px var(--ui-small); }
-.journey-tracker { position:absolute; z-index:21; bottom:max(12px,env(safe-area-inset-bottom)); left:max(12px,env(safe-area-inset-left)); width:300px; max-width:calc(100% - 24px); display:flex; flex-direction:column; gap:6px; text-align:left; padding:13px 16px; color:#efe1bb; border:1px solid #c1a86c70; border-left:3px solid #dcc080; border-radius:6px; background:#14272eed; box-shadow:0 4px 20px #0006; cursor:pointer; }
-.journey-tracker small { font:9px var(--ui-small); text-transform:uppercase; letter-spacing:.12em; color:#d5bc85; }
-.journey-tracker strong { font-size:17px; font-weight:400; }
-.journey-tracker span { font:11px/1.4 var(--ui-small); color:#bec9b9; }
+.journey-tracker { position:absolute; z-index:18; bottom:calc(max(6px,env(safe-area-inset-bottom)) + 46px); left:max(6px,env(safe-area-inset-left)); max-width:min(250px,calc(100% - 12px)); display:flex; flex-direction:column; gap:2px; text-align:left; padding:7px 10px; color:#efe1bb; border:1px solid #c1a86c55; border-left:2px solid #dcc080; border-radius:6px; background:#12202696; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); box-shadow:0 2px 14px #0005; cursor:pointer; }
+.journey-tracker small { font:8px var(--ui-small); text-transform:uppercase; letter-spacing:.14em; color:#c3ab76; }
+.journey-tracker strong { font-size:13px; font-weight:400; line-height:1.2; }
+.journey-tracker span { font:10px/1.35 var(--ui-small); color:#9fae9f; }
 .sp-contracts { width:100%; margin-bottom:14px; }
 @media(max-width:640px) {
   .adv-backdrop { padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom)); }
@@ -73,7 +72,7 @@
   .adv-choice { padding:16px; }
   .adv-choice strong { font-size:18px; }
   .adv-actions>.btn { flex:1; }
-  .journey-tracker { width:calc(100% - 24px); }
+  .journey-tracker { max-width:calc(100% - 12px); }
   .adv-companion { gap:12px; align-items:flex-start; }
   .adv-companion>img { width:75px; }
   .adv-companion h3 { font-size:20px; }

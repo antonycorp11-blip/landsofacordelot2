@@ -1,5 +1,4 @@
 import { SceneryCanvas } from "../render/SceneryCanvas";
-import { lightingAt, type LightingMode } from "../render/dayNight";
 import { AtmosphereOverlay } from "../render/layers/AtmosphereLayer";
 import { onTilesetsReady } from "../render/tilesets";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,7 +44,7 @@ import { FiefLayer } from "../render/layers/FiefLayer";
 import { FiefPanel } from "../ui/fief/FiefPanel";
 import type { Fief } from "../world/fiefs";
 import { useCamera } from "./useCamera";
-import { Hud, LIGHTING_ORDER } from "../ui/Hud";
+import { Hud } from "../ui/Hud";
 import type { JournalKind } from "../ui/journal";
 
 /** Onde a campanha começa, quando o herói escolhido não disser outra coisa. */
@@ -62,7 +61,6 @@ export function WorldMap() {
   const startNode = (game.heroId && heroById.get(game.heroId)?.startPoiId) || FALLBACK_START;
 
   const [debug, setDebug] = useState(false);
-  const [lightingMode, setLightingMode] = useState<LightingMode>("cycle");
   const [tilesReady, setTilesReady] = useState(anyTilesetLoaded());
   useEffect(() => onTilesetsReady(() => setTilesReady(true)), []);
   const [follow, setFollow] = useState(true);
@@ -127,6 +125,19 @@ export function WorldMap() {
     ),
   });
 
+  /**
+   * Fim da abertura: o jogo começa DENTRO da localidade inicial, com o menu
+   * dela aberto — e não num mapa vazio onde o jogador tem que adivinhar o
+   * primeiro toque.
+   */
+  const introSeen = game.adventure.tutorial.introSeen;
+  const introWasSeen = useRef(introSeen);
+  useEffect(() => {
+    if (introWasSeen.current || !introSeen) return;
+    introWasSeen.current = true;
+    setPanelPoiId(travel.currentNodeId);
+  }, [introSeen, travel.currentNodeId]);
+
   const openSheet = useCallback(() => {
     setAdventureView(null);
     tutorialFlag('sheetViewed');
@@ -147,16 +158,19 @@ export function WorldMap() {
     [camera.getVisibleRect, camera.settle, camera.zoom],
   );
 
+  /**
+   * Tocar numa localidade ABRE o menu dela — não parte. Partir é uma escolha
+   * dentro do menu, para que um toque perdido no mapa não custe três dias de
+   * estrada.
+   */
   const handlePoiClick = useCallback(
     (poi: PointOfInterest) => {
       if (camera.wasDragged()) return;
       setSelectedPoiId(poi.id);
       setSelectedRegion(poi.regionId);
       setPanelPoiId(poi.id);
-      if (poi.id === travel.currentNodeId) return;
-      if (!travel.travelTo(poi.id)) pushLog("evento", travel.state === "traveling" ? "Conclua o trecho atual antes de escolher outra rota." : `Sem rota disponível até ${poi.name}`);
     },
-    [camera, pushLog, travel],
+    [camera],
   );
 
   const handleRegionClick = useCallback(
@@ -183,9 +197,7 @@ export function WorldMap() {
   // e a mesma pausa do viajante, mas não escrevem no relógio do mundo.
   const wanderers = useWanderers({ speed: travel.speed, paused: travel.paused });
 
-  const region = selectedRegion ? regionById.get(selectedRegion) : null;
   const zoom = camera.zoom;
-  const lighting = lightingAt(travel.worldHours, lightingMode);
 
 
   const destinationId = travel.path?.nodeIds[travel.path.nodeIds.length - 1] ?? null;
@@ -319,11 +331,10 @@ export function WorldMap() {
         </g>
       </svg>
 
-      {/* Luz do dia: uma camada sólida multiplicada sobre o mapa. Fica abaixo
-          do brilho das lanternas, que é luz somada e não pode ser tingida. */}
-      {!debug && <div className="lighting-tint" style={{ background: lighting.tint }} aria-hidden="true" />}
-
-      <AtmosphereOverlay subscribe={camera.subscribe} night={debug ? 0 : lighting.night} view={view} zoom={zoom} />
+      {/* Sem ciclo de dia e noite: o mapa é lido a toda hora, e escurecê-lo
+          por metade do relógio só atrapalhava a leitura. A camada de atmosfera
+          continua, sempre em luz plena. */}
+      <AtmosphereOverlay subscribe={camera.subscribe} night={0} view={view} zoom={zoom} />
 
       <Hud
         placeName={regionById.get(travel.regionId)?.name ?? "Valdória"}
@@ -339,12 +350,6 @@ export function WorldMap() {
         follow={follow}
         onToggleFollow={() => setFollow((f) => !f)}
         onFit={camera.fitWorld}
-        lightingName={lighting.name}
-        lightingNight={lighting.night}
-        lightingMode={lightingMode}
-        onCycleLighting={() =>
-          setLightingMode((m) => LIGHTING_ORDER[(LIGHTING_ORDER.indexOf(m) + 1) % LIGHTING_ORDER.length])
-        }
         debug={debug}
         onToggleDebug={() => setDebug((d) => !d)}
         journal={game.adventure.chronicle}
@@ -353,19 +358,18 @@ export function WorldMap() {
         food={game.food}
         heroId={game.heroId}
         xp={game.xp}
-        onOpenAdventure={() => setAdventureView({tab:"contracts"})}
+        onOpenJourney={() => setAdventureView({tab:"guide"})}
         level={game.level}
         onOpenSheet={openSheet}
         political={political}
         onTogglePolitical={() => setPolitical((p) => !p)}
-        selected={region ? { name: region.name, biome: region.biome, pois: region.pointsOfInterest.length, settlements: region.settlements.length } : null}
       />
 
       <SettlementPanel
         key={panelPoiId}
-        onOpenAdventure={(poiId) => setAdventureView({tab:"contracts",poiId})}
         poi={panelPoiId ? poiById.get(panelPoiId) ?? null : null}
         worldHours={travel.worldHours}
+        onTravel={(id) => setQueuedDestination(id)}
         onClose={() => setPanelPoiId(null)}
       />
 

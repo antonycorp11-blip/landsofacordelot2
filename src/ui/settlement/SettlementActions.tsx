@@ -1,81 +1,87 @@
 import { memo } from "react";
 import type { Holding } from "../../data/holdings";
-import type { Character } from "../../data/characters";
 import { ownsHolding } from "../../data/player";
 
 /**
- * O que dá para fazer aqui.
+ * O MENU DA LOCALIDADE.
  *
- * Quase tudo ainda não existe como sistema, e os botões correspondentes ficam
- * DESABILITADOS em vez de ausentes: é o mapa do que vem, e evita que o painel
- * mude de forma a cada sistema novo. As ações de administração só aparecem se
- * a estrutura for da Casa do jogador — hoje, nunca.
+ * Uma lista vertical, cada linha uma coisa que se faz aqui — a forma de um
+ * menu de cidade, não de uma barra de ferramentas. O que ainda não existe como
+ * sistema fica DESABILITADO em vez de ausente: é o mapa do que vem, e o painel
+ * não muda de forma a cada sistema novo.
  */
-type Action = { id: string; label: string; enabled: boolean; primary?: boolean };
+export type MenuItem = {
+  id: string;
+  label: string;
+  /** Segunda linha: o que acontece, ou por que não dá. */
+  hint?: string;
+  enabled: boolean;
+  primary?: boolean;
+};
 
 /** Onde faz sentido levantar homens. Um templo não arma ninguém. */
 const RECRUITS: string[] = ["castle", "city", "town", "village", "military", "market", "port", "mine", "estate"];
 
-function actionsFor(holding: Holding, present: Character[]): Action[] {
-  const list: Action[] = [];
-  const leader = present[0];
+export function menuFor(holding: Holding, opts: { here: boolean; speaker: string; canDeliver: boolean }): MenuItem[] {
+  const { here, speaker, canDeliver } = opts;
+  const list: MenuItem[] = [];
 
-  if (leader) {
-    list.push({ id: "audience", label: `Pedir audiência a ${leader.name.split(" ")[1] ?? leader.name}`, enabled: false, primary: true });
+  if (!here) {
+    list.push({ id: "travel", label: "Viajar até aqui", hint: "Seguir pela estrada até esta localidade", enabled: true, primary: true });
   }
 
-  if (holding.kind === "city" || holding.kind === "town" || holding.kind === "castle") {
-    list.push({ id: "enter", label: "Entrar", enabled: false });
+  if (canDeliver) {
+    list.push({ id: "deliver", label: "Entregar o encargo", hint: "Você chegou ao destino do contrato", enabled: here, primary: true });
+  }
+
+  list.push({
+    id: "talk",
+    label: `Falar com ${speaker}`,
+    hint: here ? "Trabalho, notícias e o que se passa por aqui" : "É preciso estar no local",
+    enabled: here,
+    primary: !canDeliver,
+  });
+
+  if (RECRUITS.includes(holding.kind)) {
+    list.push({ id: "recruit", label: "Recrutar tropas", hint: here ? "Levantar homens com ouro" : "É preciso estar no local", enabled: here });
   }
   if (holding.kind === "market" || holding.kind === "city" || holding.kind === "port") {
-    list.push({ id: "market", label: "Mercado", enabled: false });
-  }
-  if (RECRUITS.includes(holding.kind)) {
-    list.push({ id: "recruit", label: "Recrutar", enabled: true });
+    list.push({ id: "market", label: "Ir ao mercado", hint: "Comércio ainda não disponível", enabled: false });
   }
   if (holding.kind === "temple") {
-    list.push({ id: "temple", label: "Templo", enabled: false });
+    list.push({ id: "temple", label: "Entrar no templo", hint: "Ainda não disponível", enabled: false });
   }
   if (holding.kind === "estate" || holding.kind === "village") {
-    list.push({ id: "rest", label: "Descansar", enabled: false });
+    list.push({ id: "rest", label: "Descansar", hint: "Ainda não disponível", enabled: false });
   }
 
-  list.push({ id: "talk", label: "Conversar", enabled: false });
-  list.push({ id: "info", label: "Informações", enabled: false });
+  list.push({ id: "info", label: "Ver informações", hint: "População, prosperidade, guarnição", enabled: true });
 
   if (ownsHolding(holding.ownerHouseId)) {
-    list.push({ id: "manage", label: "Gerir", enabled: false });
-    list.push({ id: "laws", label: "Leis", enabled: false });
-    list.push({ id: "taxes", label: "Impostos", enabled: false });
-    list.push({ id: "garrison", label: "Guarnição", enabled: false });
+    list.push({ id: "manage", label: "Administrar", hint: "Leis, impostos e guarnição — ainda não disponível", enabled: false });
   }
 
   return list;
 }
 
-export const SettlementActions = memo(function SettlementActions({
-  holding,
-  present,
-  onAction,
-  here,
+export const SettlementMenu = memo(function SettlementMenu({
+  items,
+  onPick,
 }: {
-  holding: Holding;
-  present: Character[];
-  onAction: (id: string) => void;
-  here: boolean;
+  items: MenuItem[];
+  onPick: (id: string) => void;
 }) {
-  const actions = actionsFor(holding, present);
   return (
-    <div className="sp-actions">
-      {actions.map((a) => (
+    <div className="sp-menu">
+      {items.map((item) => (
         <button
-          key={a.id}
-          className={`sp-action ${a.primary ? "primary" : ""}`}
-          disabled={!a.enabled || !here}
-          title={!here ? "Chegue ao local para agir" : a.enabled ? undefined : "Ainda não disponível"}
-          onClick={() => onAction(a.id)}
+          key={item.id}
+          className={`sp-menu-item ${item.primary ? "primary" : ""}`}
+          disabled={!item.enabled}
+          onClick={() => onPick(item.id)}
         >
-          {a.label}
+          <span className="sp-menu-label">{item.label}</span>
+          {item.hint && <span className="sp-menu-hint">{item.hint}</span>}
         </button>
       ))}
     </div>

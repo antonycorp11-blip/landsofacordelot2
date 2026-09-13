@@ -99,35 +99,15 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
 .empty { font:12px/1.8 var(--ui-small); color:#b4bdae; }
 
 /* Map HUD: resources are compact, differentiated and always readable. */
-.hud-panel { background:#102127db; border-color:#baa16a66; border-radius:6px; box-shadow:0 3px 12px #0004,inset 0 1px #fff06; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); }
-.hud-bar { gap:7px; align-items:start; }
-.hud-place-chip { padding:8px 11px; max-width:30vw; }
-.hud-place { font-size:15px; color:#f0e4c9; }
-.hud-clock { font-family:var(--ui-small); font-size:9px; margin-top:4px; color:#b7c0b0; }
-.hud-hero { height:48px; padding:0 10px; }
-.hud-level { width:26px; height:28px; font-family:Georgia,serif; font-size:17px; }
-.hud-resources { display:flex; align-items:stretch; min-height:48px; padding:0 5px; }
-.hud-resource { display:flex; align-items:center; gap:5px; padding:6px 8px; min-width:72px; }
-.hud-resource + .hud-resource { border-left:1px solid #b99d6133; }
-.hud-resource span { display:flex; flex-direction:column; gap:3px; }
-.hud-resource small { font:8px var(--ui-small); color:#c5c7b5; }
-.hud-resource b { font:600 13px var(--ui-small); color:#f4e2b3; font-variant-numeric:tabular-nums; }
-.hud-dock { min-height:48px; align-items:center; }
-.hud-btn { height:32px; font-family:var(--ui-small); font-size:10px; }
-.hud-journal { width:280px; background:#132328d9; }
-.hud-journal-head { padding:9px 12px; font:9px var(--ui-small); }
-.hud-journal-list { font:11px/1.7 var(--ui-small); padding:8px 12px; }
-.hud-journal-head button { min-width:26px; height:26px; font-size:18px; }
-.hud-selected span { display:none; }
 
 /* Settlement and agent drawers retain context on the map. */
-.settlement-panel { top:max(76px,calc(env(safe-area-inset-top) + 68px)); right:12px; bottom:12px; width:370px; z-index:22; background:linear-gradient(160deg,#203135fa,#112126f5); border-color:#bfa66c70; border-radius:8px; box-shadow:0 12px 38px #0008; }
-.sp-head { gap:13px; padding:20px 17px; background:linear-gradient(120deg,#39505755,#13232a99); border-bottom:1px solid #bda3694d; }
+.settlement-panel { background:linear-gradient(160deg,#1d2d31fa,#0f1e22f5); border-color:#bfa66c70; box-shadow:0 12px 38px #0008; }
+.sp-head { gap:11px; padding:13px 14px; background:linear-gradient(120deg,#39505755,#13232a99); border-bottom:1px solid #bda3694d; }
 .sp-crest { padding-top:4px; }
-.sp-title h2 { font-size:21px; font-weight:400; line-height:1.2; }
-.sp-sub { font:9px/1.65 var(--ui-small); color:#c8bb97; margin:6px 0 10px; }
+.sp-title h2 { font-size:18px; font-weight:400; line-height:1.2; }
+.sp-sub { font:9px/1.6 var(--ui-small); color:#c8bb97; margin:4px 0 6px; }
 .sp-owner { font:11px/1.6 var(--ui-small); color:#e2d7b8; }
-.sp-body { padding:18px; }
+.sp-body { padding:12px; }
 .char-card { padding:12px; background:#0e202680; border:1px solid #a18d5438; border-radius:5px; gap:12px; align-items:center; }
 .char-portrait { width:72px; height:98px; object-fit:contain; border:0; border-radius:0; }
 .char-name { font-size:16px; font-weight:400; }
@@ -143,22 +123,17 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
 .sp-count { font:11px/1.65 var(--ui-small); align-items:center; padding:8px 0; border-bottom:1px solid #9c8b5426; }
 .sp-count b { max-width:60%; }
 .sp-divider { margin:3px 0; }
-.sp-actions { padding:14px 17px; gap:8px; background:#0e1c20d9; }
-.sp-action { min-height:38px; font:600 11px var(--ui-small); padding:0 13px; border-radius:4px; border-color:#b8a16a55; background:#bdad7417; }
-.sp-action.primary { height:auto; min-height:40px; line-height:1.4; padding:10px; }
-.sp-action:disabled { opacity:.4; }
-.sp-action:not(:disabled) { background:#b89a54; color:#172022; border-color:#e2c889; }
 .recruit-row { padding:15px 0; gap:12px; }
 .recruit-name { font-size:16px; font-weight:400; }
 .recruit-meta,.recruit-desc,.recruit-bar { font:11px/1.65 var(--ui-small); }
 .recruit-buttons .btn { min-height:34px; }
-.agent-panel { width:340px; right:12px; bottom:12px; background:#15282ff5; border-radius:7px; border-color:#baa16a66; box-shadow:0 10px 30px #0006; }
-.agent-head { padding:18px; }
-.agent-head h2 { font-size:20px; font-weight:400; }
+.agent-panel { background:#15282ff5; border-color:#baa16a66; box-shadow:0 10px 30px #0006; }
+.agent-head { padding:13px 14px; }
+.agent-head h2 { font-size:18px; font-weight:400; }
 .agent-sub { font:9px var(--ui-small); margin-top:7px; }
-.agent-body { padding:16px 18px; }
+.agent-body { padding:11px 14px; }
 .agent-hint { font:11px/1.7 var(--ui-small); color:#b4bdae; }
-.agent-actions { padding:14px 18px; }
+.agent-actions { padding:11px 14px; }
 .agent-actions .btn { min-height:40px; }
 .legend { width:310px; background:#15282ff2; border-color:#baa16a66; border-radius:7px; }
 .legend-head { padding:10px 13px; }
@@ -172,8 +147,6 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
 .legend-foot { padding:10px 13px; font:11px var(--ui-small); }
 
 @media (max-width:1120px) {
-  .hud-btn .label-long { display:none; }
-  .hud-place-chip { max-width:32vw; }
   .hs-grid { gap:10px; }
   .hs-card { padding:13px; }
   .sheet-inner.cols { grid-template-columns:190px minmax(240px,1fr) 250px; gap:14px; }
@@ -187,29 +160,8 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
   .party-view { grid-template-columns:1fr; }
 }
 @media (max-width:720px) {
-  .hud-layer { padding: max(7px,env(safe-area-inset-top)) 7px max(7px,env(safe-area-inset-bottom)); }
-  .hud-bar { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:5px; }
-  .hud-place-chip { grid-column:1; grid-row:1; max-width:none; padding:6px 9px; }
-  .hud-hero { grid-column:2; grid-row:1; height:43px; }
-  .hud-place { font-size:13px; }
-  .hud-clock { font-size:9px; }
-  .hud-resources { grid-column:1/-1; grid-row:2; justify-content:space-around; min-height:40px; }
-  .hud-resource { flex:1; justify-content:center; padding:4px 7px; min-width:0; gap:7px; }
-  .hud-resource .resource-icon { width:27px; height:27px; }
-  .hud-resource span { flex-direction:row; align-items:baseline; gap:6px; }
-  .hud-resource small { font-size:8px; }
-  .hud-resource b { font-size:12px; }
-  .hud-dock { grid-column:1/-1; grid-row:3; width:100%; min-height:40px; padding:2px; }
-  .hud-btn { min-height:34px; min-width:32px; padding:0 5px; }
-  .hud-btn.icon { padding:0 7px; }
-  .hud-journal { width:auto; }
-  .settlement-panel { top:auto; left:7px; right:7px; bottom:max(7px,env(safe-area-inset-bottom)); width:auto; max-height:65dvh; }
   .sp-head { padding:14px; }
-  .sp-title h2 { font-size:20px; }
   .sp-body { padding:14px; }
-  .sp-actions { padding:12px 14px; }
-  .sp-action { min-height:40px; }
-  .agent-panel { left:7px; right:7px; width:auto; max-height:65dvh; overflow-y:auto; }
   .sheet-heading { padding:max(20px,env(safe-area-inset-top)) 18px 16px; }
   .sheet-heading h1 { font-size:27px; }
   .sheet-bar { padding:0 16px; gap:18px; overflow-x:auto; flex:none; }
@@ -244,24 +196,12 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
   .hs-confirm p { font-size:12px; text-align:center; line-height:1.5; }
   .hs-actions { width:100%; }
   .hs-actions .primary { min-width:0; flex:1; }
-  .hud-resource small { font-size:8px; }
-  .hud-resource { gap:3px; padding:4px; }
-  .hud-resource span { flex-direction:column; gap:2px; }
 }
 @media (prefers-reduced-motion:reduce) {
   .hs-card { transition:none; }
   .hs-card:hover,.hs-card[aria-pressed="true"] { transform:none; }
 }
 
-/* Portrait is the entry to the sheet; the ring shows progress within this level. */
-.hud-hero.portrait-button { position:relative; flex:none; width:60px; height:60px; min-width:60px; padding:0; border:0; border-radius:50%; background:#122329; cursor:pointer; box-shadow:0 3px 12px #0006; }
-.hero-xp-ring { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); fill:none; stroke-width:3; }
-.xp-track { stroke:#54615b; }
-.xp-value { stroke:#ead092; stroke-linecap:round; transition:stroke-dashoffset .35s ease; }
-.hero-avatar { position:absolute; inset:7px; display:block; border-radius:50%; overflow:hidden; background:#384844; }
-.hero-avatar img { position:absolute; width:220%; max-width:none; height:auto; left:-60%; top:-25%; }
-.hero-level-badge { position:absolute; bottom:-3px; right:-1px; min-width:21px; height:21px; display:grid; place-items:center; border:1px solid #e1c585; border-radius:50%; background:#15272c; color:#efdcaa; font:600 10px var(--ui-small); }
-.hud-dock .journey-button { color:#f1d491; background:#bca76b20; border-color:#baa16a55; }
 
 /* Compact, bounded sheet: identity, statistics and careers each have a readable area. */
 .sheet-backdrop { position:absolute; inset:0; z-index:45; background:#061014aa; display:grid; place-items:center; padding:20px; }
@@ -304,18 +244,69 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
   .sheet .panel { padding:15px; }
   .sheet .skill-head { flex-wrap:wrap; }
   .sheet .skill-name { font-size:15px; }
-  .hud-hero.portrait-button { width:48px; min-width:48px; height:48px; }
-  .hero-avatar { inset:6px; }
-  .hero-level-badge { font-size:9px; height:18px; min-width:18px; }
-}
-@media(prefers-reduced-motion:reduce) { .xp-value { transition:none; } }
-@media(min-width:721px) and (max-width:1280px) {
-  .hud-bar { display:grid; grid-template-columns:minmax(0,1fr) 60px auto; align-items:start; }
-  .hud-bar .spacer { display:none; }
-  .hud-place-chip { grid-column:1; grid-row:1; max-width:none; width:fit-content; max-width:100%; }
-  .hud-hero.portrait-button { grid-column:2; grid-row:1; }
-  .hud-resources { grid-column:3; grid-row:1; }
-  .hud-dock { grid-column:1/-1; grid-row:2; justify-self:end; max-width:100%; overflow-x:auto; }
 }
 .sheet:focus { outline:none; }
 .adv-choice .adv-growth { color:#a5d1bd; }
+
+/* ------------------------- escolha inicial no celular --------------------
+ * Numa tela estreita, duas colunas deixavam quatro cartas altíssimas e
+ * apertadas — era preciso rolar muito para comparar as origens. Uma coluna,
+ * com o retrato ao lado do texto, deixa cada carta curta e a escolha
+ * comparável de relance.
+ */
+@media (max-width: 620px) {
+  .hero-select { padding: max(18px, env(safe-area-inset-top)) 12px 12px; gap: 16px; }
+  .hs-title { font-size: 25px; }
+  .hs-sub { font-size: 12px; }
+  .hs-head::after { margin-top: 4px; }
+
+  .hs-grid {
+    grid-template-columns: 1fr;
+    max-width: 460px;
+    gap: 10px;
+  }
+
+  .hs-card {
+    display: grid;
+    grid-template-columns: 108px minmax(0, 1fr);
+    grid-template-areas: "figure head" "figure tag" "strengths strengths" "attrs attrs";
+    align-items: start;
+    column-gap: 13px;
+    row-gap: 7px;
+    padding: 12px;
+  }
+  .hs-choice-mark { display: none; }
+  .hs-figure { grid-area: figure; max-width: 108px; margin: 0; align-self: center; }
+  .hs-card > div:has(.hs-role) { grid-area: head; }
+  .hs-role { font-size: 9px; }
+  .hs-tag { grid-area: tag; font-size: 13.5px; min-height: 0; line-height: 1.4; }
+  .hs-strengths { grid-area: strengths; font-size: 11px; line-height: 1.65; }
+  .hs-attrs { grid-area: attrs; grid-template-columns: repeat(4, 1fr); gap: 4px; padding-top: 10px; }
+  .hs-attr b { font-size: 18px; }
+  .hs-attr span { font-size: 7.5px; }
+
+  /* Presa à base da tela, e não ao fim da lista: a confirmação da escolha
+     precisa estar sempre ao alcance, mesmo com a primeira carta selecionada
+     lá em cima. `fixed` em vez de `sticky` porque aqui o contêiner rolante é
+     a própria tela, e sticky ficava meio para fora dela. */
+  .hs-confirm {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    min-height: 0;
+    margin: 0;
+    padding: 9px 12px max(9px, env(safe-area-inset-bottom));
+    background: #0c181cf7;
+    border-top: 1px solid #bdab7755;
+    box-shadow: 0 -8px 26px #0007;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  /* Espaço para ela no fim da rolagem. */
+  .hs-grid { padding-bottom: 106px; }
+  .hs-confirm p { font-size: 12.5px; text-align: center; line-height: 1.45; }
+  .hs-actions { width: 100%; gap: 8px; }
+  .hs-actions .btn { flex: 1; min-width: 0; }
+}

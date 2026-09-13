@@ -1,23 +1,26 @@
 /**
- * PAINEL DE ESTRUTURA.
+ * MENU DA LOCALIDADE.
  *
- * Mesma linguagem do HUD: vidro escuro, serifa, dourado discreto. Ocupa uma
- * faixa, nunca a tela: o mapa continua visível e continua arrastável ao lado.
+ * Mesma linguagem do HUD: vidro escuro, serifa, dourado discreto. No desktop é
+ * uma coluna à direita; no celular é uma gaveta pela base, com altura máxima e
+ * rolagem POR DENTRO — em nenhum caso o painel passa da tela.
  */
 .settlement-panel {
   position: absolute;
   top: max(8px, env(safe-area-inset-top));
   right: max(8px, env(safe-area-inset-right));
-  bottom: max(8px, env(safe-area-inset-bottom));
-  width: 320px;
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + 46px);
+  z-index: 25;
+  width: 330px;
   max-width: calc(100vw - 16px);
   display: flex;
   flex-direction: column;
+  min-height: 0;
   pointer-events: auto;
   color: #f1e7cc;
-  background: #161d1cdb;
+  background: #121a1adb;
   border: 1px solid #c8af6e3d;
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow: 0 2px 20px #00000055;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -25,6 +28,7 @@
   overflow: hidden;
   animation: sp-in 160ms ease-out;
 }
+
 @keyframes sp-in { from { opacity: 0; transform: translateX(10px); } }
 @media (prefers-reduced-motion: reduce) { .settlement-panel { animation: none; } }
 
@@ -95,43 +99,75 @@
 .sp-count b.bad { color: #e0a08c; }
 .sp-divider { height: 1px; background: #c8af6e2b; margin: 9px 0 8px; }
 
-/* -------------------------------- ações --------------------------------- */
+/* -------------------------------- menu ---------------------------------- */
 
-.sp-actions {
-  display: flex; flex-wrap: wrap; gap: 5px;
-  padding: 9px 11px;
-  border-top: 1px solid #c8af6e2b;
-  background: #0f1514a6;
+.sp-preview {
+  margin: 0 0 9px;
+  font: 11.5px/1.5 var(--ui-small);
+  color: #9fae9f;
+  padding-left: 9px;
+  border-left: 2px solid #c8af6e3d;
 }
-.sp-action {
-  font: inherit; font-size: 11.5px; line-height: 1;
-  padding: 0 9px; height: 28px;
-  border-radius: 3px; border: 1px solid #c8af6e33;
-  background: #ffffff0d; color: #ded3b4; cursor: pointer;
+
+.sp-menu { display: flex; flex-direction: column; gap: 2px; }
+.sp-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #ffffff08;
+  color: #ded3b4;
+  cursor: pointer;
 }
-.sp-action:hover:not(:disabled) { background: #ffffff1a; color: #f6eed6; }
-.sp-action:disabled { opacity: 0.42; cursor: default; }
-.sp-action.primary {
-  flex: 1 0 100%;
-  height: 32px;
+.sp-menu-item:hover:not(:disabled) { background: #ffffff16; border-color: #c8af6e44; color: #f6eed6; }
+.sp-menu-item:disabled { opacity: 0.4; cursor: default; }
+.sp-menu-item:focus-visible { outline: 2px solid #d8b85c; outline-offset: -2px; }
+.sp-menu-item.primary {
   background: #c9a84c2b;
   border-color: #d8b85c5c;
   color: #f3dc9b;
 }
+.sp-menu-label { font-size: 14.5px; line-height: 1.25; }
+.sp-menu-hint { font: 11px/1.4 var(--ui-small); color: #96a096; }
+.sp-menu-item.primary .sp-menu-hint { color: #c2b083; }
+
+.sp-back {
+  margin-top: 12px;
+  width: 100%;
+  font: inherit; font-size: 13px;
+  padding: 10px;
+  border: 1px solid #c8af6e33;
+  border-radius: 6px;
+  background: #ffffff08;
+  color: #ded3b4;
+  cursor: pointer;
+}
+.sp-back:hover { background: #ffffff16; }
 
 /* ------------------------------- celular -------------------------------- */
 
 @media (max-width: 720px) {
   .settlement-panel {
+    /* Gaveta pela base. `top:auto` + `max-height` em dvh: a barra do Safari
+       muda de altura durante a rolagem, e vh congelaria o painel fora da tela. */
     top: auto;
     left: max(8px, env(safe-area-inset-left));
     right: max(8px, env(safe-area-inset-right));
+    /* Acima da doca do HUD, que mora na base. */
+    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 46px);
     width: auto;
-    max-height: 52vh;
+    max-height: min(66dvh, calc(100dvh - 170px));
+    border-radius: 10px;
     animation: sp-up 180ms ease-out;
   }
   @keyframes sp-up { from { opacity: 0; transform: translateY(16px); } }
-  .sp-action { height: 32px; font-size: 12px; }
+  .sp-menu-label { font-size: 15px; }
+  .sp-menu-item { padding: 12px; }
 }
 
 /* ------------------------------ recrutamento ---------------------------- */
