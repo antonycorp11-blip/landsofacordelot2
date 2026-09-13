@@ -8,6 +8,7 @@
 import type { TroopId } from "../data/troops";
 import { getState, update } from "../game/store";
 import { estateOf, investCost, INVEST_STEP, type TaxLevel } from "./estates";
+import { tilt, TILT } from "./balance";
 
 function owns(fiefId: string): boolean {
   return getState().fiefOwners[fiefId] === "player";
@@ -16,6 +17,10 @@ function owns(fiefId: string): boolean {
 export function setTax(fiefId: string, tax: TaxLevel): boolean {
   if (!owns(fiefId)) return false;
   update((s) => ({ ...s, fiefEstates: { ...s.fiefEstates, [fiefId]: { ...estateOf(s, fiefId), tax } } }));
+  // Como ele cobra é a coisa que mais diz quem ele está virando, porque é a
+  // única que ele decide toda semana e que outra gente paga.
+  if (tax === "pesado") tilt(TILT.taxPesado, "Imposto pesado");
+  if (tax === "baixo") tilt(TILT.taxBaixo, "Imposto baixo");
   return true;
 }
 
@@ -36,6 +41,7 @@ export function invest(fiefId: string): boolean {
       loyalty: Math.min(100, estate.loyalty + 4),
     } },
   }));
+  tilt(TILT.investir, "Obra paga do próprio bolso");
   return true;
 }
 

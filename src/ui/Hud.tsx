@@ -5,6 +5,8 @@ import { ResourceIcon } from "./ResourceIcon";
 import { useEffect, useRef, useState } from "react";
 import { formatDuration } from "../world/time";
 import { JOURNAL_GLYPH, stamp, type JournalEntry } from "./journal";
+import { BalanceBar } from "./BalanceBar";
+import type { BalanceState } from "../game/balance";
 import "./hud.css";
 
 const SPEEDS = [1, 2, 4];
@@ -62,6 +64,8 @@ type Props = {
   /** Nível do personagem — abre a ficha. */
   level: number;
   onOpenSheet: () => void;
+  /** Para que lado ele vem andando: usar os selos ou quebrá-los. */
+  balance: BalanceState;
   /** Vista política — o mapa pintado por Casa, para planejar conquista. */
   political: boolean;
   onTogglePolitical: () => void;
@@ -83,7 +87,7 @@ export function Hud({
   paused, onTogglePause, speed, onSpeed,
   follow, onToggleFollow, onFit,
   debug, onToggleDebug, journal, coins, influence, food = null, level, onOpenSheet,
-  political, onTogglePolitical, heroId, xp, onOpenJourney,
+  political, onTogglePolitical, heroId, xp, onOpenJourney, balance,
 }: Props) {
   const [journalOpen, setJournalOpen] = useState(false);
 
@@ -144,6 +148,8 @@ export function Hud({
             </span>
           </div>
         </div>
+
+        <BalanceBar balance={balance} />
 
         {/* A viagem só ocupa espaço enquanto existe. */}
         {traveling && destinationName && (

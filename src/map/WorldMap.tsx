@@ -458,6 +458,7 @@ export function WorldMap() {
         journal={game.adventure.chronicle}
         coins={game.gold}
         influence={game.influence}
+        balance={game.balance}
         food={game.food}
         heroId={game.heroId}
         xp={game.xp}

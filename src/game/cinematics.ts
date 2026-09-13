@@ -37,6 +37,14 @@ export type SceneOutcome = {
   evidence?: string[];
   /** Marcas permanentes da escolha. */
   flags?: string[];
+  /**
+   * Quanto esta escolha inclina a Balança. Positivo puxa para a Coroa,
+   * negativo para as Cinzas. A maioria das falas não mexe: se toda linha de
+   * diálogo movesse o medidor, ele viraria ruído e pararia de significar.
+   */
+  balance?: number;
+  /** Texto curto ao lado da barra explicando o empurrão. */
+  balanceReason?: string;
   /** Próximo momento desta cena. */
   next?: string;
   /** Encerra a cena e devolve o mapa. */

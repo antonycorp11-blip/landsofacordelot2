@@ -6,6 +6,7 @@ import { choiceChance, roadEventById, roadEvents } from './roadEvents';
 import { makeRaid, resolveRaid, type Raid } from './raid';
 import { beginQuest, closingFor, complicationFor, questOptionChance } from './quests';
 import { addTroopCounts, playRound, prisonerRansom, resolveParley, startBattle, type Order, type ParleyKind } from './battle';
+import { tilt, TILT } from './balance';
 import { allSteps, chapterOfStep, currentStep, triggerMet } from './story';
 import { makeOffer, type Offer } from './offers';
 import type { RoadStop } from '../world/roadStops';
@@ -531,6 +532,23 @@ export function ransomAllPrisoners(): boolean {
     const next=withReward({...g,prisoners:{}},{gold:value,xp:Math.min(45,count*4),careerXp:{TRADE:Math.min(30,count*3)},skillXp:{negociacao:1}});
     return logged(next,'evento',`${count} prisioneiro(s) resgatados por ${value} moedas.`);
   });
+  tilt(TILT.resgate,'Cativos vendidos por resgate');
+  return true;
+}
+
+/**
+ * Soltar os cativos sem cobrar nada.
+ *
+ * Perde o ouro do resgate de propósito. É a escolha mais cara que o jogo
+ * oferece por um princípio, e por isso é a que mais move a Balança nos
+ * primeiros arcos — antes de ele ter terra, soltar quarenta homens é abrir
+ * mão do soldo do mês.
+ */
+export function freePrisoners(): boolean {
+  const s=getState(),count=troopTotal(s.prisoners);
+  if(!count)return false;
+  update(g=>logged({...g,prisoners:{}},'evento',`${count} cativo(s) soltos sem resgate. Eles vão contar a alguém.`));
+  tilt(TILT.soltar,'Cativos soltos sem cobrar');
   return true;
 }
 

@@ -1,7 +1,7 @@
 # A Coroa dos Sete Juramentos
 
 > **SPOILER DO JOGO INTEIRO.** Documento de desenvolvedor. A seção 2 é a única
-> coisa que o jogador sabe ao montar no cavalo.
+> coisa que o jogador sabe ao sair do bosque.
 
 ---
 
@@ -67,6 +67,8 @@ Trezentos anos depois:
 - quem **perdeu a linhagem** levou o selo junto;
 - e a maior parte do reino nunca ouviu falar disso.
 
+E há uma coisa que nem as Casas sabem. Está na seção 6.
+
 ### A Casa Valdória
 
 Eles **são** descendentes do velho rei — por um ramo lateral, primos de
@@ -85,33 +87,153 @@ tomando de linhagens extintas.
 É por isso que um homem morrendo debaixo de uma carruagem diz *não entregue à
 Coroa*.
 
+### As três Casas sem terra
+
+Morvath, Veyr e Rosethorne nasceram de cisões: não têm região e não têm selo.
+**Morvath saiu da própria Valdória**, o que faz deles a Casa mais perigosa do
+tabuleiro — conhecem por dentro tudo o que a Coroa faz, e passaram trezentos
+anos sendo tratados como parentes pobres por isso.
+
 ---
 
-## 4. Onde estão os sete
+## 4. Por que ele não vende
 
-O mundo já carrega a divisão: **sete Casas têm região, três não têm.**
-Morvath, Veyr e Rosethorne nasceram de cisões, sem terra — e sem selo.
+Isto precisa estar resolvido **nos primeiros quinze minutos**, e está: é o
+último momento da cena da carruagem.
 
-| Selo | Casa | Onde está | Arco |
+Um plebeu com uma joia de ouro no bolso e nenhuma explicação faz o que
+qualquer um faria — desce até o primeiro mercador e vende. Se o jogo não
+responde por que ele não vendeu, o jogador não acredita em mais nada depois.
+
+A resposta é a conta que ele faz sozinho, com um homem morto ao lado:
+
+> Quem comprar vai saber o que está comprando. E ele não sabe. Vender o que
+> você não entende é ser roubado com a própria mão.
+
+Então ele guarda **primeiro para entender**. Só que, quando entende, já é
+tarde: a Coroa tem o nome dele.
+
+O jogador escolhe o **motivo** — e as três escolhas ficam com o selo:
+
+| Escolha | O que ele diz | Balança |
+| --- | --- | --- |
+| Entender | *"Primeiro eu entendo o que é isto."* | +2 |
+| Ambição | *"Um lorde mandou matar por isto. Nunca tive nada que gente grande quisesse."* | **+8** |
+| Promessa | *"Ele morreu me pedindo uma coisa."* | **−4** |
+
+E é aqui que a **Balança** aparece pela primeira vez.
+
+---
+
+## 5. A Balança
+
+Uma barra fina no alto da tela, visível a campanha inteira.
+
+Ela **não é moral e não é karma**. É a leitura de como ele vem usando poder.
+
+- Quem cobra imposto pesado, aceita título, toma juramento de lorde vencido e
+  vende cativo está construindo um trono e vai querer sentar nele.
+- Quem baixa imposto, paga obra do próprio bolso, solta prisioneiro sem cobrar
+  e dissolve Casa em vez de vassalizá-la está, sem dizer em voz alta,
+  concluindo que o problema nunca foi quem estava sentado — é a cadeira.
+
+### Um polo só, no começo
+
+No início a barra tem **um lado apenas**, marcado COROA, e ele começa inclinado
+para lá. É o que ele quer antes de saber de qualquer coisa: um plebeu com um
+selo está a seis de tudo.
+
+**Destruir os selos não lhe passou pela cabeça.** Mostrar dois lados no
+primeiro minuto entregaria um final que ele ainda não tem motivo nenhum para
+imaginar.
+
+O segundo polo — CINZAS — **aparece no fim do Arco III**, quando ele toma um
+selo e vê, pela primeira vez e de perto, quem pagou por isso. A barra ganha
+outro lado no meio de uma cena, e esse é um dos momentos que o jogador vai
+lembrar.
+
+### O que a move
+
+Quase tudo o que ele faz de importante, e quase nada do que ele fala.
+Diálogo que move medidor a cada linha vira ruído e para de significar.
+
+| Para a COROA | | Para as CINZAS | |
 | --- | --- | --- | --- |
-| I | Valdória | **com a Coroa**, por herança do ramo | VII |
-| II | Aurenna | **com a Coroa**, comprado de um herdeiro endividado | VII |
-| III | Silvarden | **o jogador acha** — ia a caminho do tesouro real | I |
-| IV | Elmwood | vendido há gerações; passou por muitas mãos | III |
-| V | Karneth | no castelo. Garrick sabe o que tem e não esconde | IV |
-| VI | Dravenor | murado em Pedra Cinza | V |
-| VII | Caelmont | refundido em outra peça, e adorado há duzentos anos | VI |
+| Imposto pesado | +3 | Imposto baixo | −3 |
+| Juramento a uma Casa | +3 | Juramento rompido | −2 |
+| Fundar a própria Casa | +5 | Obra paga do bolso dele | −1 |
+| Vender cativos por resgate | +1 | Soltar cativos sem cobrar | −2 |
+
+Soltar cativo é a escolha mais cara que o jogo oferece por um princípio: custa
+exatamente o resgate que ele deixa de receber. Nos primeiros arcos, antes de
+ele ter terra, são quarenta homens soltos contra o soldo do mês.
+
+As cenas dos arcos movem mais, e dizem por quê.
+
+### O que ela decide
+
+**Ela não tranca a escolha final.** No fim, com o reino todo na mão, ele decide
+o que quiser.
+
+A Balança decide se o reino **acredita** nele:
+
+- vinte horas sendo senhor e, no último minuto, quebrar os selos em nome do
+  povo — metade dos seus abandona o campo, porque ninguém acredita;
+- vinte horas soltando cativo e baixando imposto e, no último minuto, pôr a
+  coroa na cabeça — ele governa sobre gente que se lembra, e a primeira revolta
+  vem de quem o seguiu.
+
+Ir contra a própria Balança é permitido, é dramático, e é caro.
 
 ---
 
-## 5. Os sete arcos
+## 6. A Confissão de Pedra Cinza
+
+O segredo que nem as Casas conhecem, e a espinha do Arco V.
+
+**O velho rei tinha um filho.**
+
+Nascido fora do casamento, de uma mulher do povo, e por isso nunca reconhecido.
+O rei o mandou embora com dinheiro e silêncio, e morreu deixando lavrada uma
+confissão de próprio punho — datada de poucos meses antes de ele desfazer a
+monarquia.
+
+O que isso significa derruba o jogo inteiro:
+
+- ele **não morreu sem herdeiro**;
+- dissolver a monarquia não foi necessidade, foi escolha;
+- e **sangue vivo do rei vale mais que qualquer ajuntamento de selos**.
+
+Se a confissão for verdadeira e a linhagem existir, toda Casa que governa,
+governa sobre uma mentira — e os sete selos que o jogador passou a campanha
+inteira perseguindo **não valem nada**.
+
+E há o detalhe que fecha o tema do jogo: o herdeiro legítimo de Valdória seria
+**filho de uma mulher do povo**. O rei que o reino nunca teve era um plebeu.
+
+### Por que Pedra Cinza está fechada
+
+Boran Dravenor não abre os portões há três anos, nem para a Coroa, nem para o
+irmão. O reino inteiro tem uma teoria: peste, loucura, um cerco que não acabou.
+
+A verdade é que o arquivista dele achou a confissão no cofre da fortaleza — e
+Boran fez o que ninguém mandou fazer: **seguiu a linhagem.**
+
+Ela termina na região dele. Ele sabe o nome da família. São ninguéns.
+
+E ele não consegue pensar numa terceira saída: no dia em que mais alguém
+souber, ou a Coroa mata todos eles, ou coroa um deles como boneco. Então ele
+fechou a porta e parou de responder cartas.
+
+---
+
+## 7. Os sete arcos
 
 ### ARCO I — Uma joia que não devia existir
-**Onde:** Bosque de Elmwood, terra da Casa Silvarden.
-**Tempo estimado:** 1h30 – 2h.
+**Onde:** Bosque de Elmwood, terra da Casa Silvarden. **1h30 – 2h.**
 
 A carruagem. Ele fica com uma joia velha, o aviso de um moribundo e nenhuma
-explicação.
+explicação — e decide por que não vende (seção 4).
 
 Quatro pessoas a reconhecem de quatro jeitos e nenhuma sabe tudo: o mercador
 vê ouro antigo e oferece um preço bom demais; o escrivão vê marca de
@@ -131,21 +253,19 @@ família finge que nunca houve, e que a Coroa estava recuperando.
 Edran conta a história inteira. É a primeira vez que o jogador ouve as
 palavras "sete reinos" e "quem tiver os sete deve reinar".
 
-**Termina com uma escolha que define a partida:**
-Edran pede o selo de volta. É dele por direito, e ele oferece muito.
+**Termina com uma escolha que define a partida:** Edran pede o selo de volta.
+É dele por direito, e ele oferece muito.
 
-- **Devolver** — Silvarden vira aliado poderoso e o jogo segue sem selo. *(Não
-  implementado como final: Edran é assassinado na mesma noite e o selo some.
-  A Coroa não perde duas vezes.)*
-- **Ficar com ele** — e a partir daqui Silvarden e a Coroa querem a sua
-  cabeça.
+- **Devolver** — Edran é assassinado na mesma noite e o selo some. A Coroa não
+  perde duas vezes. *(Fim de linha; o jogo volta ao sandbox.)*
+- **Ficar com ele** — e a partir daqui Silvarden e a Coroa querem a sua cabeça.
 
 **Ensina:** mover, conversar, fazer encargo, ganhar influência.
 
 ---
 
 ### ARCO II — Alguém sabe que você tem
-**Tempo estimado:** 2h – 3h.
+**2h – 3h.**
 
 O guarda contou. Ou o mercador. Ou os três.
 
@@ -162,11 +282,13 @@ vez de um viajante.
 
 **Ensina:** feudo, renda, imposto, recrutamento, guarnição, cerco defensivo.
 Tudo porque dormir na estrada com um selo no bolso deixou de ser possível.
+**É o arco em que a Balança começa a se mexer por conta própria**, porque
+cobrar imposto é a decisão que ele vai tomar toda semana pelo resto do jogo.
 
 ---
 
 ### ARCO III — O selo que foi vendido
-**Tempo estimado:** 3h – 4h.
+**3h – 4h.**
 
 O selo de Elmwood saiu da Casa há quatro gerações e ninguém sabe onde parou.
 
@@ -174,18 +296,23 @@ O rastro é de papel: um penhor, um credor que morreu, um leiloeiro que vendeu
 "um lote de ourivesaria antiga", um livro-caixa queimado pela metade, e uma
 viúva que se lembra de tudo e mente sobre metade.
 
-O selo está com quem não faz ideia do que tem — e está **prestes a ser
+O selo está com quem não faz ideia do que tem — uma família comum, que vai
+perder tudo no dia em que ele bater na porta — e está **prestes a ser
 fundido**, porque ouro velho vale por peso.
 
 Corrida contra o tempo, resolvida com dinheiro, conversa ou faca.
 
-**Ensina:** comércio, avaliação, mercados, a rede de informação de Veyr — e é
+**Termina com a revelação do segundo polo.** Seja qual for o caminho, ele sai
+com o selo e deixa gente arruinada atrás. É a primeira vez que ele vê o preço
+de perto — e a barra no alto da tela ganha outro lado.
+
+**Ensina:** comércio, avaliação, mercados, a rede de informação de Veyr. É
 aqui que **Cassel Veyr** aparece pela primeira vez, porque ele chega antes.
 
 ---
 
 ### ARCO IV — Karneth não esconde
-**Tempo estimado:** 4h – 5h.
+**4h – 5h.**
 
 Garrick Karneth diz na cara: *"É meu. Venha buscar."*
 
@@ -193,37 +320,63 @@ Não vende, não troca, e tem a melhor tropa do reino. Dois caminhos, nenhum
 barato:
 
 - **Guerra** — cercar as Marchas exige exército de verdade e Casas dispostas a
-  olhar para o outro lado. Aqui o jogador precisa de aliados, e aliados
-  custam favores acumulados desde o Arco I.
-- **Necessidade** — Garrick tem um problema interno que não pode admitir: metade
-  das lanças dele responde a um primo. Quem resolver isso por ele ganha o que
-  pedir.
+  olhar para o outro lado. Aqui o jogador precisa de aliados, e aliados custam
+  favores acumulados desde o Arco I.
+- **Necessidade** — Garrick tem um problema interno que não pode admitir:
+  metade das lanças dele responde a um primo. Quem resolver isso por ele ganha
+  o que pedir.
 
 **Termina** com o selo, e com Karneth como aliado ou como ruína.
 
 **Ensina:** exército, general, cerco ofensivo, diplomacia entre Casas.
 **É aqui que ele funda a própria Casa** — porque ninguém faz aliança com um
-homem sem nome.
+homem sem nome. (E fundar Casa é o maior empurrão para a Coroa do jogo.)
 
 ---
 
-### ARCO V — Pedra Cinza está fechada
-**Tempo estimado:** 3h – 4h.
+### ARCO V — Pedra Cinza
+**5h – 6h.** O arco mais longo, e o que vira o jogo do avesso.
 
-Boran Dravenor não abre há três anos. Nem para a Coroa. Nem para o irmão.
+**Primeira metade: entrar.** Uma fortaleza fechada há três anos, um cerco que
+não compensa, e um punhado de caminhos que dependem de gente — um arquivista
+que saiu e não quis dizer por quê, o irmão de Boran, um túnel de escoamento,
+uma negociação com um homem que decidiu não falar com ninguém.
 
-Todo mundo tem uma teoria: peste, loucura, um cerco que nunca acabou. A
-verdade é outra, e é pior que o selo.
+**O que ele acha lá dentro não é o selo.** É a confissão (seção 6). O selo
+está ali também, murado, e naquele momento vira a segunda coisa mais
+importante da sala.
 
-*(Lacuna do autor — seção 9.)*
+**Segunda metade: a linhagem.** Ele refaz o caminho que Boran já fez —
+registros de paróquia, uma família que trocou de nome duas vezes, uma herança
+que ninguém reclamou — e chega a **uma pessoa viva**, na região de Dravenor,
+que nunca teve nada e não sabe de nada.
 
-**Ensina:** companheiro, perícia, intriga, infiltração. É o arco em que ter
-alguém do seu lado deixa de ser luxo.
+E essa pessoa **não quer.** Tem uma vida, gente, trabalho, e entende
+perfeitamente que aceitar aquilo é morrer.
+
+É o golpe na cabeça do jogador: o dono legítimo de tudo é um plebeu que não
+quer, e a ideia de que alguém nasce para mandar acaba de virar um acidente de
+cartório.
+
+**Quatro saídas, e a Balança lê cada uma:**
+
+| Saída | | |
+| --- | --- | --- |
+| Queimar a confissão | os selos voltam a significar alguma coisa | **+12 Coroa** |
+| Tomar o herdeiro sob proteção | um boneco seu, com o melhor direito do reino | +8 Coroa |
+| Contar a ele e respeitar a recusa | ele fica com a prova e com o silêncio | −6 Cinzas |
+| Publicar | o direito de toda Casa desaba junto, a sua inclusive | **−14 Cinzas** |
+
+A confissão publicada é **a arma do Arco VII**: sem ela, tirar Valdória do
+poder é guerra; com ela, a legitimidade da Coroa evapora antes da primeira
+batalha.
+
+**Ensina:** companheiro, perícia, intriga, infiltração.
 
 ---
 
 ### ARCO VI — O selo que virou relíquia
-**Tempo estimado:** 3h.
+**3h.**
 
 O selo de Caelmont não foi vendido nem roubado: foi **refundido**. Alguém o
 transformou em outra peça para escondê-lo, e há duzentos anos essa peça está
@@ -238,45 +391,55 @@ Caelmont fala por metade do reino no púlpito.
 ---
 
 ### ARCO VII — A Coroa
-**Tempo estimado:** 5h+.
+**5h+.**
 
 Ela tem dois. Ele tem cinco. Não há investigação que resolva isto.
 
 É guerra aberta, e ele só a vence se as outras Casas decidirem que uma Coroa
 com dois selos é pior que um plebeu com cinco. Tudo o que ele construiu — a
-Casa, os feudos, os vassalos, o exército, a palavra que deu e cumpriu —
-é o que compra essa decisão.
+Casa, os feudos, os vassalos, o exército, a palavra que deu e cumpriu, e a
+confissão, se ele a tiver publicado — é o que compra essa decisão.
 
 ---
 
-## 6. As duas saídas
+## 8. O ponto de decisão
 
-No fim do Arco I, quando Edran conta a história, o jogador entende o que tem
-na mão. E a partir daí carrega **duas ideias ao mesmo tempo**, sem precisar
-escolher até o fim:
+Ele acaba o Arco VII com o país inteiro na mão e os sete selos numa mesa.
+
+**Aí, e só aí, o jogo pergunta.**
+
+A Balança está no alto da tela desde o primeiro minuto, e agora ela é lida em
+voz alta: as pessoas que o cercam dizem o que esperam dele, e o que esperam é
+o que ele vem fazendo há vinte horas.
 
 ### Reinar
-Um rei que veio do povo. Nenhuma das sete Casas, nenhum sangue, nenhum título
-herdado — só os sete selos e a lei do velho rei. É a única forma de um
-plebeu sentar naquela cadeira, e ele sabe disso desde o Arco I.
+Um rei vindo do povo. Nenhuma das sete Casas, nenhum sangue, nenhum título
+herdado — só os sete selos e a lei do velho rei.
 
-### Acabar com aquilo
+### Queimar
 Reunir os sete e **destruí-los**. Sem selos não há lei; sem lei não há rei; e
 nenhuma Casa pode nunca mais dizer que manda por direito.
 
-É a saída de quem passou o jogo inteiro vendo o que os nobres fazem com o
-povo, e concluiu que o problema não é quem está sentado — é a cadeira.
+As duas exigem exatamente o mesmo trabalho. A diferença aparece no último
+minuto, é irreversível, e **custa caro contrariar a própria Balança** (seção 5).
 
-> **O peso da escolha:** as duas exigem o mesmo trabalho. Sete selos, sete
-> arcos, uma Casa fundada e uma guerra. A diferença aparece só no último
-> minuto, e é irreversível.
+### Depois
+As duas saídas levam ao **segundo estágio**, que é outro jogo dentro do mesmo
+mundo:
 
-E há uma terceira coisa que ele nunca faz: **vender**. Não por virtude — por
-um motivo que a história ainda vai dar a ele.
+- **reinando**, ele governa o país inteiro e passa a lidar com o que está fora
+  dele — outros reinos, outros reis, embaixadas, casamentos, guerra externa;
+- **tendo queimado**, os selos somem mas o poder não: o país inteiro continua
+  sendo dele de fato, agora sem nenhuma lei para justificá-lo — e o vizinho
+  que ainda tem rei vai querer saber o que é aquilo.
+
+De um jeito ou de outro o mapa deixa de ser Valdória e passa a ser o
+continente. **Fora do escopo desta campanha**, registrado aqui para que nada
+do que for construído agora feche essa porta.
 
 ---
 
-## 7. O que precisa ser bom entre os arcos
+## 9. O que precisa ser bom entre os arcos
 
 Isto não é enfeite. É onde o jogador passa a maior parte do tempo.
 
@@ -289,9 +452,27 @@ Isto não é enfeite. É onde o jogador passa a maior parte do tempo.
 
 A história dá o motivo. O motivo não substitui o prazer.
 
+E a Balança faz essas horas contarem: cobrar imposto pesado não é só mais
+ouro — é o homem que ele está virando, escrito numa barra que ele vê o tempo
+todo.
+
 ---
 
-## 8. Gente
+## 10. Onde estão os sete
+
+| Selo | Casa | Onde está | Arco |
+| --- | --- | --- | --- |
+| I | Valdória | **com a Coroa**, por herança do ramo | VII |
+| II | Aurenna | **com a Coroa**, comprado de um herdeiro endividado | VII |
+| III | Silvarden | **o jogador acha** — ia a caminho do tesouro real | I |
+| IV | Elmwood | vendido há gerações; passou por muitas mãos | III |
+| V | Karneth | no castelo. Garrick sabe o que tem e não esconde | IV |
+| VI | Dravenor | murado em Pedra Cinza, com a confissão | V |
+| VII | Caelmont | refundido em outra peça, e adorado há duzentos anos | VI |
+
+---
+
+## 11. Gente
 
 **Lorde Edran Silvarden** — perde a cor quando vê a joia. É o homem que conta
 a história, e o primeiro que o jogador trai ou poupa.
@@ -309,7 +490,12 @@ contou a ninguém.
 **Garrick Karneth** — odeia o jogador desde o primeiro dia e é o único que diz
 a verdade na cara.
 
-**Boran Dravenor** — não abre a fortaleza.
+**Boran Dravenor** — fechou os portões porque descobriu um nome e não
+conseguiu pensar numa terceira saída.
+
+**O herdeiro** — vive na região de Dravenor, não sabe de nada e não quer nada.
+Tem o melhor direito do reino e uma vida que gosta. *(Nome e ofício a definir
+— tem de ser um trabalho que o jogador reconheça.)*
 
 **Irmã Venna, de Caelmont** — reza há quarenta anos diante de uma peça de ouro
 sem saber o que ela é.
@@ -321,17 +507,16 @@ aconteceu à Casa Rosethorne.
 
 ---
 
-## 9. Lacunas — decisão do autor
+## 12. Lacunas — decisão do autor
 
 1. **O nome do último rei dos sete reinos.**
-2. **O que há dentro de Pedra Cinza** (Arco V). Tem que ser pior que o selo.
-3. **Por que ele não vende o selo.** A recusa precisa de um motivo que não
-   seja virtude.
-4. **De qual Casa Morvath se separou** — sugiro Valdória.
+2. **Nome, ofício e lugar do herdeiro** do Arco V.
+3. **O que aconteceu com o filho bastardo** entre o exílio e hoje — três
+   séculos de uma família que não sabia o que era.
 
 ---
 
-## 10. Duração estimada
+## 13. Duração estimada
 
 | | |
 | --- | --- |
@@ -339,8 +524,9 @@ aconteceu à Casa Rosethorne.
 | Arco II | 2h – 3h |
 | Arco III | 3h – 4h |
 | Arco IV | 4h – 5h |
-| Arco V | 3h – 4h |
+| Arco V | 5h – 6h |
 | Arco VI | 3h |
 | Arco VII | 5h+ |
-| **Campanha** | **22h – 26h** |
-| **Com o sandbox** | 40h+ |
+| **Campanha** | **24h – 29h** |
+| **Com o sandbox** | 45h+ |
+| Segundo estágio | fora do escopo |

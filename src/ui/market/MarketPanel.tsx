@@ -6,7 +6,7 @@ import type { PointOfInterest } from "../../world/types";
 import { ResourceIcon } from "../ResourceIcon";
 import { prisonerRansom } from "../../game/battle";
 import { troopTotal } from "../../data/troops";
-import { ransomAllPrisoners } from "../../game/adventure";
+import { freePrisoners, ransomAllPrisoners } from "../../game/adventure";
 
 function quantityLabel(amount: number, id: GoodId) {
   const good = goodById.get(id)!;
@@ -54,6 +54,8 @@ export function MarketPanel({ poi, onClose }: { poi: PointOfInterest; onClose: (
     {prisonerCount>0&&<div className="market-ransom">
       <div><b>Mercador de resgates</b><span>{prisonerCount} cativo(s) · oferta de {prisonerRansom(game.prisoners)} moedas</span></div>
       <button onClick={()=>{ransomAllPrisoners();setNotice("Os resgates foram pagos. Os cativos deixam o grupo sob escolta.");}}>Resgatar todos</button>
+      {/* Soltar custa exatamente o resgate que ele deixa de receber. É para custar. */}
+      <button className="quiet" onClick={()=>{freePrisoners();setNotice("Você mandou soltar. Saem sem escolta e sem pagar nada, e vão contar a alguém.");}}>Soltar sem cobrar</button>
     </div>}
 
     <p className="market-notice" role="status">{notice}</p>

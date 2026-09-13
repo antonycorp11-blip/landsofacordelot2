@@ -215,6 +215,71 @@ export const carriageScene: Cinematic = {
     },
 
     /* ---------------------------- o moribundo ---------------------------- */
+    /**
+     * POR QUE ELE NÃO VENDE.
+     *
+     * Tem de ficar resolvido aqui, no primeiro quarto de hora, e não numa
+     * revelação tardia: um plebeu com uma joia de ouro no bolso e nenhuma
+     * explicação faz o que qualquer um faria — vai vender. Se o jogo não
+     * responde por que ele não vendeu, o jogador não acredita em mais nada
+     * depois.
+     *
+     * A resposta é a conta que ele faz sozinho: vender uma coisa que ele não
+     * entende é ser roubado com as próprias mãos, porque quem compra sabe o
+     * que é. E as três escolhas guardam O MOTIVO — todas ficam com o selo, e
+     * é o motivo que inclina a Balança pela primeira vez.
+     */
+    decisao: {
+      id: "decisao",
+      place: "Bosque de Elmwood",
+      time: "Pouco depois",
+      text: [
+        "Você fica sozinho com um homem morto e uma caixa aberta na mão.",
+        "A coisa sensata é óbvia: descer até o primeiro mercador, vender depressa e sumir antes que alguém venha procurar. Ouro assim paga três anos de vida.",
+        "Só que quem comprar vai saber o que está comprando. E você não sabe. Vender o que você não entende é ser roubado com a própria mão.",
+      ],
+      choices: [
+        {
+          id: "entender",
+          label: "«Primeiro eu entendo o que é isto.»",
+          hint: "Guardar. Perguntar. Vender só depois de saber o preço de verdade.",
+          outcome: {
+            text:
+              "Você fecha a caixa e a enfia por dentro da roupa, contra as costelas, onde ninguém esbarra sem querer.\n\nNão é um plano. É só a primeira coisa em muito tempo que depende de você.",
+            questions: ["Quanto vale, de verdade, o que eu estou carregando?"],
+            flags: ["guardou_para_entender"],
+            balance: 2,
+            balanceReason: "Guardou para entender",
+          },
+        },
+        {
+          id: "lorde",
+          label: "«Um lorde mandou matar por isto.»",
+          hint: "Nunca teve nada que gente grande quisesse. Agora tem.",
+          outcome: {
+            text:
+              "Homens armados vieram ao bosque por esta caixa. Homens que respondem a alguém com anel no dedo.\n\nA vida inteira você foi coisa que se empurra de um lado para o outro. Pela primeira vez você está com a única coisa da estrada que alguém importante quer — e ela cabe no seu punho.",
+            facts: ["Alguém com poder mandou matar por este selo. Eu estou com ele."],
+            flags: ["guardou_por_ambicao"],
+            balance: 8,
+            balanceReason: "Entendeu o que tem na mão",
+          },
+        },
+        {
+          id: "promessa",
+          label: "«Ele morreu me pedindo uma coisa.»",
+          hint: "Um homem qualquer, debaixo de uma carruagem, e um pedido.",
+          outcome: {
+            text:
+              "Ele não era ninguém. Levava a caixa de outro, ganhava por trajeto, e morreu numa estrada de terra sem ninguém saber o nome dele.\n\nVocê conhece essa morte. Metade da gente que você conhece vai ter essa morte.\n\nVocê cava o que dá para cavar e segue com a caixa.",
+            facts: ["O mensageiro morreu sem nome numa estrada, levando coisa de outro."],
+            flags: ["guardou_pela_promessa"],
+            balance: -4,
+            balanceReason: "Enterrou um homem que ninguém ia enterrar",
+          },
+        },
+      ],
+    },
     sobrevivente: {
       id: "sobrevivente",
       place: "Bosque de Elmwood",
@@ -243,7 +308,7 @@ export const carriageScene: Cinematic = {
             flags: ["tem_selo", "ouviu_o_setimo"],
             reward: { xp: 140, influence: 4 },
             eventState: "looted",
-            end: true,
+            next: "decisao",
           },
         },
         {
@@ -264,7 +329,7 @@ export const carriageScene: Cinematic = {
             flags: ["tem_selo", "suspeita_da_coroa"],
             reward: { xp: 140, influence: 4 },
             eventState: "looted",
-            end: true,
+            next: "decisao",
           },
         },
       ],

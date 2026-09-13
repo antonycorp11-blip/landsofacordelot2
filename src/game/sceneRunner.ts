@@ -15,6 +15,7 @@ import type { Cinematic, SceneChoice, SceneOutcome } from "./cinematics";
 import { startBattle } from "./battle";
 import { withReward } from "./experience";
 import { getState, update, type GameState } from "./store";
+import { REVEAL_FLAG } from "./balance";
 import type { TroopCount } from "../data/troops";
 
 const SCENES: Record<string, Cinematic> = {
@@ -54,6 +55,17 @@ function applyKnowledge(g: GameState, outcome: SceneOutcome): GameState {
       evidence: add(g.knowledge.evidence, outcome.evidence),
     },
     storyFlags: add(g.storyFlags, outcome.flags),
+    balance: {
+      ...g.balance,
+      // A cena que mostra o preço de um selo é a que abre o segundo polo.
+      revealed: g.balance.revealed || !!outcome.flags?.includes(REVEAL_FLAG),
+      tilt: outcome.balance
+        ? Math.max(-100, Math.min(100, g.balance.tilt + outcome.balance))
+        : g.balance.tilt,
+      last: outcome.balance
+        ? { amount: outcome.balance, reason: outcome.balanceReason ?? "Pelo que você escolheu", at: Date.now() }
+        : g.balance.last,
+    },
   };
 }
 

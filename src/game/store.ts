@@ -28,6 +28,7 @@ import { freshAdventure, type AdventureState, type JourneySave } from "./adventu
 import type { War } from "./worldSim";
 import type { Estate } from "./estates";
 import { freshAllegiance, type Allegiance } from "./allegiance";
+import { freshBalance, type BalanceState } from "./balance";
 import type { WorldEventInstance } from "./worldEvents";
 import { normalizeForceState, type WorldForceState } from "./worldForces";
 
@@ -126,6 +127,12 @@ export type GameState = {
   knowledge: { facts: string[]; questions: string[]; evidence: string[] };
   /** Marcas deixadas pelas escolhas, lidas por cenas futuras. */
   storyFlags: string[];
+  /**
+   * Para que lado ele está andando: usar os selos ou quebrá-los. Fica no
+   * estado e não numa tela de fim de jogo porque o jogador precisa vê-la
+   * mexer na hora em que cobra um imposto.
+   */
+  balance: BalanceState;
   /** Coisas paradas no mapa: carroças, acampamentos, campos de batalha. */
   worldEvents: Record<string, WorldEventInstance>;
 
@@ -187,6 +194,7 @@ function blank(): GameState {
     allegiance: freshAllegiance(),
     knowledge: { facts: [], questions: [], evidence: [] },
     storyFlags: [],
+    balance: freshBalance(),
     worldEvents: {},
     wars: [],
     worldTickDay: 0,
@@ -260,6 +268,7 @@ function load(): GameState | null {
     const merged = {
       ...blank(), ...parsed,
       skills: { ...startingSkills({}), ...parsed.skills },
+      balance: { ...freshBalance(), ...parsed.balance },
       adventure: { ...adventure, ...parsed.adventure, tutorial: { ...adventure.tutorial, ...parsed.adventure?.tutorial } },
       worldForces:Object.fromEntries(Object.entries(parsed.worldForces??{}).map(([id,force])=>[id,normalizeForceState(id,force)])),
     };

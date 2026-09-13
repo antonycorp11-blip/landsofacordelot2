@@ -28,6 +28,7 @@ import { troopTotal } from "../data/troops";
 import { fiefs } from "../world/fiefs";
 import type { HouseId } from "../world/types";
 import type { GameState } from "./store";
+import { tilt, TILT } from "./balance";
 
 /** Quem pode estar em guerra: as Casas e, quando independente, você. */
 export type Belligerent = HouseId | "player";
@@ -159,6 +160,8 @@ export function swearTo(houseId: HouseId): boolean {
     influence: g.influence + 8,
     houseRelations: { ...g.houseRelations, [houseId]: Math.min(100, (g.houseRelations[houseId] ?? 0) + 15) },
   }));
+  // Ajoelhar é aceitar que a escada existe — e que um dia ele quer o topo.
+  tilt(TILT.juramento, "Juramento a uma Casa");
   return true;
 }
 
@@ -175,6 +178,7 @@ export function breakOath(): boolean {
     // As guerras do antigo senhor deixam de ser suas no mesmo instante.
     wars: (g.wars ?? []).filter((w) => w.a !== "player" && w.b !== "player"),
   }));
+  tilt(TILT.quebrarJuramento, "Juramento rompido");
   return true;
 }
 
@@ -201,6 +205,7 @@ export function declareIndependence(name: string): boolean {
     // Quem era senhor vira inimigo na hora. Traição não espera o calendário.
     wars: oldLiege ? [...(g.wars ?? []), { a: "player" as const, b: oldLiege, since: day }] : (g.wars ?? []),
   }));
+  tilt(TILT.independencia, "Casa própria fundada");
   return true;
 }
 
