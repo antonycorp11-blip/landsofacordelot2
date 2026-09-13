@@ -12,7 +12,7 @@ import { abandonContract, canRecruitCompanion, completeContract, dismissNotice, 
 import { choiceChance, roadEventById } from '../../game/roadEvents';
 import { actOnRaid, attemptParley, chooseQuestOption, giveOrder, startQuestBattle, startRaidBattle } from '../../game/adventure';
 import { BATTLE_TERRAINS, ORDERS, canDemandSurrender, canFlank, orderAvailable, orderEffects, parleyChance } from '../../game/battle';
-import { allSteps, chapterOfStep, chapters, currentStep } from '../../game/story';
+import { chapterOfStep, currentStep } from '../../game/story';
 import { abandonContract as giveUpContract } from '../../game/adventure';
 import { fleeChance, winChance } from '../../game/raid';
 import { readForce } from '../../game/estimate';
@@ -79,26 +79,53 @@ function RestartButton() {
  * O capítulo, o que ele é sobre, o objetivo de agora e o que já ficou para
  * trás. É a única aba que responde "por que eu estou jogando".
  */
+/**
+ * O QUE VOCÊ SABE.
+ *
+ * A aba de campanha deixou de ser lista de tarefas. Ela responde três coisas:
+ * o que você descobriu, o que ainda não entendeu, e o que tem na mão para
+ * provar. Não há ordem, não há passo 1 de 4 — porque a investigação não tem
+ * ordem, e fingir que tem seria voltar ao aplicativo de tarefas.
+ *
+ * As perguntas vêm primeiro de propósito: é o que puxa o jogador para o mapa.
+ */
 function StoryTab() {
   const game=useGame();
-  const story=game.adventure.story;
-  const step=currentStep(story);
-  const chapter=step?chapterOfStep.get(step.id):chapters[chapters.length-1];
-  const feitos=allSteps.slice(0,story.step).slice(-3).reverse();
+  const k=game.knowledge;
+  const step=currentStep(game.adventure.story);
+  const chapter=step?chapterOfStep.get(step.id):null;
+  const vazio=!k.facts.length&&!k.questions.length&&!k.evidence.length;
+
+  if(vazio) return <>
+    <p className="adv-story">Você chegou a Valdória sem nada que valha registrar. Ainda.</p>
+    <p className="adv-caption">O que você descobrir pelo caminho fica anotado aqui.</p>
+  </>;
+
   return <>
-    <span className="adv-eyebrow">Capítulo {chapter?.number} · {chapter?.title}</span>
-    <p className="adv-story">{chapter?.blurb}</p>
-    {step ? <article className="adv-contract active">
-      <span className="adv-eyebrow">Agora</span>
-      <h3>{step.objective}</h3>
-      <p>{step.detail}</p>
-    </article> : <p className="adv-caption">A campanha chegou ao fim do que está escrito. Novos capítulos entram aqui.</p>}
-    {feitos.length>0 && <>
-      <p className="adv-caption">Atrás de você</p>
-      {feitos.map(f=><article className="adv-log" key={f.id}><p>{f.objective}</p></article>)}
+    {chapter && <span className="adv-eyebrow">Capítulo {chapter.number} · {chapter.title}</span>}
+    {step && <p className="adv-caption">{step.objective}</p>}
+
+    {k.questions.length>0 && <>
+      <span className="adv-eyebrow">Perguntas em aberto</span>
+      <ul className="know-list ask">{k.questions.map((q)=><li key={q}>{q}</li>)}</ul>
+    </>}
+
+    {k.facts.length>0 && <>
+      <span className="adv-eyebrow">O que você sabe</span>
+      <ul className="know-list">{k.facts.map((f)=><li key={f}>{f}</li>)}</ul>
+    </>}
+
+    {k.evidence.length>0 && <>
+      <span className="adv-eyebrow">Em suas mãos</span>
+      <ul className="know-list proof">{k.evidence.map((id)=><li key={id}>{EVIDENCE_NAME[id]??id}</li>)}</ul>
     </>}
   </>;
 }
+
+/** Nome legível de cada prova. A função escondida delas não é dita aqui. */
+const EVIDENCE_NAME: Record<string,string> = {
+  royal_seal: "Selo Real de Valdória — encontrado junto à carruagem atacada",
+};
 
 function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGame>['adventure']['quest']>['pending']>}) {
   const game=useGame();

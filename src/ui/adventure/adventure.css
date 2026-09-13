@@ -118,3 +118,18 @@
   .btl-parley { grid-template-columns:1fr; }
   .btl-orders { grid-template-columns:1fr; }
 }
+
+/* ---------------------------- o que se sabe -----------------------------
+ * Listas de investigação, não de tarefas: sem caixinha de marcar, sem
+ * numeração, sem barra de progresso. Pergunta em aberto puxa o olho.
+ */
+.know-list { list-style:none; margin:4px 0 12px; padding:0; display:flex; flex-direction:column; gap:5px; }
+.know-list li {
+  position:relative; padding-left:14px;
+  font:12px/1.55 var(--ui-small); color:#c4ccbe;
+}
+.know-list li::before { content:"·"; position:absolute; left:3px; color:#8a7d5c; }
+.know-list.ask li { color:#dcd0aa; }
+.know-list.ask li::before { content:"?"; color:#c9a85c; font-weight:700; }
+.know-list.proof li { color:#d9c48d; }
+.know-list.proof li::before { content:"◆"; color:#c9a85c; font-size:8px; top:3px; }
