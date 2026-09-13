@@ -33,4 +33,4 @@ As conferências de apresentação, experiência de jogo e balanceamento ficam c
 
 ## Próxima etapa
 
-Ampliar o combate descrito em [Combate](combate.md) com terreno, arqueiros, feridos e prisioneiros; depois ligar caravanas visíveis e bloqueios de estrada à oferta física dos mercados. Itens, equipamento, oficinas e terras podem usar o mesmo inventário e a mesma economia sem criar outra moeda paralela.
+Ligar caravanas visíveis e bloqueios de estrada à oferta física dos mercados. O combate com terreno, arqueiros, cavalaria, feridos, prisioneiros e rendição já está descrito em [Combate](combate.md). Itens, equipamento, oficinas e terras podem usar o mesmo inventário e a mesma economia sem criar outra moeda paralela.

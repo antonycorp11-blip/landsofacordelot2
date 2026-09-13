@@ -16,6 +16,7 @@ import { bystanderName, hashText } from "../data/notables";
 import { partySpeed, partyStrength } from "./progression";
 import { derivedInput } from "./experience";
 import type { GameState } from "./store";
+import type { TerrainType } from "../world/types";
 
 export type Raid = {
   id: string;
@@ -23,10 +24,11 @@ export type Raid = {
   band: TroopCount;
   /** Quanto eles exigem para deixar passar. */
   toll: number;
+  terrain: TerrainType;
 };
 
 /** Um bando proporcional ao perigo da estrada, com semente estável. */
-export function makeRaid(seed: string, danger: number, day: number): Raid {
+export function makeRaid(seed: string, danger: number, day: number, terrain: TerrainType="plain"): Raid {
   const h = hashText(`${seed}:${day}`);
   const rand = (n: number, salt: number) => ((h >>> salt) % n);
   const size = 3 + rand(7, 3) + Math.round(danger * 8);
@@ -40,6 +42,7 @@ export function makeRaid(seed: string, danger: number, day: number): Raid {
     name: `Bando de ${bystanderName(`${seed}:${day}`)}`,
     band,
     toll: Math.round(20 + troopStrength(band) * 9),
+    terrain,
   };
 }
 

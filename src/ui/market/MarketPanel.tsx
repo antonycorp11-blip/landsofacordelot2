@@ -4,6 +4,9 @@ import { amountOwned, cargoLimit, cargoUsed, quotesAt, trade, tradeHint } from "
 import { useGame } from "../../game/store";
 import type { PointOfInterest } from "../../world/types";
 import { ResourceIcon } from "../ResourceIcon";
+import { prisonerRansom } from "../../game/battle";
+import { troopTotal } from "../../data/troops";
+import { ransomAllPrisoners } from "../../game/adventure";
 
 function quantityLabel(amount: number, id: GoodId) {
   const good = goodById.get(id)!;
@@ -18,6 +21,7 @@ export function MarketPanel({ poi, onClose }: { poi: PointOfInterest; onClose: (
   const contractCargo = game.adventure.contract?.cargo;
   const used = cargoUsed(game);
   const limit = cargoLimit(game);
+  const prisonerCount=troopTotal(game.prisoners);
 
   const act = (id: GoodId, amount: number, side: "buy" | "sell") => {
     const result = trade(poi.id, id, amount, side);
@@ -42,6 +46,11 @@ export function MarketPanel({ poi, onClose }: { poi: PointOfInterest; onClose: (
     {contractCargo && <div className="market-order">
       <b>Encomenda em curso</b>
       <span>{quantityLabel(amountOwned(game, contractCargo.goodId), contractCargo.goodId)} na carga · precisa de {contractCargo.amount}</span>
+    </div>}
+
+    {prisonerCount>0&&<div className="market-ransom">
+      <div><b>Mercador de resgates</b><span>{prisonerCount} cativo(s) · oferta de {prisonerRansom(game.prisoners)} moedas</span></div>
+      <button onClick={()=>{ransomAllPrisoners();setNotice("Os resgates foram pagos. Os cativos deixam o grupo sob escolta.");}}>Resgatar todos</button>
     </div>}
 
     <p className="market-notice" role="status">{notice}</p>

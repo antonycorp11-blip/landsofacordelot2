@@ -84,6 +84,10 @@ export type GameState = {
   tradesCompleted: number;
 
   troops: TroopCount;
+  /** Fora da linha, mas ainda no grupo. Recuperam uma parte a cada dia alimentado. */
+  wounded: TroopCount;
+  /** Capturados que podem ser libertados, recrutados ou resgatados depois. */
+  prisoners: TroopCount;
   companions: Record<string, CompanionState>;
 
   /** Recrutas ainda disponíveis por estrutura, e o dia da última reposição. */
@@ -137,6 +141,8 @@ function blank(): GameState {
     tradeProfit: 0,
     tradesCompleted: 0,
     troops: {},
+    wounded: {},
+    prisoners: {},
     companions: {},
     recruitPools: {},
     poolRefreshDay: {},

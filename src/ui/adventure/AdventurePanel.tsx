@@ -10,8 +10,8 @@ import { isPresent, locationId } from '../../game/presence';
 import { withReward, type Reward } from '../../game/experience';
 import { abandonContract, canRecruitCompanion, completeContract, dismissNotice, recruitCompanion, remainingContractHours, resolveRoadEvent, rewardSummary } from '../../game/adventure';
 import { choiceChance, roadEventById } from '../../game/roadEvents';
-import { actOnRaid, chooseQuestOption, giveOrder, startQuestBattle, startRaidBattle } from '../../game/adventure';
-import { ORDERS, canFlank, orderEffects } from '../../game/battle';
+import { actOnRaid, attemptParley, chooseQuestOption, giveOrder, startQuestBattle, startRaidBattle } from '../../game/adventure';
+import { BATTLE_TERRAINS, ORDERS, canDemandSurrender, canFlank, orderAvailable, orderEffects, parleyChance } from '../../game/battle';
 import { allSteps, chapterOfStep, chapters, currentStep } from '../../game/story';
 import { abandonContract as giveUpContract } from '../../game/adventure';
 import { fleeChance, winChance } from '../../game/raid';
@@ -21,6 +21,7 @@ import { ResourceIcon } from '../ResourceIcon';
 import { goodById } from '../../data/goods';
 import { amountOwned } from '../../game/economy';
 import { questOptionChance } from '../../game/quests';
+import { BattleArena } from '../battle/BattleArena';
 import './adventure.css';
 
 export type AdventureView = {tab:'guide'|'story'|'contracts'|'companions'|'history';poiId?:string};
@@ -104,6 +105,7 @@ function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGam
   if (beat.kind==='batalha') {
     return <>
       <p className="adv-story">{beat.text}</p>
+      {beat.terrain&&<p className="adv-caption"><b>{BATTLE_TERRAINS[beat.terrain].name}:</b> {BATTLE_TERRAINS[beat.terrain].blurb}</p>}
       <div className="adv-choices">
         <button className="adv-choice" onClick={startQuestBattle}>
           <strong>Formar e enfrentar</strong>
@@ -147,31 +149,37 @@ function BattleScene({battle}:{battle:NonNullable<ReturnType<typeof useGame>['ad
   const game=useGame();
   const flank=canFlank(battle.mine);
   return <>
+    <BattleArena battle={battle}/>
     <div className="btl-sides">
       <div className="btl-side">
         <span className="btl-label">Os seus</span>
         <b>{troopTotal(battle.mine)}</b>
         <span className="btl-bar"><i style={{width:`${battle.myMorale}%`}}/></span>
-        <small>moral {battle.myMorale}</small>
+        <small>moral {battle.myMorale} · {battle.myDead??0} mortos · {battle.myWounded??0} feridos</small>
       </div>
       <div className="btl-side them">
         <span className="btl-label">{battle.enemyName}</span>
         <b>{troopTotal(battle.theirs)}</b>
         <span className="btl-bar"><i style={{width:`${battle.theirMorale}%`}}/></span>
-        <small>moral {battle.theirMorale}</small>
+        <small>moral {battle.theirMorale} · {battle.theirLosses??0} fora de combate</small>
       </div>
     </div>
     <p className="adv-story btl-log">{battle.log[battle.log.length-1] ?? 'As linhas se encaram. A sua ordem decide como isto começa.'}</p>
+    {!battle.parleyAttempted && <div className="btl-parley">
+      {canDemandSurrender(battle)&&<button className="adv-choice" onClick={()=>attemptParley('exigir')}><strong>Exigir rendição</strong><span>Diplomacia {game.attributes.diplomacy} + Persuasão {game.skills.persuasao}</span><span className="adv-check"><em>{Math.round(parleyChance(game,battle,'exigir')*100)}% de sucesso</em></span><span className="adv-outcome">Captura parte dos sobreviventes e encerra o combate.</span></button>}
+      <button className="adv-choice" onClick={()=>attemptParley('retirada')}><strong>Negociar passagem</strong><span>Oferecer dinheiro para sair com feridos e carga.</span><span className="adv-check"><em>{Math.round(parleyChance(game,battle,'retirada')*100)}% de sucesso</em></span></button>
+    </div>}
     <div className="btl-orders">{ORDERS.map(o=>{
       const ruim=o.id==='flanquear' && !flank;
       const effect=orderEffects(game,battle,o.id);
-      return <button className="adv-choice" key={o.id} onClick={()=>giveOrder(o.id)}>
+      const available=orderAvailable(o.id,battle.mine);
+      return <button className="adv-choice" key={o.id} disabled={!available} onClick={()=>giveOrder(o.id)}>
         <strong>{o.name}</strong>
-        <span>{ruim?'Sem cavalaria, a manobra expõe o seu flanco.':o.blurb}</span>
+        <span>{!available?(o.id==='saraivada'?'Você não tem arqueiros.':'Você não tem cavalaria.'):ruim?'Sem cavalaria, a manobra expõe o seu flanco.':o.blurb}</span>
         <span className="btl-effect">
           {effect.retreatPercent!=null
             ? <><b>{effect.retreatPercent}%</b> de sair da batalha</>
-            : <><b>Ataque {effect.attackPercent>=0?'+':''}{effect.attackPercent}%</b><b>Exposição {effect.exposurePercent>=0?'+':''}{effect.exposurePercent}%</b></>}
+            : <><b>Ataque {effect.attackPercent>=0?'+':''}{effect.attackPercent}%</b><b>Exposição {effect.exposurePercent>=0?'+':''}{effect.exposurePercent}%</b><span>{BATTLE_TERRAINS[battle.terrain]?.name??'Campo'} {effect.terrainNote>=0?'+':''}{effect.terrainNote}%</span></>}
         </span>
       </button>;
     })}</div>
@@ -188,6 +196,7 @@ function RaidScene({raid}:{raid:import('../../game/raid').Raid}) {
   const vago=reading.confidence==='vago';
   return <>
     <p className="adv-story">Homens atravessados na estrada, e não é para pedir carona. Você conta {reading.label.toLowerCase()}.</p>
+    <p className="adv-caption"><b>{BATTLE_TERRAINS[raid.terrain??'plain'].name}:</b> {BATTLE_TERRAINS[raid.terrain??'plain'].blurb}</p>
     <p className="adv-caption">{reading.verdict} Risco: <b className={`risk ${reading.risk}`}>{reading.risk}</b>. {mine===0?'Você viaja sem ninguém.':`Você tem ${mine} homem(ns).`}</p>
     <div className="adv-choices">
       <button className="adv-choice" onClick={startRaidBattle}>

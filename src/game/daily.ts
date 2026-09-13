@@ -45,6 +45,7 @@ export type DayReport = {
   deserted: number;
   unpaid: boolean;
   hungry: boolean;
+  recovered: number;
 };
 
 /** Quem vai embora primeiro: os de menor grau, que são os menos comprometidos. */
@@ -72,15 +73,18 @@ function desert(troops: TroopCount, count: number): { troops: TroopCount; gone: 
  * quem some do jogo por três dias precisa ver os três dias cobrados.
  */
 export function applyDay(s: GameState, day: number): { state: GameState; report: DayReport } {
-  const input = derivedInput(s);
+  const maintained:TroopCount={...s.troops};
+  for(const type of troopTypes)maintained[type.id]=(maintained[type.id]??0)+(s.wounded[type.id]??0);
+  const input = {...derivedInput(s),troops:maintained};
   const wages = dailyCost(input);
-  const eaten = foodPerDay(s.troops);
+  const eaten = foodPerDay(maintained)+Math.ceil(troopTotal(s.prisoners)/8);
   const income = fiefIncomePerDay(s);
   const influence = passiveInfluencePerDay(s.careerXp);
 
   let gold = s.gold + income;
   let food = s.food;
   let troops = s.troops;
+  let wounded: TroopCount = {...s.wounded};
 
   const unpaid = gold < wages;
   gold = Math.max(0, gold - wages);
@@ -105,17 +109,33 @@ export function applyDay(s: GameState, day: number): { state: GameState; report:
     hardshipDays = 0;
   }
 
+  // Feridos voltam por tipo e só se recuperam quando o grupo conseguiu comer.
+  let recovered=0;
+  if(!hungry){
+    troops={...troops};
+    for(const type of troopTypes){
+      const waiting=wounded[type.id]??0;
+      const ready=waiting>0?Math.max(1,Math.ceil(waiting*.34)):0;
+      if(!ready)continue;
+      wounded[type.id]=waiting-ready;
+      if(!wounded[type.id])delete wounded[type.id as TroopId];
+      troops[type.id]=(troops[type.id]??0)+ready;
+      recovered+=ready;
+    }
+  }
+
   return {
     state: {
       ...s,
       gold,
       food,
       troops,
+      wounded,
       influence: Math.round((s.influence + influence) * 10) / 10,
       dayProcessed: day,
       hardshipDays,
     },
-    report: { day, wages, food: eaten, income, influence, deserted, unpaid, hungry },
+    report: { day, wages, food: eaten, income, influence, deserted, unpaid, hungry, recovered },
   };
 }
 
@@ -128,6 +148,7 @@ export function reportLine(report: DayReport, troops: TroopCount): string | null
   if (report.unpaid) parts.push("SEM SOLDO");
   if (report.hungry) parts.push("SEM COMIDA");
   if (report.deserted > 0) parts.push(`${report.deserted} desertaram`);
+  if (report.recovered > 0) parts.push(`${report.recovered} ferido(s) voltaram à linha`);
   if (!parts.length) return null;
   return `Dia ${report.day}: ${parts.join(" · ")}`;
 }

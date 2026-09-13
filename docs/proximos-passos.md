@@ -9,23 +9,26 @@
 - Conversas locais com pessoas nomeadas, trabalho contado em falas e respostas numeradas.
 - Encargos em três atos: pedido, complicação e fechamento. Decisões mostram atributo, habilidade, chance e consequências.
 - Eventos aleatórios, bandos, chamados com prazo e simulação diária de salário, comida, renda, deserção, guerra e conquista.
-- Combate por rodadas com ordens, moral, baixas permanentes, saque e retirada.
+- Arena de combate 32-bit com terreno, ordens de formação, moral, mortos, feridos recuperáveis, prisioneiros, rendição, saque e retirada.
 - Mercados regionais com estoque, reposição, preço, provisões, oito mercadorias, capacidade de carga, lucro real e contratos que exigem compra e entrega física.
 
 ## O que mudou no ciclo principal
 
 Antes, aceitar um encargo e chegar ao destino bastava. Agora o jogador pode precisar financiar a mercadoria, escolher uma rota, manter comida e salário, enfrentar um bando, decidir entre reputação e dinheiro, passar ou falhar numa barganha e chegar ainda com a carga. O resultado altera ouro, influência, relações, tropas, experiência e disponibilidade do encargo.
 
+## Marco de combate concluído
+
+O combate tático agora conecta a estrada à campanha:
+
+1. A arena representa cada formação e as baixas calculadas pelo motor.
+2. Sete terrenos afetam defesa, arqueiros, cavalaria e retirada.
+3. Infantaria, arqueiros, cavalaria e reserva possuem ordens próprias.
+4. Mortos saem da campanha; feridos recuperam com tempo e comida.
+5. Rendição usa Diplomacia e Persuasão; prisioneiros ocupam carga e rendem resgate no mercado.
+
 ## Próximo marco recomendado
 
-O próximo salto deve aprofundar a **batalha**, porque comércio, manutenção e contratos já dão motivo para montar e preservar um grupo.
-
-1. Arena curta em pixel art 32-bit que represente a rodada calculada pelo motor.
-2. Terreno de estrada, floresta, colina e travessia afetando formações.
-3. Ordens próprias para infantaria, arqueiros e cavalaria; posição e reserva.
-4. Feridos, prisioneiros, rendição e negociação antes e depois do confronto.
-5. Equipamento do herói e dos companheiros comprado no mercado.
-6. Bandos e caravanas persistentes: derrotar, escoltar ou saquear um grupo altera estoque e preço da região.
+Fazer bandos, patrulhas e caravanas existirem como forças persistentes no mundo. Derrotar um bando deve aumentar segurança e fluxo comercial; perder uma caravana deve retirar mercadoria do mercado; bloquear uma estrada deve mudar preço, rota e oferta de missões. Em seguida entram equipamento do herói e companheiros, cercos por etapas e campanhas militares das Casas.
 
 Depois disso, o melhor arco de retenção é **subir de viajante para senhor**: reputação local abre audiência, audiência abre juramento ou independência, terra abre guarnição, imposto, oficina e guerra. A campanha principal deve reagir à Casa apoiada, às cartas lidas, às pessoas traídas e aos senhorios controlados, criando finais políticos diferentes.
 

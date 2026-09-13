@@ -5,7 +5,7 @@ import { contractsAt } from './contracts';
 import { choiceChance, roadEventById, roadEvents } from './roadEvents';
 import { makeRaid, resolveRaid, type Raid } from './raid';
 import { beginQuest, closingFor, complicationFor, questOptionChance } from './quests';
-import { playRound, startBattle, type Order } from './battle';
+import { addTroopCounts, playRound, prisonerRansom, resolveParley, startBattle, type Order, type ParleyKind } from './battle';
 import { allSteps, chapterOfStep, currentStep, triggerMet } from './story';
 import { makeOffer, type Offer } from './offers';
 import type { RoadStop } from '../world/roadStops';
@@ -19,6 +19,7 @@ import { poiById } from '../world/valdoria';
 import { goodById, type GoodId } from '../data/goods';
 import type { AgentClass, RouteEdge } from '../world/types';
 import type { JournalKind } from '../ui/journal';
+import { troopTotal } from '../data/troops';
 
 export const COMPANION_RELATION = 10;
 const round = (n: number) => Math.round(n * 10) / 10;
@@ -112,7 +113,8 @@ export function checkRoadEvent(edge: RouteEdge, roll: number) {
   // O MIOLO DA MISSÃO vem antes de qualquer encontro genérico: todo encargo
   // tem um segundo ato, e ele acontece no primeiro posto depois de aceitar.
   if (a.contract && a.quest && !a.quest.complicated && a.quest.phase==='a_caminho') {
-    const beat=complicationFor(a.contract);
+    const raw=complicationFor(a.contract);
+    const beat=raw.kind==='batalha'?{...raw,terrain:edge.terrain}:raw;
     update(g=>logged({...g,adventure:{...g.adventure,quest:{...g.adventure.quest!,pending:beat,complicated:true,decisionRoll:Math.random()}}},'evento',beat.title));
     return;
   }
@@ -121,7 +123,7 @@ export function checkRoadEvent(edge: RouteEdge, roll: number) {
   // uma rota curta e arriscada não ser automaticamente a melhor.
   if (edge.danger>0.12 && roll<edge.danger*0.55) {
     const day=Math.floor(hours/24)+1;
-    const raid=makeRaid(edge.id,edge.danger,day);
+    const raid=makeRaid(edge.id,edge.danger,day,edge.terrain);
     update(g=>({...g,adventure:{...g.adventure,raid,nextEventHour:hours+10}}));
     return;
   }
@@ -289,7 +291,7 @@ export function chooseQuestOption(optionId: string): boolean {
 export function startQuestBattle(): boolean {
   const s=getState(), beat=s.adventure.quest?.pending;
   if (!beat || beat.kind!=='batalha') return false;
-  update(g=>({...g,adventure:{...g.adventure,battle:startBattle(g,beat.band,beat.enemyName)}}));
+  update(g=>({...g,adventure:{...g.adventure,battle:startBattle(g,beat.band,beat.enemyName,beat.terrain)}}));
   return true;
 }
 
@@ -297,7 +299,7 @@ export function startQuestBattle(): boolean {
 export function startRaidBattle(): boolean {
   const s=getState(), raid=s.adventure.raid;
   if (!raid) return false;
-  update(g=>({...g,adventure:{...g.adventure,battle:startBattle(g,raid.band,raid.name)}}));
+  update(g=>({...g,adventure:{...g.adventure,battle:startBattle(g,raid.band,raid.name,raid.terrain)}}));
   return true;
 }
 
@@ -314,13 +316,26 @@ export function giveOrder(order: Order): boolean {
   return true;
 }
 
+/** Uma única conversa durante o combate. Se resolver a batalha, fecha o resultado imediatamente. */
+export function attemptParley(kind: ParleyKind): boolean {
+  const s=getState(),battle=s.adventure.battle;
+  if(!battle||battle.parleyAttempted||battle.result!=='andamento')return false;
+  const next=resolveParley(s,battle,kind);
+  if(next.result==='andamento')update(g=>({...g,adventure:{...g.adventure,battle:next}}));
+  else finishBattle(next);
+  return true;
+}
+
 function finishBattle(battle: ReturnType<typeof playRound>) {
   update(g=>{
     const beat=g.adventure.quest?.pending;
     const fromQuest=beat?.kind==='batalha';
     const won=battle.result==='vitoria';
 
-    let next: GameState={...g,troops:battle.mine,
+    const wounded=addTroopCounts(g.wounded,battle.myWoundedTroops??{});
+    const captured=battle.result==='vitoria'?battle.prisoners??{}:{};
+    const prisoners=addTroopCounts(g.prisoners,captured);
+    let next: GameState={...g,troops:battle.mine,wounded,prisoners,gold:Math.max(0,g.gold-(battle.tribute??0)),
       adventure:{...g.adventure,battlesWon:g.adventure.battlesWon+(battle.result==='vitoria'?1:0)}};
     next=withReward(next,{
       xp:won?Math.round(50+battle.theirLosses*6):20,
@@ -331,8 +346,8 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
     const levelUp=next.level>g.level;
 
     let text=battle.log[battle.log.length-1]??'';
-    if (won) text+=` ${battle.myLosses} dos seus ficaram no campo; ${battle.theirLosses} deles. Despojos: ${battle.loot} moedas.`;
-    else text+=` Você perdeu ${battle.myLosses} homens.`;
+    if (won) text+=` Dos seus, ${battle.myDead??battle.myLosses} morreram e ${battle.myWounded??0} ficaram feridos. Você fez ${troopTotal(captured)} prisioneiro(s). Despojos: ${battle.loot} moedas.`;
+    else text+=` Dos seus, ${battle.myDead??battle.myLosses} morreram e ${battle.myWounded??0} ficaram feridos.${battle.tribute?` A passagem custou ${battle.tribute} moedas.`:''}`;
 
     if (fromQuest && beat?.kind==='batalha') {
       text+=` ${won?beat.onWin:beat.onLose}`;
@@ -350,7 +365,7 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
         text += ` O bando continua onde estava, e ${poiName(offer.poiId)} vai pagar por isso.`;
       }
       next = { ...next, adventure: { ...next.adventure, offer: null } };
-    } else if (!won) {
+    } else if (battle.result==='derrota') {
       // Derrota contra bando avulso: eles levam o que dá.
       const robbed=Math.round(next.gold*0.3);
       next={...next,gold:next.gold-robbed};
@@ -363,6 +378,18 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
     }};
     return logged(next,'evento',`${battle.enemyName}: ${text}`);
   });
+}
+
+/** Mercadores de resgate pagam por todos os cativos de uma vez. */
+export function ransomAllPrisoners(): boolean {
+  const s=getState(),count=troopTotal(s.prisoners);
+  if(!count)return false;
+  const value=prisonerRansom(s.prisoners);
+  update(g=>{
+    const next=withReward({...g,prisoners:{}},{gold:value,xp:Math.min(45,count*4),careerXp:{TRADE:Math.min(30,count*3)},skillXp:{negociacao:1}});
+    return logged(next,'evento',`${count} prisioneiro(s) resgatados por ${value} moedas.`);
+  });
+  return true;
 }
 
 /** Na chegada, a entrega vira o TERCEIRO ato em vez de um botão. */

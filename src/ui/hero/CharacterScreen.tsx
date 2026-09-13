@@ -87,6 +87,8 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
   const input = derivedInput(game);
   const limit = maxTroops(input);
   const total = troopTotal(game.troops);
+  const woundedTotal=troopTotal(game.wounded);
+  const prisonerTotal=troopTotal(game.prisoners);
   const speed = partySpeed(input);
   const speedWord = speed >= 1.0 ? "Ótima" : speed >= 0.85 ? "Boa" : speed >= 0.7 ? "Moderada" : "Lenta";
   const portrait = heroPortraitUrl(hero.portraitAssetKey);
@@ -332,6 +334,12 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
                 <b>{Math.round(partyStrength(input))}</b>
               </div>
             </div>
+
+            {(woundedTotal>0||prisonerTotal>0)&&<div className="panel">
+              <div className="panel-title">Depois da batalha</div>
+              {woundedTotal>0&&<><div className="pair"><span>Feridos em recuperação</span><b>{woundedTotal}</b></div><span className="empty">Uma parte volta à linha a cada dia em que o grupo consegue comer.</span></>}
+              {prisonerTotal>0&&<><div className="pair"><span>Prisioneiros</span><b>{prisonerTotal}</b></div><span className="empty">Mercados possuem negociantes que pagam resgate.</span></>}
+            </div>}
 
             <div className="panel">
               <div className="panel-title">Contingente</div>

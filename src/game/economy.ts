@@ -11,6 +11,7 @@ import { cargoCapacity } from "./progression";
 import { derivedInput, withReward } from "./experience";
 import { isPresent } from "./presence";
 import { getState, update, type GameState } from "./store";
+import { troopTotal } from "../data/troops";
 
 export type GoodsCount = Partial<Record<GoodId, number>>;
 export type MarketQuote = {
@@ -51,7 +52,7 @@ export function amountOwned(s: GameState, id: GoodId): number {
 }
 
 export function cargoUsed(s: GameState): number {
-  return tradeGoods.reduce((sum, good) => sum + amountOwned(s, good.id) * good.weight, 0);
+  return tradeGoods.reduce((sum, good) => sum + amountOwned(s, good.id) * good.weight, 0)+troopTotal(s.prisoners)*2;
 }
 
 export function cargoLimit(s: GameState): number {

@@ -2,7 +2,7 @@
 
 Campanha jogável em Valdória: mapa estratégico 32-bit, viagem por estradas,
 personagens e diálogos, história em capítulos, política territorial, contratos,
-economia diária, mercados regionais e combate entre pequenos grupos.
+economia diária, mercados regionais e arena tática para combate entre grupos.
 
 ```bash
 npm install

@@ -23,7 +23,7 @@ import { holdingFor } from "../data/holdings";
 import type { TroopCount } from "../data/troops";
 import type { Contract } from "./adventureState";
 import type { Reward } from "./experience";
-import type { AgentClass, HouseId } from "../world/types";
+import type { AgentClass, HouseId, TerrainType } from "../world/types";
 import type { Attributes } from "../data/heroes";
 import type { SkillId } from "../data/skills";
 import type { GameState } from "./store";
@@ -52,7 +52,7 @@ export type QuestOption = {
 
 export type QuestBeat =
   | { kind: "escolha"; title: string; text: string; options: QuestOption[] }
-  | { kind: "batalha"; title: string; text: string; enemyName: string; band: TroopCount; onWin: string; onLose: string; loseReward?: Reward };
+  | { kind: "batalha"; title: string; text: string; enemyName: string; band: TroopCount; terrain?:TerrainType; onWin: string; onLose: string; loseReward?: Reward };
 
 export type QuestState = {
   contractId: string;
