@@ -16,10 +16,10 @@ import "./hero.css";
  * e podem ser recrutados depois.
  */
 const ARCHETYPE_COLOR: Record<string, string> = {
-  MILITARY: "#9c3b2e",
-  TRADE: "#3f7a4a",
-  POLITICS: "#3d6ea8",
-  RELIGION: "#c2a552",
+  MILITARY: "#d1876e",
+  TRADE: "#98b797",
+  POLITICS: "#92b4d3",
+  RELIGION: "#ddc37f",
 };
 
 function Portrait({ hero }: { hero: HeroDefinition }) {
@@ -56,9 +56,8 @@ export function HeroSelect() {
         <span className="hs-kicker">Lands of Acordelot</span>
         <h1 className="hs-title">De quem será esta história?</h1>
         <p className="hs-sub">
-          Nenhum dos quatro tem Casa, título ou exército. A escolha define onde a
-          história começa — não onde ela termina. Os outros três continuam em
-          Valdória, e você pode encontrá-los pelo caminho.
+          Quatro origens, um reino por descobrir. Escolha quem dará o primeiro passo.
+          Todas as carreiras permanecem abertas para você.
         </p>
       </div>
 
@@ -67,10 +66,12 @@ export function HeroSelect() {
           <button
             key={hero.id}
             className="hs-card"
+            aria-label={`Escolher ${hero.name}`}
             style={{ ["--arch" as string]: ARCHETYPE_COLOR[hero.archetype] }}
             aria-pressed={pickedId === hero.id}
             onClick={() => setPicked(hero.id)}
           >
+            <div className="hs-choice-mark" aria-hidden="true">{pickedId === hero.id ? "Escolhido" : "Conhecer origem"}</div>
             <Portrait hero={hero} />
             <div>
               <div className="hs-role">
@@ -87,7 +88,7 @@ export function HeroSelect() {
               {(Object.keys(hero.attributes) as (keyof typeof hero.attributes)[]).map((k) => (
                 <div className="hs-attr" key={k}>
                   <b>{hero.attributes[k]}</b>
-                  <span>{ATTRIBUTE_LABEL[k].slice(0, 4)}</span>
+                  <span>{ATTRIBUTE_LABEL[k]}</span>
                 </div>
               ))}
             </div>
@@ -106,7 +107,7 @@ export function HeroSelect() {
                 Voltar
               </button>
               <button className="btn primary" onClick={() => startCampaign(picked.id)}>
-                Confirmar
+                Iniciar jornada
               </button>
             </div>
           </>

@@ -24,6 +24,7 @@ import { xpToNextLevel, maxTroops, MAX_LEVEL } from "../game/progression";
 import { derivedInput } from "../game/experience";
 import { rankIndex, RANK_THRESHOLDS } from "../game/careers";
 import { partyOf, wanderers } from "./wanderers";
+import { foreignRealms } from "./foreignRealms";
 
 export type Check = { name: string; ok: boolean; detail: string };
 
@@ -248,6 +249,26 @@ export function runSelfTest(): Check[] {
     "retratos dos quatro inícios",
     missingPortraits.length === 0,
     missingPortraits.length ? `faltam: ${missingPortraits.join(", ")}` : "4 retratos",
+  );
+
+  /* --------------------------- fronteira -------------------------------- */
+
+  /*
+   * O limite do mundo é GEOGRÁFICO, não uma parede: se um único nó de rota
+   * caísse fora do contorno, o viajante poderia sair do reino. Esta é a
+   * verificação que garante que a escuridão da borda não precisa segurar nada.
+   */
+  const outside = routeNodes.filter((n) => !pointInPolygon({ x: n.x, y: n.y }, valdoria.outline));
+  add(
+    "nenhum nó de rota fora do reino",
+    outside.length === 0,
+    outside.map((n) => n.id).join(", ") || `${routeNodes.length} nós dentro`,
+  );
+
+  add(
+    "reinos vizinhos existem como dado",
+    foreignRealms.length >= 4 && foreignRealms.every((r) => r.rumor.length > 0),
+    foreignRealms.map((r) => `${r.name} (${r.status})`).join(" · "),
   );
 
   return checks;

@@ -1,3 +1,4 @@
+import { ResourceIcon } from "../ResourceIcon";
 import { useState } from "react";
 import { heroById, ATTRIBUTE_EFFECT, ATTRIBUTE_LABEL, type Attributes } from "../../data/heroes";
 import { heroPortraitUrl } from "../../data/heroAssets";
@@ -72,16 +73,17 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
   const companions = Object.values(game.companions);
 
   return (
-    <div className="sheet">
+    <div className="sheet" role="dialog" aria-label={`Ficha de ${hero.name}`}>
+      <header className="sheet-heading">
+        <div><span className="hs-kicker">Crônica do viajante</span><h1>{hero.name}</h1><p>Nível {game.level} · {CAREER_LABEL[hero.archetype]} · Valdória</p></div>
+        <button className="sheet-close" onClick={onClose} aria-label="Fechar a ficha">×</button>
+      </header>
       <div className="sheet-bar">
         {(Object.keys(TAB_LABEL) as Tab[]).map((t) => (
           <button key={t} className="sheet-tab" aria-selected={tab === t} onClick={() => setTab(t)}>
             {TAB_LABEL[t]}
           </button>
         ))}
-        <button className="sheet-close" onClick={onClose} aria-label="Fechar a ficha">
-          ×
-        </button>
       </div>
 
       <div className="sheet-body">
@@ -117,11 +119,11 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
               <div className="panel">
                 <Meter label="Experiência" value={game.xp} max={xpToNextLevel(game.level)} tone="xp" />
                 <div className="pair">
-                  <span>Influência</span>
+                  <span className="resource-label"><ResourceIcon name="influence"/>Influência</span>
                   <b className="big">{game.influence.toFixed(1)}</b>
                 </div>
                 <div className="pair">
-                  <span>Ouro</span>
+                  <span className="resource-label"><ResourceIcon name="gold"/>Ouro</span>
                   <b className="big">{game.gold}</b>
                 </div>
                 <div className="pair">
@@ -233,7 +235,7 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
         )}
 
         {tab === "companheiros" && (
-          <div className="sheet-inner">
+          <div className="sheet-inner companions-view">
             <div className="panel">
               <div className="panel-title">Companheiros</div>
               {companions.length === 0 && <span className="empty">Ninguém ainda.</span>}
@@ -282,14 +284,13 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
               })}
             </div>
             <p className="empty">
-              Companheiro é gente, tropa é unidade — os dois nunca se somam. Cada um destes
-              tem nível, atributos e habilidades próprios, e continua evoluindo onde está.
+              Encontre estes viajantes em Valdória e conquiste sua confiança. Cada companheiro traz suas próprias habilidades para o grupo.
             </p>
           </div>
         )}
 
         {tab === "grupo" && (
-          <div className="sheet-inner">
+          <div className="sheet-inner party-view">
             <div className="panel">
               <div className="panel-title">Grupo</div>
               <Meter label="Tropas" value={total} max={limit} />

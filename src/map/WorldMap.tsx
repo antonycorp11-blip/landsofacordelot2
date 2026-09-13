@@ -34,6 +34,10 @@ import { useGame } from "../game/store";
 import { heroById } from "../data/heroes";
 import { troopTotal } from "../data/troops";
 import type { Wanderer } from "../world/wanderers";
+import { FrontierLayer } from "../render/layers/FrontierLayer";
+import { FrontierPanel } from "../ui/frontier/FrontierPanel";
+import { PoliticalLegend } from "../ui/PoliticalLegend";
+import type { ForeignRealm } from "../world/foreignRealms";
 import { useCamera } from "./useCamera";
 import { Hud, LIGHTING_ORDER } from "../ui/Hud";
 import type { JournalEntry, JournalKind } from "../ui/journal";
@@ -64,6 +68,12 @@ export function WorldMap() {
   /** Ficha do personagem e leitura de um grupo no mapa — ambas contextuais. */
   const [sheetOpen, setSheetOpen] = useState(false);
   const [readAgent, setReadAgent] = useState<Wanderer | null>(null);
+  const [realm, setRealm] = useState<ForeignRealm | null>(null);
+  /**
+   * Vista política: o mapa vira tabuleiro. O cenário sai da frente para que a
+   * cor das Casas possa ser comparada de fronteira a fronteira.
+   */
+  const [political, setPolitical] = useState(false);
   const [journal, setJournal] = useState<JournalEntry[]>([]);
 
   const followRef = useRef(follow);
@@ -183,8 +193,8 @@ export function WorldMap() {
   return (
     <div className="map-root" ref={camera.containerRef}>
       <div className="ground-art">
-        <TerrainTiles subscribe={camera.subscribe} opacity={tileOpacity} />
-        <SceneryCanvas subscribe={camera.subscribe} enabled={!debug} />
+        <TerrainTiles subscribe={camera.subscribe} opacity={political ? 0 : tileOpacity} />
+        <SceneryCanvas subscribe={camera.subscribe} enabled={!debug && !political} />
       </div>
 
       <svg className="map-svg" {...camera.handlers}>
@@ -206,13 +216,18 @@ export function WorldMap() {
             onRegionClick={handleRegionClick}
             onRegionHover={setHoveredRegion}
           />
-          {!debug && zoom >= LANDCOVER_MIN_ZOOM && <LandcoverLayer view={view} />}
-          {!debug && <ReliefLayer zoom={zoom} />}
+          {!debug && !political && zoom >= LANDCOVER_MIN_ZOOM && <LandcoverLayer view={view} />}
+          {!debug && !political && <ReliefLayer zoom={zoom} />}
           {!debug && (
-            <PoliticalLayer zoom={zoom} selectedRegion={selectedRegion} hoveredRegion={hoveredRegion} />
+            <PoliticalLayer
+              zoom={zoom}
+              selectedRegion={selectedRegion}
+              hoveredRegion={hoveredRegion}
+              political={political}
+            />
           )}
           <RiversLayer zoom={zoom} />
-          <NatureLayer zoom={zoom} view={view} />
+          {!political && <NatureLayer zoom={zoom} view={view} />}
           <RoadsLayer zoom={zoom} />
           <BordersLayer zoom={zoom} onCrossingClick={handleCrossingClick} />
           <RouteHighlight path={travel.path} zoom={zoom} />
@@ -248,6 +263,16 @@ export function WorldMap() {
                 </text>
               ))}
             </g>
+          )}
+
+          {!debug && (
+            <FrontierLayer
+              zoom={zoom}
+              onRealmClick={(r) => {
+                if (camera.wasDragged()) return;
+                setRealm(r);
+              }}
+            />
           )}
 
           {!debug && (
@@ -301,8 +326,11 @@ export function WorldMap() {
         onToggleDebug={() => setDebug((d) => !d)}
         journal={journal}
         coins={game.gold}
+        influence={game.influence}
         level={game.level}
         onOpenSheet={() => setSheetOpen(true)}
+        political={political}
+        onTogglePolitical={() => setPolitical((p) => !p)}
         selected={region ? { name: region.name, biome: region.biome, pois: region.pointsOfInterest.length, settlements: region.settlements.length } : null}
       />
 
@@ -312,7 +340,9 @@ export function WorldMap() {
         onClose={() => setPanelPoiId(null)}
       />
 
-      {readAgent && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
+      {political && <PoliticalLegend onClose={() => setPolitical(false)} />}
+      {realm && <FrontierPanel realm={realm} onClose={() => setRealm(null)} />}
+      {readAgent && !realm && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
       {sheetOpen && <CharacterScreen onClose={() => setSheetOpen(false)} />}
     </div>
   );

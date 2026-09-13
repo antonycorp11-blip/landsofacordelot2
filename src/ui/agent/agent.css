@@ -42,3 +42,13 @@
 @media (max-width: 720px) {
   .agent-panel { left: max(8px, env(safe-area-inset-left)); width: auto; }
 }
+
+/* O rumor é a ponta de uma missão futura: fica em destaque, não em nota de pé. */
+.realm-rumor {
+  margin: 8px 0 0;
+  padding-left: 9px;
+  border-left: 2px solid #c8af6e44;
+  font-size: 12px;
+  font-style: italic;
+  color: #d8cba6;
+}

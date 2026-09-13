@@ -1,0 +1,42 @@
+/** Legenda da vista política. Mesma linguagem dos demais painéis. */
+.legend {
+  position: absolute;
+  left: max(8px, env(safe-area-inset-left));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  width: 262px;
+  max-width: calc(100vw - 16px);
+  max-height: 52vh;
+  z-index: 18;
+  display: flex;
+  flex-direction: column;
+  color: #f1e7cc;
+  background: #161d1cdb;
+  border: 1px solid #c8af6e3d;
+  border-radius: 4px;
+  box-shadow: 0 2px 20px #00000055;
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  font-family: inherit;
+  overflow: hidden;
+}
+.legend-head { display: flex; align-items: center; padding: 6px 10px; border-bottom: 1px solid #c8af6e2b; }
+.legend-title { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #b6a97a; }
+.legend-close { margin-left: auto; border: 0; background: none; color: #b6a97a; font: inherit; font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px; }
+
+.legend-list { overflow-y: auto; padding: 4px 10px 8px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.legend-row { display: flex; align-items: center; gap: 7px; padding: 5px 0; border-top: 1px solid #c8af6e1c; }
+.legend-row:first-child { border-top: 0; }
+.legend-swatch { width: 4px; align-self: stretch; border-radius: 2px; flex: none; }
+.legend-crest { width: 20px; height: 24px; object-fit: contain; flex: none; }
+.legend-body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.legend-name { font-size: 12.5px; line-height: 1.2; }
+.legend-sub { font-size: 10.5px; color: #9d947c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legend-rel { font-size: 10.5px; color: #9d947c; flex: none; }
+.legend-rel.pos { color: #a9cf8e; }
+.legend-rel.neg { color: #e0a08c; }
+
+.legend-foot { padding: 6px 10px; border-top: 1px solid #c8af6e2b; font-size: 11px; color: #cbbf9d; background: #0f1514a6; }
+
+@media (max-width: 720px) {
+  .legend { right: max(8px, env(safe-area-inset-right)); width: auto; max-height: 40vh; }
+}
