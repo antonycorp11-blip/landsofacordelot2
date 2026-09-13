@@ -30,7 +30,9 @@ import { freshAdventure, type AdventureState, type JourneySave } from "./adventu
  * exemplo —, subir o número descarta o save antigo em vez de ressuscitar um
  * estado que o jogo novo não sabe ler.
  */
-const SAVE_KEY = "acordelot.campanha.v2";
+const SAVE_KEY = "acordelot.campanha.v3";
+/** Chaves de versões anteriores, apagadas ao carregar. */
+const OLD_KEYS = ["acordelot.campanha.v1", "acordelot.campanha.v2"];
 
 export type CompanionStatus = "IN_PARTY" | "AVAILABLE" | "TRAVELING" | "CAPTURED" | "WOUNDED";
 
@@ -179,6 +181,8 @@ export function flushGameSave() {
 
 function load(): GameState | null {
   try {
+    // Não deixa save velho ocupando espaço depois de uma virada de versão.
+    for (const key of OLD_KEYS) localStorage.removeItem(key);
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as GameState;

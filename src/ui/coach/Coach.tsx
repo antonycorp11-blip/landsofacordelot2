@@ -118,24 +118,25 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
       };
     }
 
-    /* --------------------- a campanha principal ----------------------- */
-    // Sem encargo em mãos, o que o jogo tem a dizer é a linha da partida.
-    const step = currentStep(game.adventure.story);
-    if (step && tutorial.politicsSeen) {
-      const chapter = chapterOfStep.get(step.id);
-      return {
-        id: `story-${step.id}`,
-        title: `${chapter ? `Capítulo ${chapter.number}` : "Campanha"} · ${step.objective}`,
-        body: step.detail,
-      };
-    }
-
     /* -------------------- influência e o tabuleiro -------------------- */
     if (!tutorial.politicsSeen) {
       return {
         id: "influence",
         title: `Influência: ${game.influence.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}`,
         body: "Ouro compra homens; influência faz uma Casa ouvir você — e sem ela não se compra terra. Toque no estandarte para ver quem manda em quê.",
+      };
+    }
+
+    /* --------------------- a campanha principal ----------------------- */
+    // Por último e sem condição: quando o básico está aprendido, o que o jogo
+    // tem a dizer é a linha da partida — e ela nunca some até acabar.
+    const step = currentStep(game.adventure.story);
+    if (step) {
+      const chapter = chapterOfStep.get(step.id);
+      return {
+        id: `story-${step.id}`,
+        title: `${chapter ? `Capítulo ${chapter.number}` : "Campanha"} · ${step.objective}`,
+        body: step.detail,
       };
     }
 
