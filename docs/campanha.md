@@ -92,6 +92,13 @@ entregou lacrado.
   de Mareth, Ávrenne), hoje com a fronteira fechada e um rumor cada. São a
   reserva natural para os capítulos finais.
 
+## A história
+
+O arco completo — a premissa, os sete selos, os atos, os personagens e o que o
+jogador nunca pode saber cedo — está em [`narrativa.md`](narrativa.md).
+
+**Aquele documento contém spoilers do jogo inteiro.**
+
 ## O que falta e é escrita, não código
 
 Os capítulos I e II estão escritos com o que o mundo já estabelece, e existem
