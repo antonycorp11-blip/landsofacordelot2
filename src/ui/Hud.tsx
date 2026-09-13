@@ -181,7 +181,7 @@ export function Hud({
         </div>
 
         <div className="hud-panel hud-dock">
-          <button className="hud-btn journey-button" onClick={onOpenAdventure} title="Contratos, tutorial e companheiros"><Icon name="journal" /><span>Jornada</span></button>
+          <button className="hud-btn journey-button" onClick={onOpenAdventure} title="Contratos, tutorial e companheiros"><Icon name="journal" /><span className="label-long">Jornada</span></button>
           <button
             className={`hud-btn icon ${paused ? "on" : ""}`}
             onClick={onTogglePause}

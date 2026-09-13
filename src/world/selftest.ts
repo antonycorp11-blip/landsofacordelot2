@@ -6,7 +6,7 @@
  * ajustada — é barato e evita regressões silenciosas (buracos, sobreposições,
  * POIs na região errada, regiões sem estrada).
  */
-import { bounds, makeRng, pointInPolygon } from "./geo";
+import { bounds, distanceToPolyline, makeRng, pointInPolygon } from "./geo";
 import { adjacency, findPath } from "./navgraph";
 import { valdoria, allPois, regions, routeNodes, regionById } from "./valdoria";
 import { formatDuration } from "./time";
@@ -25,6 +25,7 @@ import { derivedInput } from "../game/experience";
 import { rankIndex, RANK_THRESHOLDS } from "../game/careers";
 import { partyOf, wanderers } from "./wanderers";
 import { foreignRealms } from "./foreignRealms";
+import { fiefs, fiefsOfRegion } from "./fiefs";
 
 export type Check = { name: string; ok: boolean; detail: string };
 
@@ -269,6 +270,50 @@ export function runSelfTest(): Check[] {
     "reinos vizinhos existem como dado",
     foreignRealms.length >= 4 && foreignRealms.every((r) => r.rumor.length > 0),
     foreignRealms.map((r) => `${r.name} (${r.status})`).join(" · "),
+  );
+
+  /* --------------------------- senhorios -------------------------------- */
+
+  add(
+    "cada região dividida em senhorios",
+    regions.every((r) => fiefsOfRegion(r.id).length >= 4),
+    regions.map((r) => `${r.name}: ${fiefsOfRegion(r.id).length}`).join(" · "),
+  );
+
+  add(
+    "todo senhorio tem polígono",
+    fiefs.every((f) => f.polygon.length >= 3),
+    `${fiefs.length} senhorios`,
+  );
+
+  /*
+   * Um senhorio não pode vazar para a região vizinha: o Voronoi é recortado no
+   * polígono da região, e a ondulação da divisa devolve para dentro qualquer
+   * ponto que saia. Os vértices que estão EXATAMENTE sobre a borda são da
+   * própria região, e por isso a tolerância.
+   */
+  let leaked = 0;
+  for (const f of fiefs) {
+    const region = regionById.get(f.regionId);
+    if (!region) continue;
+    for (const p of f.polygon) {
+      if (!pointInPolygon(p, region.polygon) && distanceToPolyline(p, region.polygon) > 1) leaked++;
+    }
+  }
+  add("nenhum senhorio vaza da sua região", leaked === 0, `${leaked} pontos fora`);
+
+  /* Terra dentro do domínio alheio é o caso que prova Casa ≠ região. */
+  const foreign = fiefs.filter((f) => f.ownerHouseId !== regionById.get(f.regionId)?.houseId);
+  add(
+    "Casas possuem senhorios em região alheia",
+    foreign.length >= 8,
+    `${foreign.length} de ${fiefs.length}`,
+  );
+
+  add(
+    "todo senhorio tem lorde, renda e preço",
+    fiefs.every((f) => f.lordId && f.income > 0 && f.value > 0),
+    `preço médio ${Math.round(fiefs.reduce((a, f) => a + f.value, 0) / fiefs.length)} moedas`,
   );
 
   return checks;

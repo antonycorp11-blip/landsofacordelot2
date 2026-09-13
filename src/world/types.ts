@@ -41,6 +41,15 @@ export type HouseId =
   | "house_veyr"
   | "house_rosethorne";
 
+/**
+ * Quem pode possuir um senhorio.
+ *
+ * O jogador entra aqui SEM Casa: comprar terra não faz de ninguém um nobre, e
+ * a arquitetura precisa aguentar um viajante dono de um feudo muito antes de
+ * existir uma Casa dele. `"player"` é o dono, não a Casa.
+ */
+export type FiefOwner = HouseId | "player";
+
 /** Arquétipo de um personagem. O brasão diz a família; a classe, o ofício. */
 export type AgentClass = "MILITARY" | "TRADE" | "POLITICS" | "RELIGION";
 

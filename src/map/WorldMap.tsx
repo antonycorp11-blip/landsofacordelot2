@@ -41,6 +41,9 @@ import { FrontierLayer } from "../render/layers/FrontierLayer";
 import { FrontierPanel } from "../ui/frontier/FrontierPanel";
 import { PoliticalLegend } from "../ui/PoliticalLegend";
 import type { ForeignRealm } from "../world/foreignRealms";
+import { FiefLayer } from "../render/layers/FiefLayer";
+import { FiefPanel } from "../ui/fief/FiefPanel";
+import type { Fief } from "../world/fiefs";
 import { useCamera } from "./useCamera";
 import { Hud, LIGHTING_ORDER } from "../ui/Hud";
 import type { JournalKind } from "../ui/journal";
@@ -72,6 +75,7 @@ export function WorldMap() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [readAgent, setReadAgent] = useState<Wanderer | null>(null);
   const [realm, setRealm] = useState<ForeignRealm | null>(null);
+  const [fief, setFief] = useState<Fief | null>(null);
   /**
    * Vista política: o mapa vira tabuleiro. O cenário sai da frente para que a
    * cor das Casas possa ser comparada de fronteira a fronteira.
@@ -238,6 +242,15 @@ export function WorldMap() {
           )}
           <RiversLayer zoom={zoom} />
           {!political && <NatureLayer zoom={zoom} view={view} />}
+          <FiefLayer
+            zoom={zoom}
+            political={political}
+            selectedFiefId={fief?.id ?? null}
+            onFiefClick={(f) => {
+              if (camera.wasDragged()) return;
+              setFief(f);
+            }}
+          />
           <RoadsLayer zoom={zoom} />
           <BordersLayer zoom={zoom} onCrossingClick={handleCrossingClick} />
           <RouteHighlight path={travel.path} zoom={zoom} />
@@ -358,7 +371,8 @@ export function WorldMap() {
 
       {political && <PoliticalLegend onClose={() => setPolitical(false)} />}
       {realm && <FrontierPanel realm={realm} onClose={() => setRealm(null)} />}
-      {readAgent && !realm && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
+      {fief && !realm && <FiefPanel fief={fief} onClose={() => setFief(null)} />}
+      {readAgent && !realm && !fief && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
       {sheetOpen && <CharacterScreen onClose={() => setSheetOpen(false)} />}
       {!adventureBlocked && !panelPoiId && !political && <JourneyTracker onOpen={setAdventureView} />}
       <AdventurePanel view={adventureView} onView={setAdventureView} onClose={() => setAdventureView(null)}

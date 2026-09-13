@@ -1,0 +1,133 @@
+import { useState } from "react";
+import { TIER_LABEL, type Fief } from "../../world/fiefs";
+import { buyBlocker, buyFief, ownerOf, useFiefOwners, BUY_RELATION } from "../../data/fiefOwners";
+import { houseById } from "../../data/houses";
+import { crestUrl } from "../../data/houseAssets";
+import { characterById, CLASS_LABEL } from "../../data/characters";
+import { relationLabel, relationWith } from "../../data/player";
+import { regionById } from "../../world/valdoria";
+import { useGame } from "../../game/store";
+import "../agent/agent.css";
+
+/**
+ * A FICHA DE UM SENHORIO.
+ *
+ * Quem é o dono, quem governa, quanto rende e quanto custa. É a tela da
+ * transação: comprar terra é o primeiro jeito de um viajante sem nome deixar
+ * de ser só um viajante.
+ *
+ * Senhorio NOBRE não está à venda, e o painel diz por quê — é a base do poder
+ * de uma Casa, não se passa a um estranho por dinheiro.
+ */
+const BLOCK_TEXT: Record<string, string> = {
+  not_for_sale: "Não está à venda. É terra nobre, e a Casa não se desfaz dela por moedas.",
+  relation: `A Casa não ouviria a oferta. Seria preciso relação ${BUY_RELATION} ou melhor.`,
+  gold: "Ouro insuficiente.",
+};
+
+export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }) {
+  useFiefOwners();
+  const game = useGame();
+  const [note, setNote] = useState<string | null>(null);
+
+  const owner = ownerOf(fief.id);
+  const house = owner === "player" ? null : houseById.get(owner);
+  const crest = house ? crestUrl(house.crestAssetKey) : undefined;
+  const lord = characterById.get(fief.lordId);
+  const region = regionById.get(fief.regionId);
+  const blocker = buyBlocker(fief.id);
+  const relation = house ? relationWith(house.id) : 0;
+
+  return (
+    <aside className="agent-panel" style={{ borderLeftColor: house?.color ?? "#e2c169" }}>
+      <header className="agent-head">
+        {crest && <img className="legend-crest" src={crest} alt="" style={{ width: 26, height: 31 }} />}
+        <div>
+          <h2>{fief.name}</h2>
+          <div className="agent-sub">
+            {TIER_LABEL[fief.tier]} · {region?.name}
+          </div>
+        </div>
+        <button className="sheet-close" onClick={onClose} aria-label="Fechar">
+          ×
+        </button>
+      </header>
+
+      <div className="agent-body">
+        <div className="pair">
+          <span>Dono</span>
+          <b>{owner === "player" ? "Você" : house?.name}</b>
+        </div>
+        {lord && (
+          <div className="pair">
+            <span>Governante</span>
+            <b>
+              {lord.name.split(" ").slice(0, 2).join(" ")} · {CLASS_LABEL[lord.primaryClass]}
+            </b>
+          </div>
+        )}
+        <div className="pair">
+          <span>Sede</span>
+          <b>{fief.seatName}</b>
+        </div>
+        <div className="pair">
+          <span>População</span>
+          <b>{fief.population.toLocaleString("pt-BR")}</b>
+        </div>
+        <div className="pair">
+          <span>Renda</span>
+          <b>{fief.income} moedas / dia</b>
+        </div>
+        <div className="pair">
+          <span>Defesa</span>
+          <b>{fief.defense}</b>
+        </div>
+        {house && (
+          <div className="pair">
+            <span>Relação com {house.shortName}</span>
+            <b>{relationLabel(relation)}</b>
+          </div>
+        )}
+
+        <div className="pair" style={{ marginTop: 8 }}>
+          <span>Preço</span>
+          <b>{owner === "player" ? "—" : `${fief.value.toLocaleString("pt-BR")} moedas`}</b>
+        </div>
+        {owner !== "player" && (
+          <div className="pair">
+            <span>Sua bolsa</span>
+            <b>{game.gold.toLocaleString("pt-BR")} moedas</b>
+          </div>
+        )}
+
+        {note && <p className="realm-rumor">{note}</p>}
+      </div>
+
+      <div className="agent-actions">
+        {owner === "player" ? (
+          <button className="btn" disabled title="Administração ainda não disponível">
+            Gerir
+          </button>
+        ) : (
+          <button
+            className="btn"
+            disabled={blocker !== "none"}
+            title={blocker === "none" ? undefined : BLOCK_TEXT[blocker]}
+            onClick={() => {
+              const result = buyFief(fief.id);
+              setNote(result === "none" ? `${fief.name} agora é seu.` : BLOCK_TEXT[result]);
+            }}
+          >
+            Comprar
+          </button>
+        )}
+        <button className="btn" disabled title="Ainda não disponível">
+          Negociar
+        </button>
+        <button className="btn" onClick={onClose}>
+          Fechar
+        </button>
+      </div>
+    </aside>
+  );
+}

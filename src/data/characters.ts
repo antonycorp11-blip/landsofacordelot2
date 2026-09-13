@@ -10,6 +10,7 @@
  * é; a classe, qual é o seu ofício.
  */
 import type { AgentClass, HouseId } from "../world/types";
+import { fiefLords } from "./fiefLords";
 
 export type CharacterStatus = "available" | "traveling" | "war" | "captured" | "dead";
 
@@ -160,15 +161,26 @@ export const characters: Character[] = [
   },
 ];
 
-export const characterById = new Map(characters.map((c) => [c.id, c]));
+/**
+ * Todo mundo com nome no reino: os líderes de Casa, escritos à mão, e os
+ * trinta e cinco lordes de senhorio, gerados. Para o painel e para uma
+ * audiência os dois são a mesma coisa.
+ */
+export const allCharacters: Character[] = [...characters, ...fiefLords];
+
+export const characterById = new Map(allCharacters.map((c) => [c.id, c]));
 
 export function leadersOf(houseId: HouseId): Character[] {
   return characters.filter((c) => c.houseId === houseId);
 }
 
+export function charactersOfHouse(houseId: HouseId): Character[] {
+  return allCharacters.filter((c) => c.houseId === houseId);
+}
+
 /** Quem está neste local agora. Muda sozinho quando os lordes se moverem. */
 export function charactersAt(poiId: string): Character[] {
-  return characters.filter((c) => c.locationPoiId === poiId && c.status !== "dead");
+  return allCharacters.filter((c) => c.locationPoiId === poiId && c.status !== "dead");
 }
 
 export const CLASS_LABEL: Record<AgentClass, string> = {
