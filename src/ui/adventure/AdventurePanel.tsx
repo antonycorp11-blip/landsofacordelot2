@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ATTRIBUTE_LABEL, heroById } from '../../data/heroes';
 import { heroPortraitUrl } from '../../data/heroAssets';
 import { skillById } from '../../data/skills';
 import { poiById } from '../../world/valdoria';
 import { formatDuration } from '../../world/time';
-import { useGame } from '../../game/store';
+import { resetCampaign, useGame } from '../../game/store';
 import { CAREER_LABEL } from '../../game/careers';
 import { isPresent, locationId } from '../../game/presence';
 import { withReward, type Reward } from '../../game/experience';
@@ -44,16 +44,28 @@ function DecisionGrowth({reward}:{reward:Reward}) {
   return <span className="adv-growth">Este resultado alcança o nível {next.level}: +{next.skillPoints-game.skillPoints} ponto(s) de habilidade{next.attributePoints>game.attributePoints ? ` e +${next.attributePoints-game.attributePoints} de atributo` : ''}.</span>;
 }
 
+/**
+ * Recomeçar apaga tudo. Por isso o botão pergunta antes, na própria etiqueta,
+ * em vez de abrir mais uma janela por cima da janela.
+ */
+function RestartButton() {
+  const [armed,setArmed]=useState(false);
+  if(!armed) return <button className="btn" onClick={()=>setArmed(true)}>Recomeçar campanha</button>;
+  return <>
+    <button className="btn" onClick={()=>setArmed(false)}>Não, continuar</button>
+    <button className="btn danger" onClick={resetCampaign}>Apagar e recomeçar</button>
+  </>;
+}
+
 export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:AdventureView|null;onClose:()=>void;onView:(view:AdventureView)=>void;onNavigate:(id:string)=>void;onSheet:()=>void}) {
   const game=useGame(), a=game.adventure;
-  const welcome=!a.tutorial.introSeen;
   const pending=a.event;
   const event=pending ? roadEventById.get(pending.definitionId) : undefined;
   const notice=a.notice;
-  const active=!!view || welcome || !!event || !!notice;
+  const active=!!view || !!event || !!notice;
   const dialog=useRef<HTMLDivElement>(null);
   const closeRef=useRef(()=>{});
-  closeRef.current=()=>{if(event)return;if(notice)dismissNotice();else if(welcome)tutorialFlag('introSeen');else onClose();};
+  closeRef.current=()=>{if(event)return;if(notice)dismissNotice();else onClose();};
   useEffect(()=>{
     if(!active) return;
     const previous=document.activeElement as HTMLElement|null;
@@ -76,12 +88,12 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
   const here=isPresent(placeId,game);
   const contract=a.contract;
   const tab=view?.tab??'guide';
-  const title=event?.title??notice?.title??(welcome?'Sua primeira jornada':tab==='guide'?'Guia do viajante':tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':'Encargo em curso');
+  const title=event?.title??notice?.title??(tab==='guide'?'Guia do viajante':tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':'Encargo em curso');
   return <div className="adv-backdrop"><div className="adv-dialog" role="dialog" aria-modal="true" aria-labelledby="adv-title" ref={dialog} tabIndex={-1}>
     <header className="adv-head"><div><span className="hs-kicker">{event?'Encontro na estrada':notice?'Crônica de Valdória':'Lands of Acordelot'}</span><h2 id="adv-title">{title}</h2></div>
       {!event && <button className="sheet-close" onClick={()=>closeRef.current()} aria-label="Fechar">×</button>}
     </header>
-    {!event && !notice && !welcome && <nav className="adv-tabs" aria-label="Jornada">
+    {!event && !notice && <nav className="adv-tabs" aria-label="Jornada">
       {([['guide','Guia'],['contracts','Encargo'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
     </nav>}
     <div className="adv-body">
@@ -99,14 +111,10 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
       </> : notice ? <>
         <div className={`adv-result ${notice.levelUp?'level-up':''}`}><span aria-hidden="true">✦</span><p>{notice.text}</p></div>
         <div className="adv-actions">{notice.levelUp && <button className="btn" onClick={()=>{dismissNotice();onSheet();}}>Distribuir pontos</button>}<button className="btn primary" onClick={dismissNotice}>Continuar</button></div>
-      </> : welcome ? <>
-        <p className="adv-story">Você chega a {place?.name ?? 'Valdória'} sem terras, sem título e com o próprio nome para construir.</p>
-        <p className="adv-story">Aqui ninguém entrega serviço por escrito. Trabalho se consegue falando com quem manda no lugar — e é na conversa que se sabe o destino, o prazo e a paga. Uma decisão tomada na estrada pode mudar quem confia em você.</p>
-        <div className="adv-actions"><button className="btn" onClick={()=>{tutorialFlag('hidden');tutorialFlag('introSeen');onClose();}}>Seguir sem orientação</button><button className="btn primary" onClick={()=>{tutorialFlag('introSeen');onClose();}}>Entrar em {place?.name ?? 'Valdória'}</button></div>
       </> : tab==='guide' ? <>
         <p className="adv-caption">O guia acompanha suas ações e pode ser consultado novamente em Jornada.</p>
         <ol className="adv-steps">{STEPS.map((step,index)=><li key={step.key} className={a.tutorial[step.key]?'done':''}><span>{a.tutorial[step.key]?'✓':index+1}</span><div><h3>{step.title}</h3><p>{step.description}</p></div></li>)}</ol>
-        <div className="adv-actions"><button className="btn" onClick={()=>tutorialFlag('hidden',!a.tutorial.hidden)}>{a.tutorial.hidden?'Mostrar dicas no mapa':'Ocultar dicas no mapa'}</button><button className="btn primary" onClick={onClose}>Voltar ao mapa</button></div>
+        <div className="adv-actions"><RestartButton/><button className="btn" onClick={()=>tutorialFlag('hidden',!a.tutorial.hidden)}>{a.tutorial.hidden?'Mostrar dicas no mapa':'Ocultar dicas no mapa'}</button><button className="btn primary" onClick={onClose}>Voltar ao mapa</button></div>
       </> : tab==='contracts' ? <>
         {contract ? <article className="adv-contract active"><span className="adv-eyebrow">Contrato em andamento · {CAREER_LABEL[contract.career]}</span><h3>{contract.title}</h3><p>{contract.description}</p><p className="adv-route">{poiById.get(contract.sourceId)?.name} → <b>{poiById.get(contract.destinationId)?.name}</b></p><p>Prazo restante: {formatDuration(remainingContractHours(game))}</p><Gains reward={contract.reward}/><div className="adv-actions">
           {isPresent(contract.destinationId,game)?<button className="btn primary" onClick={completeContract}>Entregar e receber</button>:<button className="btn primary" disabled={!!game.journey?.destinationId} onClick={()=>onNavigate(contract.destinationId)}>{game.journey?.destinationId?'Viagem em andamento':'Viajar ao destino'}</button>}

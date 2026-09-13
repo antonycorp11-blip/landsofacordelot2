@@ -32,6 +32,7 @@ import { AgentPanel } from "../ui/agent/AgentPanel";
 import { useGame } from "../game/store";
 import { checkRoadEvent, recordJourney, tutorialFlag } from "../game/adventure";
 import { AdventurePanel, JourneyTracker, type AdventureView } from "../ui/adventure/AdventurePanel";
+import { MentorTalk } from "../ui/dialogue/MentorTalk";
 import { restoreJourney } from "../travel/journey";
 import { heroById } from "../data/heroes";
 import { troopTotal } from "../data/troops";
@@ -125,18 +126,7 @@ export function WorldMap() {
     ),
   });
 
-  /**
-   * Fim da abertura: o jogo começa DENTRO da localidade inicial, com o menu
-   * dela aberto — e não num mapa vazio onde o jogador tem que adivinhar o
-   * primeiro toque.
-   */
   const introSeen = game.adventure.tutorial.introSeen;
-  const introWasSeen = useRef(introSeen);
-  useEffect(() => {
-    if (introWasSeen.current || !introSeen) return;
-    introWasSeen.current = true;
-    setPanelPoiId(travel.currentNodeId);
-  }, [introSeen, travel.currentNodeId]);
 
   const openSheet = useCallback(() => {
     setAdventureView(null);
@@ -377,6 +367,10 @@ export function WorldMap() {
       {realm && <FrontierPanel realm={realm} onClose={() => setRealm(null)} />}
       {fief && !realm && <FiefPanel fief={fief} onClose={() => setFief(null)} />}
       {readAgent && !realm && !fief && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
+      {/* A abertura é uma conversa, não um manual: quem recebe o recém-chegado
+          explica o mapa, o relógio e de onde vem trabalho — e a conversa acaba
+          com o menu da localidade inicial aberto. */}
+      {!introSeen && <MentorTalk onDone={setPanelPoiId} />}
       {sheetOpen && <CharacterScreen onClose={() => setSheetOpen(false)} />}
       {!adventureBlocked && !panelPoiId && !political && <JourneyTracker onOpen={setAdventureView} />}
       <AdventurePanel view={adventureView} onView={setAdventureView} onClose={() => setAdventureView(null)}

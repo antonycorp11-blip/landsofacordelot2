@@ -268,6 +268,15 @@ export function useCamera({ world, focus, maxZoom, initialCenter, initialScale }
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; mid: Point } | null>(null);
   const dragged = useRef(0);
+  /**
+   * Distância LÍQUIDA do dedo até onde ele encostou, e não o comprimento do
+   * caminho percorrido. No celular um toque parado ainda emite vários
+   * `pointermove` de um pixel, e somar esses pixels fazia qualquer toque
+   * passar do limiar — o mapa entendia arrasto e o castelo nunca abria.
+   */
+  const origin = useRef<{ x: number; y: number } | null>(null);
+  const moved = useRef(0);
+  const pinched = useRef(false);
 
   /**
    * Os gestos NÃO usam setPointerCapture: capturar o ponteiro faria o evento de
@@ -294,6 +303,7 @@ export function useCamera({ world, focus, maxZoom, initialCenter, initialScale }
         if (pinch.current.dist > 0) zoomAt(d / pinch.current.dist, mid.x, mid.y);
         pinch.current = { dist: d, mid };
         dragged.current += 10;
+        pinched.current = true;
         return;
       }
 
@@ -301,6 +311,12 @@ export function useCamera({ world, focus, maxZoom, initialCenter, initialScale }
       const dx = (e.clientX - prev.x) / s;
       const dy = (e.clientY - prev.y) / s;
       dragged.current += Math.hypot(e.clientX - prev.x, e.clientY - prev.y);
+      if (origin.current) {
+        moved.current = Math.max(
+          moved.current,
+          Math.hypot(e.clientX - origin.current.x, e.clientY - origin.current.y),
+        );
+      }
       // Pan é imediato: arrastar precisa colar no dedo, sem suavização.
       setTarget({ cx: target.current.cx - dx, cy: target.current.cy - dy }, true);
     },
@@ -328,6 +344,11 @@ export function useCamera({ world, focus, maxZoom, initialCenter, initialScale }
     const first = pointers.current.size === 0;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     dragged.current = 0;
+    if (first) {
+      origin.current = { x: e.clientX, y: e.clientY };
+      moved.current = 0;
+      pinched.current = false;
+    }
     if (pointers.current.size === 2) {
       const [a, b] = [...pointers.current.values()];
       pinch.current = {
@@ -351,7 +372,11 @@ export function useCamera({ world, focus, maxZoom, initialCenter, initialScale }
   );
 
   /** `true` se o gesto atual foi um arrasto (para não disparar clique). */
-  const wasDragged = useCallback(() => dragged.current > 6, []);
+  /**
+   * Um toque com o dedo vale como toque até 12 px de desvio — abaixo disso é
+   * tremor de mão, não intenção de arrastar. Pinça sempre cancela o clique.
+   */
+  const wasDragged = useCallback(() => pinched.current || moved.current > 12, []);
 
   /** Retângulo do mundo visível agora, com margem para o culling. */
   const getVisibleRect = useCallback(

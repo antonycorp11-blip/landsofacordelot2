@@ -9,7 +9,7 @@
   position: absolute;
   top: max(8px, env(safe-area-inset-top));
   right: max(8px, env(safe-area-inset-right));
-  bottom: calc(max(8px, env(safe-area-inset-bottom)) + 46px);
+  bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 25;
   width: 330px;
   max-width: calc(100vw - 16px);
@@ -158,10 +158,9 @@
     top: auto;
     left: max(8px, env(safe-area-inset-left));
     right: max(8px, env(safe-area-inset-right));
-    /* Acima da doca do HUD, que mora na base. */
-    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 46px);
+    bottom: max(6px, env(safe-area-inset-bottom));
     width: auto;
-    max-height: min(66dvh, calc(100dvh - 170px));
+    max-height: min(64dvh, calc(100dvh - 190px));
     border-radius: 10px;
     animation: sp-up 180ms ease-out;
   }

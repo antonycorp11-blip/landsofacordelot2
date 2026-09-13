@@ -23,7 +23,13 @@ import type { AgentClass, FiefOwner, HouseId } from "../world/types";
 
 import { freshAdventure, type AdventureState, type JourneySave } from "./adventureState";
 
-const SAVE_KEY = "acordelot.campanha.v1";
+/**
+ * A versão faz parte da chave de propósito: quando uma mudança altera o
+ * significado do que estava gravado — o relógio que agora anda parado, por
+ * exemplo —, subir o número descarta o save antigo em vez de ressuscitar um
+ * estado que o jogo novo não sabe ler.
+ */
+const SAVE_KEY = "acordelot.campanha.v2";
 
 export type CompanionStatus = "IN_PARTY" | "AVAILABLE" | "TRAVELING" | "CAPTURED" | "WOUNDED";
 

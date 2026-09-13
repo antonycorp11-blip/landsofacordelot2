@@ -8,6 +8,16 @@ import { samplePath } from './samplePath';
 import { restoreJourney } from './journey';
 
 const WORLD_HOURS_PER_SECOND=4;
+/**
+ * O RELÓGIO DO MUNDO NÃO PARA.
+ *
+ * Parado numa cidade o tempo corre devagar — uma hora do mundo a cada dois
+ * segundos, um dia inteiro em pouco menos de um minuto. Na estrada ele corre
+ * como sempre correu. Isso é o que permite que renda, prazo de contrato e
+ * qualquer coisa que dependa de calendário andem sem obrigar o jogador a
+ * cavalgar em círculos para o dia virar.
+ */
+const IDLE_HOURS_PER_SECOND=0.5;
 export type TravelState='idle'|'traveling'|'arrived';
 type Options={startNodeId:string;events?:TravelEvents;blocked?:boolean;onFrame?:(pos:Point,regionId:RegionId)=>void};
 
@@ -59,9 +69,20 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
   const frame=useCallback((now:number)=>{
     rafRef.current=0;
     const p=pathRef.current;
-    if (!p || pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice) return;
+    if (pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice) return;
     const dt=Math.min(.05,(now-lastTimeRef.current)/1000);
     lastTimeRef.current=now;
+    if (!p) {
+      // Parado: só o relógio anda. A barra mostra horas inteiras, então a
+      // interface só é avisada quando a hora vira — e não 60 vezes por
+      // segundo, o que redesenharia o mapa à toa.
+      const before=Math.floor(hoursRef.current);
+      hoursRef.current+=IDLE_HOURS_PER_SECOND*speedRef.current*dt;
+      if (Math.floor(hoursRef.current)!==before) setWorldHours(hoursRef.current);
+      if (now-lastSaveRef.current>4000) { lastSaveRef.current=now; checkpoint(); }
+      rafRef.current=requestAnimationFrame(frame);
+      return;
+    }
     const before=progressRef.current;
     const edge=routeEdgeById.get(p.edgeIds[nodeCursorRef.current]);
     const modifier=edge?.movementModifier??1;
@@ -104,12 +125,12 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
       checkpoint();
     }
     writeMarker();
-    if (pathRef.current && !getState().adventure.event && !getState().adventure.notice) rafRef.current=requestAnimationFrame(frame);
+    if (!getState().adventure.event && !getState().adventure.notice) rafRef.current=requestAnimationFrame(frame);
   },[checkpoint,writeMarker]);
 
   useEffect(()=>{
     stop();
-    if (!blocked && !paused && pathRef.current && !document.hidden) {
+    if (!blocked && !paused && !document.hidden) {
       lastTimeRef.current=performance.now();
       rafRef.current=requestAnimationFrame(frame);
     }
@@ -157,7 +178,8 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     const persist=()=>{checkpoint();flushGameSave();};
     const visibility=()=>{
       if (document.hidden) {stop();persist();}
-      else if (!pausedRef.current && !blockedRef.current && pathRef.current) {
+      else if (!pausedRef.current && !blockedRef.current) {
+        // Volta sem creditar o tempo em que a aba esteve escondida.
         lastTimeRef.current=performance.now();
         stop();rafRef.current=requestAnimationFrame(frame);
       }

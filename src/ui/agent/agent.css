@@ -48,9 +48,8 @@
   .agent-panel {
     left: max(8px, env(safe-area-inset-left));
     width: auto;
-    /* A doca do HUD mora embaixo; a gaveta para acima dela. */
-    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 46px);
-    max-height: min(66dvh, calc(100dvh - 160px));
+    bottom: max(6px, env(safe-area-inset-bottom));
+    max-height: min(64dvh, calc(100dvh - 190px));
   }
   .agent-actions .btn { min-height: 40px; }
 }

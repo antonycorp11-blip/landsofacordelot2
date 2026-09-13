@@ -157,29 +157,6 @@ export function Hud({
         )}
       </div>
 
-      {/* --------------------------- registro --------------------------- */}
-      {journalOpen && (
-        <div className="hud-journal">
-          <div className="hud-journal-head">
-            Diário de viagem
-            <button onClick={() => setJournalOpen(false)} aria-label="Fechar o diário">×</button>
-          </div>
-          <div className="hud-journal-list" ref={listRef}>
-            {journal.length === 0 ? (
-              <div className="hud-empty">Nada aconteceu ainda. Toque em uma localidade para partir.</div>
-            ) : (
-              journal.map((e) => (
-                <div className={`hud-entry kind-${e.kind}`} key={e.id}>
-                  <span className="glyph">{JOURNAL_GLYPH[e.kind]}</span>
-                  <span className="when">{stamp(e.hours)}</span>
-                  <span>{e.text}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
       {/* ----------------------------- doca ----------------------------- */}
       <div className="hud-dock">
         <button
@@ -229,6 +206,30 @@ export function Hud({
           <Icon name="debug" />
         </button>
       </div>
+
+      {/* --------------------------- registro --------------------------- */}
+      {journalOpen && (
+        <div className="hud-journal">
+          <div className="hud-journal-head">
+            Diário de viagem
+            <button onClick={() => setJournalOpen(false)} aria-label="Fechar o diário">×</button>
+          </div>
+          <div className="hud-journal-list" ref={listRef}>
+            {journal.length === 0 ? (
+              <div className="hud-empty">Nada aconteceu ainda. Toque em uma localidade para partir.</div>
+            ) : (
+              journal.map((e) => (
+                <div className={`hud-entry kind-${e.kind}`} key={e.id}>
+                  <span className="glyph">{JOURNAL_GLYPH[e.kind]}</span>
+                  <span className="when">{stamp(e.hours)}</span>
+                  <span>{e.text}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
