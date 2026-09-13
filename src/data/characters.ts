@@ -34,15 +34,15 @@ export type Character = {
 export const characters: Character[] = [
   {
     id: "aldren_valdoria",
-    name: "Rei Aldren Valdória",
+    name: "Protetor Aldren Valdória",
     houseId: "house_valdoria",
-    title: "Rei de Valdória",
+    title: "Protetor do Reino",
     primaryClass: "POLITICS",
     portraitAssetKey: "portrait_aldren_valdoria",
     locationPoiId: "castelo_real",
     status: "available",
     relationWithPlayer: 0,
-    description: "Soberano do reino. Governa do Castelo Real.",
+    description: "Governa do Castelo Real. Não é rei, e sabe disso melhor que ninguém.",
   },
   {
     id: "garrick_karneth",
