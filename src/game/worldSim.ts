@@ -15,13 +15,23 @@
  * dado rolado enquanto ele viajava.
  */
 import { houses, houseById } from "../data/houses";
-import type { HouseId } from "../world/types";
+import { allegianceLabel, type Belligerent } from "./allegiance";
 import type { GameState } from "./store";
+
+/** O nome de quem briga, seja Casa ou o próprio jogador. */
+export function belligerentName(s: GameState, who: Belligerent): string {
+  return who === "player" ? allegianceLabel(s.allegiance) : houseById.get(who)?.name ?? who;
+}
 
 /** De quantos em quantos dias o tabuleiro se mexe. */
 export const WORLD_TICK_DAYS = 4;
 
-export type War = { a: HouseId; b: HouseId; since: number };
+/**
+ * Uma guerra tem dois beligerantes, e um deles pode ser VOCÊ — a partir do dia
+ * em que se declara soberano. É o que transforma independência de um título
+ * numa posição no tabuleiro.
+ */
+export type War = { a: Belligerent; b: Belligerent; since: number };
 
 export type WorldNews = { text: string; kind: "guerra" | "paz" | "conquista" };
 
@@ -48,7 +58,7 @@ export function advanceWorld(s: GameState, day: number, rolls: number[]): { stat
     if (long >= 12 && roll() < 0.45) {
       news.push({
         kind: "paz",
-        text: `${houseById.get(war.a)?.shortName} e ${houseById.get(war.b)?.shortName} depuseram as armas depois de ${long} dias.`,
+        text: `${belligerentName(s, war.a)} e ${belligerentName(s, war.b)} depuseram as armas depois de ${long} dias.`,
       });
       return false;
     }
@@ -58,11 +68,20 @@ export function advanceWorld(s: GameState, day: number, rolls: number[]): { stat
   /* ------------------------- guerras que começam ----------------------- */
   if (wars.length < 2 && roll() < 0.34) {
     const a = houses[pickIndex(houses.length, roll())];
-    const rest = houses.filter((h) => h.id !== a.id && !wars.some((w) => w.a === h.id || w.b === h.id));
-    const b = rest[pickIndex(rest.length, roll())];
-    if (b && !wars.some((w) => (w.a === a.id && w.b === b.id) || (w.a === b.id && w.b === a.id))) {
-      wars.push({ a: a.id, b: b.id, since: day });
-      news.push({ kind: "guerra", text: `${a.name} declarou guerra a ${b.name}.` });
+    const rest: Belligerent[] = houses
+      .filter((h) => h.id !== a.id && !wars.some((w) => w.a === h.id || w.b === h.id))
+      .map((h) => h.id);
+    // Um soberano é alvo como qualquer outro — e quem menos gosta dele é
+    // quem primeiro marcha. É a conta que a independência cobra.
+    const sovereign = s.allegiance.kind === "independente";
+    const hatesYou = sovereign && (s.houseRelations[a.id] ?? 0) <= -20;
+    if (sovereign && !wars.some((w) => w.a === "player" || w.b === "player")) rest.push("player");
+    const b = hatesYou && !wars.some((w) => w.a === "player" || w.b === "player")
+      ? "player"
+      : rest[pickIndex(rest.length, roll())];
+    if (b && !wars.some((w) => (w.a === a.id && w.b === b) || (w.a === b && w.b === a.id))) {
+      wars.push({ a: a.id, b, since: day });
+      news.push({ kind: "guerra", text: `${a.name} declarou guerra a ${belligerentName(s, b)}.` });
     }
   }
 
@@ -73,11 +92,11 @@ export function advanceWorld(s: GameState, day: number, rolls: number[]): { stat
   return { state: { ...s, wars, fiefOwners, worldTickDay: day }, news };
 }
 
-/** Guerras em que uma Casa está metida agora. */
-export function warsOf(s: GameState, houseId: HouseId): War[] {
-  return (s.wars ?? []).filter((w) => w.a === houseId || w.b === houseId);
+/** Guerras em que um beligerante está metido agora. */
+export function warsOf(s: GameState, who: Belligerent): War[] {
+  return (s.wars ?? []).filter((w) => w.a === who || w.b === who);
 }
 
-export function atWar(s: GameState, a: HouseId, b: HouseId): boolean {
+export function atWar(s: GameState, a: Belligerent, b: Belligerent): boolean {
   return (s.wars ?? []).some((w) => (w.a === a && w.b === b) || (w.a === b && w.b === a));
 }

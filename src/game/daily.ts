@@ -20,6 +20,7 @@
 import { troopById, troopTotal, troops as troopTypes, type TroopCount, type TroopId } from "../data/troops";
 import { fiefById, fiefs } from "../world/fiefs";
 import { estateDay, estateOf, garrisonCost, incomeOf } from "./estates";
+import { vassalStipend } from "./allegiance";
 import { passiveInfluencePerDay } from "./careers";
 import { dailyCost } from "./progression";
 import { derivedInput } from "./experience";
@@ -57,6 +58,8 @@ export type DayReport = {
   garrison: number;
   /** Terras que se levantaram hoje e deixaram de ser suas. */
   revolts: string[];
+  /** Soldo pago pela Casa a que você jurou. */
+  stipend: number;
   food: number;
   income: number;
   influence: number;
@@ -98,6 +101,9 @@ export function applyDay(s: GameState, day: number): { state: GameState; report:
   const eaten = foodPerDay(maintained)+Math.ceil(troopTotal(s.prisoners)/8);
   const income = fiefIncomePerDay(s);
   const garrison = garrisonCostPerDay(s);
+  // Soldo de vassalo: a Casa sustenta quem lhe serve, e é a razão prática de
+  // jurar em vez de continuar livre.
+  const stipend = vassalStipend(s.allegiance);
   const influence = passiveInfluencePerDay(s.careerXp);
 
   /* ---------------------- o que a terra fez hoje ----------------------- */
@@ -121,7 +127,7 @@ export function applyDay(s: GameState, day: number): { state: GameState; report:
     }
   }
 
-  let gold = s.gold + income - garrison;
+  let gold = s.gold + income + stipend - garrison;
   let food = s.food;
   let troops = s.troops;
   let wounded: TroopCount = {...s.wounded};
@@ -178,7 +184,7 @@ export function applyDay(s: GameState, day: number): { state: GameState; report:
       dayProcessed: day,
       hardshipDays,
     },
-    report: { day, wages, garrison, food: eaten, income, influence, deserted, unpaid, hungry, recovered, revolts },
+    report: { day, wages, garrison, stipend, food: eaten, income, influence, deserted, unpaid, hungry, recovered, revolts },
   };
 }
 
@@ -187,6 +193,7 @@ export function reportLine(report: DayReport, troops: TroopCount): string | null
   const parts: string[] = [];
   if (report.income > 0) parts.push(`+${report.income} de renda`);
   if (report.garrison > 0) parts.push(`−${report.garrison} de guarnição`);
+  if (report.stipend > 0) parts.push(`+${report.stipend} de soldo do senhor`);
   if (report.wages > 0) parts.push(`−${report.wages} de soldo`);
   if (report.food > 0 && troopTotal(troops) > 0) parts.push(`−${report.food} de comida`);
   if (report.unpaid) parts.push("SEM SOLDO");

@@ -12,6 +12,7 @@ import { derivedInput } from "../../game/experience";
 import { spendAttributePoint, spendSkillPoint } from "../../game/experience";
 import { setCompanionStatus, useGame, type CompanionState } from "../../game/store";
 import { poiById } from "../../world/valdoria";
+import { CourtPanel } from "../allegiance/CourtPanel";
 import "./hero.css";
 
 /**
@@ -22,13 +23,14 @@ import "./hero.css";
  * lê, nunca calcula, porque no dia em que a fórmula do limite de tropas mudar
  * ela tem de mudar num lugar só.
  */
-type Tab = "visao" | "habilidades" | "companheiros" | "grupo";
+type Tab = "visao" | "habilidades" | "companheiros" | "grupo" | "corte";
 
 const TAB_LABEL: Record<Tab, string> = {
   visao: "Visão geral",
   habilidades: "Habilidades",
   companheiros: "Companheiros",
   grupo: "Grupo",
+  corte: "Corte",
 };
 
 const STATUS_LABEL: Record<CompanionState["status"], string> = {
@@ -309,6 +311,12 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
             <p className="empty">
               Encontre estes viajantes em Valdória e conquiste sua confiança. Cada companheiro traz suas próprias habilidades para o grupo.
             </p>
+          </div>
+        )}
+
+        {tab === "corte" && (
+          <div className="sheet-inner">
+            <div className="panel"><CourtPanel /></div>
           </div>
         )}
 

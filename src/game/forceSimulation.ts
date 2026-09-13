@@ -102,6 +102,55 @@ function resolveContact(aId:string,bId:string,forces:Record<string,WorldForceSta
 }
 
 /** Um passo por dia, chamado junto de comida, soldo e política. */
+/**
+ * O que uma terra vale defendendo.
+ *
+ * Homem atrás de muralha rende mais do que homem em campo aberto, e a muralha
+ * rende sozinha. Sem isso a conta ficava impossível: segurar uma hoste de
+ * setenta exigiria trinta e três infantes parados num só senhorio, e nenhum
+ * jogador pode pagar isso. Com a muralha contando, uma dúzia de soldados de
+ * verdade segura — que é como cerco funcionava.
+ */
+export function defenceOf(wallDefense:number,garrison:TroopCount):number {
+  return troopStrength(garrison)*2.2+wallDefense*1.2;
+}
+
+/** Um senhorio do jogador e o lugar de onde se marcha sobre ele. */
+function playerTarget(s:GameState):{fiefId:string;poiId:string}|null {
+  for(const fief of fiefs){
+    if((s.fiefOwners[fief.id]??fief.ownerHouseId)!=="player")continue;
+    const poi=allPois.find((p)=>p.regionId===fief.regionId&&p.routeNode);
+    if(poi)return {fiefId:fief.id,poiId:poi.id};
+  }
+  return null;
+}
+
+/**
+ * O cerco chegou à terra do jogador.
+ *
+ * A GUARNIÇÃO decide: homens deixados no senhorio contra a hoste que chegou.
+ * Aguentando quase metade da força inimiga, o cerco é rompido e o sitiante
+ * volta para casa menor. Abaixo disso a terra cai, e a guarnição cai com ela.
+ */
+function resolvePlayerSiege(s:GameState,force:WorldForceState,def:{name:string;houseId?:string}):{state:GameState;troops:TroopCount;news:ForceNews;repelled:boolean} {
+  const target=playerTarget(s);
+  if(!target)return {state:s,troops:force.troops,news:{kind:"fronteira",text:`${def.name} não encontrou terra sua para cercar.`},repelled:false};
+  const fief=fiefs.find((f)=>f.id===target.fiefId)!;
+  const estate=s.fiefEstates?.[fief.id];
+  const defenders=defenceOf(fief.defense,estate?.garrison??{});
+  const besiegers=troopStrength(force.troops);
+  const repelled=defenders>=besiegers*.45;
+
+  if(repelled){
+    return {state:s,troops:removeShare(force.troops,.3),repelled:true,
+      news:{kind:"fronteira",text:`A guarnição de ${fief.name} rompeu o cerco de ${def.name}. A terra continua sua.`}};
+  }
+  const estates={...(s.fiefEstates??{})};delete estates[fief.id];
+  return {state:{...s,fiefEstates:estates,fiefOwners:{...s.fiefOwners,[fief.id]:def.houseId as never}},
+    troops:removeShare(force.troops,.12),repelled:false,
+    news:{kind:"fronteira",text:`${houseById.get(def.houseId as never)?.shortName} tomou ${fief.name}. ${defenders?"A guarnição não foi suficiente.":"Não havia guarnição nenhuma."}`}};
+}
+
 export function advanceWorldForces(input:GameState,day:number):{state:GameState;news:ForceNews[]} {
   let state=input;
   let forces={...state.worldForces};
@@ -153,9 +202,14 @@ export function advanceWorldForces(input:GameState,day:number):{state:GameState;
         objectiveLabel:`Defendendo ${houseById.get(def.houseId)?.shortName}`};
       const supplied=provisionArmy(force,home,{...state,worldForces:forces},day,5);state=supplied.state;force=supplied.force;
     }else{
-      const enemy=war.a===def.houseId?war.b:war.a,target=houseById.get(enemy)?.capitalPoiId??null;
+      const enemy=war.a===def.houseId?war.b:war.a;
+      // Guerra contra o JOGADOR: a hoste marcha sobre a terra dele. É isto
+      // que transforma independência de título em ameaça — e que finalmente
+      // dá função à guarnição deixada num senhorio.
+      const playerFief=enemy==="player"?playerTarget(state):null;
+      const target=enemy==="player"?playerFief?.poiId??null:houseById.get(enemy)?.capitalPoiId??null;
       const consumption=Math.max(1,Math.ceil(troopTotal(force.troops)/35));
-      force={...force,food:Math.max(0,force.food-consumption),targetHouseId:enemy};
+      force={...force,food:Math.max(0,force.food-consumption),targetHouseId:enemy==="player"?undefined:enemy};
       if(force.food<=0){
         force={...force,troops:removeShare(force.troops,.08),objective:"return",targetPoiId:home,siegeProgress:0,objectiveLabel:"Sem suprimentos; retornando para casa"};
       }else if(force.objective!=="siege"&&force.objective!=="gather"){
@@ -166,6 +220,12 @@ export function advanceWorldForces(input:GameState,day:number):{state:GameState;
       }else if(force.objective==="siege"&&target&&force.at===target){
         force={...force,siegeProgress:force.siegeProgress+1,objectiveLabel:`Cercando ${poiById.get(target)?.name} · etapa ${Math.min(3,force.siegeProgress+1)}/3`};
         if(force.siegeProgress>=3){
+          if(enemy==="player"){
+            const result=resolvePlayerSiege(state,force,def);
+            state=result.state;news.push(result.news);
+            force={...force,troops:result.troops,objective:"return",targetPoiId:home,siegeProgress:0,objectiveLabel:result.repelled?"Cerco rompido; retornando":"Retornando após a campanha"};
+            forces[id]=force;continue;
+          }
           const victim=fiefs.find((f)=>(state.fiefOwners[f.id]??f.ownerHouseId)===enemy&&f.tier!=="nobre");
           if(victim){state={...state,fiefOwners:{...state.fiefOwners,[victim.id]:def.houseId}};news.push({kind:"fronteira",text:`${houseById.get(def.houseId)?.shortName} tomou ${victim.name} após um cerco conduzido por ${def.name}.`});}
           force={...force,objective:"return",targetPoiId:home,siegeProgress:0,objectiveLabel:"Retornando após a campanha"};

@@ -11,11 +11,12 @@ import { makeOffer, type Offer } from './offers';
 import type { RoadStop } from '../world/roadStops';
 import { isPresent } from './presence';
 import { applyDay, reportLine } from './daily';
-import { advanceWorld, WORLD_TICK_DAYS } from './worldSim';
+import { advanceWorld, atWar, WORLD_TICK_DAYS } from './worldSim';
 import { heroById } from '../data/heroes';
 import { skillById } from '../data/skills';
 import { CAREER_LABEL } from './careers';
 import { fiefById } from '../world/fiefs';
+import { claimGrant, fiefName } from './allegiance';
 import { poiById } from '../world/valdoria';
 import { goodById, type GoodId } from '../data/goods';
 import type { AgentClass, RouteEdge } from '../world/types';
@@ -208,6 +209,18 @@ export function settleDays(upToDay: number) {
       deserted += result.report.deserted;
       const line = reportLine(result.report, next.troops);
       if (line) next = logged(next, 'evento', line);
+      // A Casa paga o serviço em terra. Uma concessão que aparece na lista sem
+      // ninguém dizer nada não é recompensa: é bug.
+      const grant=claimGrant(next);
+      if(grant){
+        next=grant.state;
+        next=logged(next,'fronteira',`Sua Casa concedeu ${fiefName(grant.fiefId)} pelos serviços prestados.`);
+        next={...next,adventure:{...next.adventure,notice:{
+          title:'Terra por serviço',
+          text:`${fiefName(grant.fiefId)} passa às suas mãos. Quem serve e sobrevive recebe — é assim que um vassalo vira senhor.`,
+          levelUp:false,
+        }}};
+      }
       // Perder terra por má administração é notícia, não um número no diário.
       for (const fiefId of result.report.revolts) {
         const fief = fiefById.get(fiefId);
@@ -350,13 +363,15 @@ export function startWorldForceBattle(forceId:string,regionId:RegionId,terrain:T
 /** Ajuda direta numa etapa de cerco, consumindo suprimento do grupo do jogador. */
 export function supportArmySiege(forceId:string):boolean {
   const s=getState(),force=s.worldForces[forceId],wanderer=wandererById.get(forceId);
+  const serving=s.allegiance.kind==='jurado'&&force?.ownerHouseId===s.allegiance.houseId;
   if(!force||force.status!=="active"||force.objective!=="siege"||force.at!==force.targetPoiId||wanderer?.routine!=="exército"||s.food<2||troopTotal(s.troops)===0)return false;
   update(g=>{
     const owner=force.ownerHouseId;
     return logged({...g,food:g.food-2,influence:g.influence+3,
       houseRelations:owner?{...g.houseRelations,[owner]:Math.min(100,(g.houseRelations[owner]??0)+5)}:g.houseRelations,
       worldForces:{...g.worldForces,[forceId]:{...g.worldForces[forceId],siegeProgress:Math.min(3,g.worldForces[forceId].siegeProgress+1),objectiveLabel:`Cerco reforçado por você · etapa ${Math.min(3,g.worldForces[forceId].siegeProgress+1)}/3`}},
-      adventure:{...g.adventure,notice:{title:"Você entrou no cerco",text:`Seus homens reforçam ${wanderer.name}. −2 comida · +3 influência${owner?" · +5 de relação com a Casa":""}. A hoste ganhou uma etapa de cerco.`,levelUp:false}}},'fronteira',`Você reforçou o cerco conduzido por ${wanderer.name}.`);
+      allegiance:serving&&g.allegiance.kind==='jurado'?{...g.allegiance,service:g.allegiance.service+18}:g.allegiance,
+      adventure:{...g.adventure,notice:{title:"Você entrou no cerco",text:`Seus homens reforçam ${wanderer.name}. −2 comida · +3 influência${owner?" · +5 de relação com a Casa":""}${serving?" · +18 de serviço ao seu senhor":""}. A hoste ganhou uma etapa de cerco.`,levelUp:false}}},'fronteira',`Você reforçou o cerco conduzido por ${wanderer.name}.`);
   });
   return true;
 }
@@ -464,6 +479,12 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
 
     if (battle.worldForce) {
       const hostile=battle.worldForce.routine==='pilhagem';
+      // Bater num inimigo do seu senhor é serviço prestado, e serviço vira terra.
+      const beaten=wandererById.get(battle.worldForce.forceId)?.houseId;
+      if(won&&next.allegiance.kind==='jurado'&&beaten&&atWar(next,next.allegiance.houseId,beaten)){
+        next={...next,allegiance:{...next.allegiance,service:next.allegiance.service+22}};
+        text+=` Bater num inimigo declarado do seu senhor conta: +22 de serviço.`;
+      }
       if(won) text+=hostile?' A estrada fica mais segura; mercados da região sentem o caminho abrir. +3 influência · +2 comida.':' Atacar viajantes e homens da lei abala a segurança e custa influência.';
       else if(battle.result==='derrota'){
         const robbed=Math.round(next.gold*.3);

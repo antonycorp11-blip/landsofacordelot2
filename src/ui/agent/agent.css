@@ -131,3 +131,8 @@
 .estate-tabs button { font: 600 10px var(--ui-small); padding: 5px 11px; border: 0; border-radius: 4px; background: none; color: #a4ae9f; cursor: pointer; }
 .estate-tabs button:hover { color: #e6dcbc; }
 .estate-tabs button[aria-selected="true"] { background: #c9a84c33; color: #f3dc9b; }
+
+.estate-defence { display: flex; gap: 10px; align-items: flex-start; padding: 7px 9px; border: 1px solid #a8915b44; border-radius: 6px; background: #0f202780; }
+.estate-defence small { display: block; font: 8.5px var(--ui-small); letter-spacing: .12em; text-transform: uppercase; color: #b6a97a; }
+.estate-defence b { font-size: 19px; font-weight: 400; color: #f2e5c1; font-variant-numeric: tabular-nums; }
+.estate-defence p { flex: 1; margin: 0; }

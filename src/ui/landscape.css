@@ -436,3 +436,21 @@
   .estate-taxes { gap: 4px; }
   .estate-tax { padding: 4px 3px; }
 }
+
+/* Corte deitada: dez brasões numa grade baixa, sem rolagem. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .court { gap: 9px; }
+  .court-status b { font-size: 16px; }
+  .court-line, .court-note { font-size: 9.5px; line-height: 1.4; }
+  .court-block { padding-top: 8px; gap: 6px; }
+  .court-houses { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .court-house { padding: 4px 5px; gap: 5px; }
+  .court-house img { width: 16px; height: 20px; }
+  .court-house b { font-size: 10.5px; }
+  .court-house em { font-size: 8px; }
+  .court-req { font-size: 9.5px; }
+  .court-wide { min-height: 28px; font-size: 10.5px; }
+  .court-status b { font-size: 15px; }
+  .court-block { padding-top: 7px; gap: 5px; }
+  .court { gap: 7px; }
+}

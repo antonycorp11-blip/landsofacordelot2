@@ -26,6 +26,7 @@ import type { AgentClass, FiefOwner, HouseId } from "../world/types";
 import { freshAdventure, type AdventureState, type JourneySave } from "./adventureState";
 import type { War } from "./worldSim";
 import type { Estate } from "./estates";
+import { freshAllegiance, type Allegiance } from "./allegiance";
 import { normalizeForceState, type WorldForceState } from "./worldForces";
 
 /**
@@ -110,6 +111,8 @@ export type GameState = {
   fiefOwners: Record<string, FiefOwner>;
   /** Como você administra cada terra sua: imposto, prosperidade, lealdade, guarnição. */
   fiefEstates: Record<string, Estate>;
+  /** De quem você é: livre, vassalo de uma Casa, ou soberano. */
+  allegiance: Allegiance;
 
   /** Guerras entre Casas, movidas pelo mundo e não pelo jogador. */
   wars: War[];
@@ -166,6 +169,7 @@ function blank(): GameState {
     houseRelations: { ...DEFAULT_RELATIONS },
     fiefOwners: {},
     fiefEstates: {},
+    allegiance: freshAllegiance(),
     wars: [],
     worldTickDay: 0,
     dayProcessed: 0,

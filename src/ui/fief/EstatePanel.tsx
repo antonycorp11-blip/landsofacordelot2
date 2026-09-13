@@ -2,6 +2,8 @@ import { useState } from "react";
 import { troopById, troops as troopTypes, troopTotal, type TroopId } from "../../data/troops";
 import { estateOf, garrisonCost, incomeOf, investCost, INVEST_STEP, TAX, type TaxLevel } from "../../game/estates";
 import { setTax, invest, moveGarrison } from "../../game/estateActions";
+import { defenceOf } from "../../game/forceSimulation";
+import { landIsAtRisk } from "../../game/allegiance";
 import { useGame } from "../../game/store";
 import type { Fief } from "../../world/fiefs";
 
@@ -92,6 +94,17 @@ export function EstatePanel({ fief, onClose }: { fief: Fief; onClose: () => void
       </>}
 
       {tab === "guarnicao" && <>
+      <div className="estate-defence">
+        <div>
+          <small>Defesa</small>
+          <b>{Math.round(defenceOf(fief.defense, estate.garrison))}</b>
+        </div>
+        <p className="estate-note">
+          {landIsAtRisk(game)
+            ? "Uma hoste de Casa chega com cerca de 180 de força; segura-se um cerco com mais ou menos 80 de defesa. A muralha já conta 32."
+            : "Enquanto você não jurar nem se declarar soberano, ninguém marcha sobre esta terra — a guarnição vale pela segurança da região."}
+        </p>
+      </div>
       {/* ----------------------------- guarnição -------------------------- */}
       <div className="estate-block">
         <p className="estate-note">
