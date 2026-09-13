@@ -64,3 +64,6 @@
   color: #d8cba6;
 }
 
+
+/* Rosto no cabeçalho de um painel: redondo, do tamanho de um brasão. */
+.panel-face { flex: none; border-radius: 50%; display: block; }

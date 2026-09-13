@@ -151,3 +151,6 @@
   .dlg-plate b { font-size: 16.5px; }
 }
 
+
+/* O rosto gerado ocupa o círculo inteiro, como faria uma foto. */
+.dlg-face { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }

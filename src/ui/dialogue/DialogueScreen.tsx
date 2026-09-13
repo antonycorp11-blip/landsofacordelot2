@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import { FacePortrait } from "../../render/portraits/FacePortrait";
+import type { FaceTraits } from "../../render/portraits/face";
 import "./dialogue.css";
 
 /**
@@ -31,6 +33,12 @@ export type DialogueScene = {
   placeName?: string;
   /** Sem ninguém falando: a cena narra, e o círculo de retrato sai. */
   narration?: boolean;
+  /**
+   * Quando não há arte encomendada, o rosto é DESENHADO a partir da semente.
+   * Uma inicial numa bolinha não é personagem — é etiqueta, e conversar com
+   * etiqueta parece menu.
+   */
+  face?: FaceTraits;
   text: string;
   options: DialogueOption[];
 };
@@ -74,6 +82,8 @@ export function DialogueScreen({ scene, onClose }: { scene: DialogueScene; onClo
           {!scene.narration && <div className="dlg-portrait">
             {scene.portraitUrl
               ? <img src={scene.portraitUrl} alt="" />
+              : scene.face
+              ? <FacePortrait {...scene.face} size={62} className="dlg-face" />
               : <span className="dlg-monogram" aria-hidden="true">{scene.speakerName.replace(/^(Lorde|Lady|Rei|Rainha|Sir|Mestre|Irmã|Irmão)\s+/i, "")[0]}</span>}
           </div>}
           <div className="dlg-plate">

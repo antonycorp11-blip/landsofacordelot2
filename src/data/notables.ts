@@ -22,6 +22,10 @@ export type Notable = {
   /** Que tipo de serviço esta pessoa tem para oferecer. */
   career: AgentClass;
   trait: NotableTrait;
+  /** Para o rosto gerado concordar com o nome. */
+  female: boolean;
+  /** 0 jovem, 1 velho. Idade é feição, e senescal velho conta história. */
+  age: number;
 };
 
 /**
@@ -113,6 +117,8 @@ export function notablesAt(poiId: string, kind: HoldingKind): Notable[] {
       poiId,
       name: person.name,
       role: person.female ? pair[1] : pair[0],
+      female: person.female,
+      age: 0.28 + ((seed >>> 21) % 100) / 145,
       career: CAREER_BY_KIND[kind][i] ?? CAREER_BY_KIND[kind][0],
       trait: TRAITS[(seed >>> 17) % TRAITS.length],
     });
@@ -137,4 +143,9 @@ const GREETING: Record<NotableTrait, string> = {
 
 export function greetingOf(notable: Notable): string {
   return GREETING[notable.trait];
+}
+
+/** Que cara tem cada ofício: elmo, coroa, capuz ou nada. */
+export function faceKindOf(career: AgentClass): "militar" | "corte" | "clero" | "povo" {
+  return career === "MILITARY" ? "militar" : career === "POLITICS" ? "corte" : career === "RELIGION" ? "clero" : "povo";
 }

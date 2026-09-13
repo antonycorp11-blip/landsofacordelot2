@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { portraitUrl } from "../../data/characterAssets";
 import { CLASS_LABEL, type Character } from "../../data/characters";
-import { HouseCrest } from "../../render/houses/HouseCrest";
+import { FacePortrait } from "../../render/portraits/FacePortrait";
+import { faceOf } from "../../render/portraits/characterFace";
 import { relationLabel } from "../../data/player";
 
 /**
@@ -32,7 +33,7 @@ export const CharacterMiniCard = memo(function CharacterMiniCard({
         <img className="char-portrait" src={portrait} alt={character.name} loading="lazy" />
       ) : (
         <div className="char-portrait char-portrait-empty" aria-hidden="true">
-          <HouseCrest houseId={character.houseId} size={26} />
+          <FacePortrait {...faceOf(character)} size={62} />
         </div>
       )}
       <div className="char-body">

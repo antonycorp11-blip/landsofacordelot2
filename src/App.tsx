@@ -2,6 +2,7 @@ import { WorldMap } from "./map/WorldMap";
 import { HeroSelect } from "./ui/hero/HeroSelect";
 import { RotateNotice, usePortraitPhone } from "./ui/Orientation";
 import { useGame } from "./game/store";
+import { FaceSheet } from "./dev/FaceSheet";
 
 /**
  * Antes de escolher personagem não existe campanha — e o mapa depende de quem
@@ -14,6 +15,8 @@ import { useGame } from "./game/store";
  */
 export default function App() {
   const game = useGame();
+  // Folha de contato dos rostos gerados, para ajuste: /#faces
+  if (typeof location !== "undefined" && location.hash === "#faces") return <FaceSheet />;
   if (usePortraitPhone()) return <RotateNotice />;
   return game.started && game.heroId ? <WorldMap /> : <HeroSelect />;
 }

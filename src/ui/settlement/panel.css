@@ -186,3 +186,6 @@
 .recruit-buttons .btn { height: 26px; font-size: 11.5px; padding: 0 9px; min-width: 52px; }
 .recruit-note { margin: 8px 0 0; font-size: 12px; color: #e0b394; }
 
+
+/* No painel de estrutura o rosto ocupa a moldura inteira do retrato. */
+.char-portrait-empty > svg { width: 100%; height: 100%; display: block; }

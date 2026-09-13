@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DialogueScreen, type DialogueOption, type DialogueScene } from "./DialogueScreen";
-import { greetingOf, notablesAt, type Notable } from "../../data/notables";
+import { faceKindOf, greetingOf, notablesAt, type Notable } from "../../data/notables";
 import { charactersAt } from "../../data/characters";
 import { portraitUrl } from "../../data/characterAssets";
 import { holdingFor } from "../../data/holdings";
@@ -60,8 +60,17 @@ export function TownTalk({
   const leave: DialogueOption = { id: "leave", label: "Fique bem.", onPick: onClose };
   const person = (id: string): Notable | undefined => people.find((p) => p.id === id);
 
-  function base(speaker: { name: string; role: string; portrait?: string }): Omit<DialogueScene, "text" | "options"> {
-    return { speakerName: speaker.name, speakerRole: speaker.role, portraitUrl: speaker.portrait, accent: house?.color, placeName: poi.name };
+  function base(speaker: { name: string; role: string; portrait?: string; notable?: Notable }): Omit<DialogueScene, "text" | "options"> {
+    const n = speaker.notable;
+    return {
+      speakerName: speaker.name,
+      speakerRole: speaker.role,
+      portraitUrl: speaker.portrait,
+      // Sem arte, o rosto é gerado a partir do id da pessoa — e é sempre o mesmo.
+      face: n ? { seed: n.id, female: n.female, age: n.age, accent: house?.color, kind: faceKindOf(n.career) } : undefined,
+      accent: house?.color,
+      placeName: poi.name,
+    };
   }
 
   /* ----------------------------- as cenas ------------------------------ */
@@ -103,7 +112,11 @@ export function TownTalk({
     }
 
     const who = person("person" in node ? node.person : "") ?? people[0];
-    const speaker = { name: who.name, role: who.role, portrait: resident && people.length === 1 ? portraitUrl(resident.portraitAssetKey) : undefined };
+    const speaker = {
+      name: who.name, role: who.role,
+      portrait: resident && people.length === 1 ? portraitUrl(resident.portraitAssetKey) : undefined,
+      notable: who,
+    };
 
     if (node.at === "story") {
       const issue = offers.find((i) => i.contract.id === node.issue) ?? offers[0];

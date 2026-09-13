@@ -4,6 +4,8 @@ import { buyBlocker, buyFief, ownerOf, useFiefOwners, BUY_RELATION } from "../..
 import { houseById } from "../../data/houses";
 import { crestUrl } from "../../data/houseAssets";
 import { characterById, CLASS_LABEL } from "../../data/characters";
+import { FacePortrait } from "../../render/portraits/FacePortrait";
+import { faceOf } from "../../render/portraits/characterFace";
 import { relationLabel, relationWith } from "../../data/player";
 import { regionById } from "../../world/valdoria";
 import { useGame } from "../../game/store";
@@ -41,7 +43,11 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
   return (
     <aside className="agent-panel" style={{ borderLeftColor: house?.color ?? "#e2c169" }}>
       <header className="agent-head">
-        {crest && <img className="legend-crest" src={crest} alt="" style={{ width: 26, height: 31 }} />}
+        {lord ? (
+          <FacePortrait {...faceOf(lord)} size={38} className="panel-face" />
+        ) : (
+          crest && <img className="legend-crest" src={crest} alt="" style={{ width: 26, height: 31 }} />
+        )}
         <div>
           <h2>{fief.name}</h2>
           <div className="agent-sub">
