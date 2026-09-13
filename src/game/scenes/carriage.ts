@@ -262,7 +262,7 @@ export const carriageScene: Cinematic = {
             facts: ["Alguém com poder mandou matar por este selo. Eu estou com ele."],
             flags: ["guardou_por_ambicao"],
             balance: 8,
-            balanceReason: "Entendeu o que tem na mão",
+            balanceReason: "Sabe o que tem na mão",
           },
         },
         {
@@ -275,7 +275,7 @@ export const carriageScene: Cinematic = {
             facts: ["O mensageiro morreu sem nome numa estrada, levando coisa de outro."],
             flags: ["guardou_pela_promessa"],
             balance: -4,
-            balanceReason: "Enterrou um homem que ninguém ia enterrar",
+            balanceReason: "Enterrou o mensageiro",
           },
         },
       ],

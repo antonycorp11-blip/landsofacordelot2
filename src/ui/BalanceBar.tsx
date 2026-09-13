@@ -4,13 +4,14 @@ import { leaningLabel, type BalanceState } from "../game/balance";
 /**
  * A BALANÇA, NO ALTO DA TELA.
  *
- * Fina de propósito: ela fica visível a campanha inteira e não pode roubar
- * mapa. Uma agulha que anda entre dois polos, o rótulo do que ela lê hoje, e
- * um aviso curto quando alguma coisa a move — sem o aviso, o jogador vê a
- * agulha mudar de lugar e não faz ideia do que a empurrou.
+ * Fina de propósito: fica visível a campanha inteira e não pode roubar mapa.
+ * Uma agulha entre dois polos e UMA linha de texto — que mostra o que a
+ * Balança lê hoje e, por alguns segundos depois de uma decisão, o que a
+ * moveu. É a mesma fatia de largura nos dois casos, para a faixa não pular
+ * de tamanho no meio de uma partida.
  *
  * Antes de o jogo revelar que existe um segundo caminho, ela é uma barra de
- * um lado só, marcada COROA. Ele ainda não imaginou destruir nada.
+ * um lado só. Ele ainda não imaginou destruir nada.
  */
 export function BalanceBar({ balance }: { balance: BalanceState }) {
   const [nudge, setNudge] = useState<{ amount: number; reason: string } | null>(null);
@@ -18,31 +19,27 @@ export function BalanceBar({ balance }: { balance: BalanceState }) {
   useEffect(() => {
     if (!balance.last) return;
     setNudge({ amount: balance.last.amount, reason: balance.last.reason });
-    const t = setTimeout(() => setNudge(null), 3800);
+    const t = setTimeout(() => setNudge(null), 4200);
     return () => clearTimeout(t);
   }, [balance.last?.at]);
 
-  // −100..100 vira 0..100 de largura. Antes da revelação só a metade direita
-  // existe, então o zero da barra é o zero da Balança.
-  const pos = balance.revealed
-    ? (balance.tilt + 100) / 2
-    : Math.max(0, balance.tilt);
+  // −100..100 vira 0..100 de largura. Antes da revelação só existe a metade
+  // direita, então o zero da barra é o zero da Balança.
+  const pos = balance.revealed ? (balance.tilt + 100) / 2 : Math.max(0, balance.tilt);
+  const read = leaningLabel(balance);
 
   return (
-    <div className={`balance ${balance.revealed ? "two" : "one"}`} title={leaningLabel(balance)}>
-      <span className="balance-pole left">{balance.revealed ? "Cinzas" : ""}</span>
+    <div className={`balance ${balance.revealed ? "two" : "one"}`} title={read}>
+      {balance.revealed && <span className="balance-pole left">Cinzas</span>}
       <span className="balance-track">
         <i className="balance-fill" style={{ width: `${pos}%` }} />
         {balance.revealed && <i className="balance-mid" />}
         <i className="balance-needle" style={{ left: `${pos}%` }} />
       </span>
       <span className="balance-pole right">Coroa</span>
-      <span className="balance-read">{leaningLabel(balance)}</span>
-      {nudge && (
-        <span className={`balance-nudge ${nudge.amount > 0 ? "up" : "down"}`}>
-          {nudge.amount > 0 ? "▸" : "◂"} {nudge.reason}
-        </span>
-      )}
+      <span className={`balance-status ${nudge ? (nudge.amount > 0 ? "up" : "down") : ""}`}>
+        {nudge ? `${nudge.amount > 0 ? "▸" : "◂"} ${nudge.reason}` : read}
+      </span>
     </div>
   );
 }

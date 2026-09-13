@@ -242,44 +242,39 @@
    notada de canto de olho na hora de cobrar um imposto. */
 .balance {
   display: flex; align-items: center; gap: 7px;
-  padding: 0 11px 6px;
+  padding: 1px 11px 6px;
   font: 9.5px var(--ui-small);
-  color: #8e968c;
   letter-spacing: 0.06em; text-transform: uppercase;
+  color: #8e968c;
 }
-.balance-pole { flex: none; min-width: 0; }
-.balance-pole.left { color: #9a7f6e; }
-.balance-pole.right { color: var(--ui-gold); opacity: 0.85; }
+.balance-pole { flex: none; }
+.balance-pole.left { color: #c08d72; }
+.balance-pole.right { color: var(--ui-gold); }
 .balance-track {
-  position: relative; flex: 1; min-width: 40px; height: 3px;
-  border-radius: 2px; background: #0d1517; overflow: visible;
+  position: relative; flex: 1; min-width: 44px; height: 4px;
+  border-radius: 2px;
+  background: #0b1214; box-shadow: inset 0 0 0 1px #b99c5f2e;
 }
 .balance-fill {
   position: absolute; inset: 0 auto 0 0; border-radius: 2px;
-  background: linear-gradient(90deg, #6d4f3d, var(--ui-gold));
+  background: linear-gradient(90deg, #7a5640, var(--ui-gold));
   transition: width 420ms ease;
 }
 /* O meio só existe quando há dois lados para separar. */
-.balance-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: #b99c5f55; }
+.balance-mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: #b99c5f66; }
 .balance-needle {
-  position: absolute; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px;
+  position: absolute; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px;
   border-radius: 50%; background: var(--ui-text); box-shadow: 0 0 0 1.5px #101c20;
   transition: left 420ms ease;
 }
-.balance-read { flex: none; color: #c8cbc1; }
-.balance-nudge {
-  flex: none; text-transform: none; letter-spacing: 0;
-  animation: balance-in 240ms ease both;
+/* Uma fatia só de largura para as duas mensagens: a leitura de hoje e, por
+   alguns segundos, o que acabou de mexer. Assim a faixa não pula. */
+.balance-status {
+  flex: 0 1 auto; max-width: 24ch; color: #c8cbc1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.balance-nudge.up { color: var(--ui-gold); }
-.balance-nudge.down { color: #c08d72; }
-@keyframes balance-in { from { opacity: 0; transform: translateY(-2px); } }
+.balance-status.up { color: var(--ui-gold); text-transform: none; letter-spacing: 0; }
+.balance-status.down { color: #d79f80; text-transform: none; letter-spacing: 0; }
 @media (prefers-reduced-motion: reduce) {
   .balance-fill, .balance-needle { transition: none; }
-  .balance-nudge { animation: none; }
-}
-/* Espaço é o que mais falta em paisagem: o rótulo some antes da barra. */
-@media (max-height: 430px) {
-  .balance { padding-bottom: 4px; font-size: 9px; }
-  .balance-read { display: none; }
 }

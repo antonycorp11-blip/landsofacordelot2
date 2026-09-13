@@ -28,6 +28,23 @@
     padding-right: 3px;
   }
   .hud-bar { flex: 0 1 auto; padding: 3px 8px 3px 4px; gap: 7px; }
+
+  /* Em paisagem a Balança não é uma linha abaixo da faixa: é o vão entre os
+     recursos e a doca, que existe de qualquer jeito e estava vazio. Os polos
+     escritos saem — o rótulo de leitura já diz de que lado ele está. */
+  .balance {
+    flex: 1 1 auto; min-width: 92px; max-width: 300px;
+    padding: 0 4px 0 10px; gap: 6px;
+  }
+  .balance .balance-pole { display: none; }
+  .balance-track { min-width: 34px; }
+  /* Caixa alta com espaçamento não cabe no vão: aqui o rótulo é texto normal. */
+  .balance-status { max-width: 24ch; font-size: 9.5px; text-transform: none; letter-spacing: 0; }
+  /* Abaixo de 700px de largura sobra vão para a barra e mais nada. */
+  @media (max-width: 700px) {
+    .balance-status { display: none; }
+    .balance { max-width: 120px; }
+  }
   .hud-place { flex: 0 1 auto; }
   .hud-place b { font-size: 12px; }
   .hud-place span { font-size: 9.5px; }

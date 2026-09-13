@@ -532,7 +532,7 @@ export function ransomAllPrisoners(): boolean {
     const next=withReward({...g,prisoners:{}},{gold:value,xp:Math.min(45,count*4),careerXp:{TRADE:Math.min(30,count*3)},skillXp:{negociacao:1}});
     return logged(next,'evento',`${count} prisioneiro(s) resgatados por ${value} moedas.`);
   });
-  tilt(TILT.resgate,'Cativos vendidos por resgate');
+  tilt(TILT.resgate,'Cativos vendidos');
   return true;
 }
 
@@ -548,7 +548,7 @@ export function freePrisoners(): boolean {
   const s=getState(),count=troopTotal(s.prisoners);
   if(!count)return false;
   update(g=>logged({...g,prisoners:{}},'evento',`${count} cativo(s) soltos sem resgate. Eles vão contar a alguém.`));
-  tilt(TILT.soltar,'Cativos soltos sem cobrar');
+  tilt(TILT.soltar,'Cativos soltos de graça');
   return true;
 }
 

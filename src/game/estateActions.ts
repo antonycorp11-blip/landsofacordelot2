@@ -41,7 +41,7 @@ export function invest(fiefId: string): boolean {
       loyalty: Math.min(100, estate.loyalty + 4),
     } },
   }));
-  tilt(TILT.investir, "Obra paga do próprio bolso");
+  tilt(TILT.investir, "Obra paga do seu bolso");
   return true;
 }
 
