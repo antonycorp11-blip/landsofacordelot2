@@ -1,3 +1,6 @@
+import { heroById } from "../data/heroes";
+import { heroPortraitUrl } from "../data/heroAssets";
+import { xpToNextLevel } from "../game/progression";
 import { ResourceIcon } from "./ResourceIcon";
 import { useEffect, useRef, useState } from "react";
 import { formatDuration } from "../world/time";
@@ -65,6 +68,9 @@ type Props = {
   journal: JournalEntry[];
   /** Bolsa do jogador. */
   coins: number;
+  heroId: string | null;
+  xp: number;
+  onOpenAdventure: () => void;
   influence: number;
   /** Null until provisions become a tracked gameplay resource. */
   food?: number | null;
@@ -93,7 +99,7 @@ export function Hud({
   follow, onToggleFollow, onFit,
   lightingName, lightingNight, lightingMode, onCycleLighting,
   debug, onToggleDebug, journal, selected, coins, influence, food = null, level, onOpenSheet,
-  political, onTogglePolitical,
+  political, onTogglePolitical, heroId, xp, onOpenAdventure,
 }: Props) {
   // No desktop há espaço de sobra para o diário; no celular ele é uma gaveta.
   const [journalOpen, setJournalOpen] = useState(
@@ -106,6 +112,12 @@ export function Hud({
     if (listRef.current) listRef.current.scrollTop = 0;
   }, [journal]);
 
+  const hero = heroById.get(heroId ?? '');
+  const portrait = heroPortraitUrl(hero?.portraitAssetKey);
+  const nextLevel = xpToNextLevel(level);
+  const xpRatio = Number.isFinite(nextLevel) ? Math.max(0,Math.min(1,xp / nextLevel)) : 1;
+  const circumference = 2 * Math.PI * 29;
+  const xpLabel = Number.isFinite(nextLevel) ? `${xp} de ${nextLevel} XP` : 'Nível máximo';
   const day = Math.floor(worldHours / 24) + 1;
   const hour = String(Math.floor(((worldHours % 24) + 24) % 24)).padStart(2, "0");
 
@@ -147,9 +159,13 @@ export function Hud({
 
         {/* A ficha do personagem fica atrás do nível: é o número que o jogador
             olha com mais frequência, e serve de porta para o resto. */}
-        <button className="hud-panel hud-hero" onClick={onOpenSheet} title="Ficha do personagem">
-          <span className="hud-level">{level}</span>
-          <span className="hud-hero-label">Ficha</span>
+        <button className="hud-hero portrait-button" onClick={onOpenSheet} title={`${hero?.name} · nível ${level} · ${xpLabel}`} aria-label={`Abrir ficha de ${hero?.name}. Nível ${level}. ${xpLabel}`}>
+          <svg className="hero-xp-ring" viewBox="0 0 64 64" aria-hidden="true">
+            <circle className="xp-track" cx="32" cy="32" r="29" />
+            <circle className="xp-value" cx="32" cy="32" r="29" strokeDasharray={circumference} strokeDashoffset={circumference*(1-xpRatio)} />
+          </svg>
+          <span className="hero-avatar">{portrait ? <img src={portrait} alt=""/> : hero?.name[0]}</span>
+          <span className="hero-level-badge">{level}</span>
         </button>
 
         <div className="hud-panel hud-resources" aria-label="Recursos do viajante">
@@ -165,6 +181,7 @@ export function Hud({
         </div>
 
         <div className="hud-panel hud-dock">
+          <button className="hud-btn journey-button" onClick={onOpenAdventure} title="Contratos, tutorial e companheiros"><Icon name="journal" /><span>Jornada</span></button>
           <button
             className={`hud-btn icon ${paused ? "on" : ""}`}
             onClick={onTogglePause}

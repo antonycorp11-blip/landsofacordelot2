@@ -299,3 +299,16 @@ Metadados econômicos por região (`produces` / `consumes` / `tradeActivity`) j�
 estão nos dados, aguardando o mercado. Cada senhorio também tem de 5 a 7
 assentamentos secundários que existem **apenas em dados**, para uma futura tela
 de "Assentamentos da Região" — o mapa principal não é poluído com eles.
+
+
+## Jornada, tutorial e contratos
+
+A campanha agora oferece um guia opcional, quatro carreiras de contratos e seis
+tipos de encontros de estrada. As decisões mostram custos, atributos, chances e
+recompensas. Ouro, influência, comida, experiência, relações e o progresso da viagem
+ficam salvos localmente. O mapa abre perto do viajante; seu retrato com XP circular
+abre a ficha.
+
+Veja [como jogar e as regras atuais](docs/jornada.md) e a
+[proposta de combate entre grupos](docs/combate.md). Consumo de provisões, mercado
+e combate são etapas seguintes; nesta entrega a comida já pode ser recebida e armazenada.

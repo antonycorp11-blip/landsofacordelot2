@@ -1,5 +1,7 @@
 # Estado do jogo e próximo marco
 
+**Atualização:** o ciclo de contratos, tutorial e encontros foi implementado após este diagnóstico. Consulte [Primeira jornada jogável](jornada.md) para o estado atual e [Combate](combate.md) para a próxima etapa. O texto abaixo preserva o diagnóstico anterior.
+
 Revisão de 12/09/2026, com base na conversa **Lands Of Acordelot**, na fase de personagem pedida ao Claude e no código atual. Esta revisão entrega arte e interface; os sistemas abaixo são planejamento, não funcionalidades adicionadas nesta entrega.
 
 ## O que já está construído

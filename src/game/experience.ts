@@ -9,7 +9,7 @@ import { clampAttribute, clampSkill, maxTroops, xpToNextLevel, MAX_LEVEL, SKILL_
 import { getState, update, type GameState } from "./store";
 import type { SkillId } from "../data/skills";
 import type { Attributes } from "../data/heroes";
-import type { AgentClass } from "../world/types";
+import type { AgentClass, HouseId } from "../world/types";
 
 /** De onde veio o XP. Serve para o registro e, depois, para achados por fonte. */
 export type XpSource =
@@ -31,22 +31,10 @@ export function grantXp(amount: number, _source: XpSource): LevelUp | null {
   let gainedSkill = 0;
 
   update((s) => {
-    let { level, xp } = s;
-    xp += Math.round(amount);
-    while (level < MAX_LEVEL && xp >= xpToNextLevel(level)) {
-      xp -= xpToNextLevel(level);
-      level++;
-      gainedSkill += 1;
-      // Ponto de atributo a cada dois níveis: subir Comando tem de ser raro.
-      if (level % 2 === 1) gainedAttr += 1;
-    }
-    return {
-      ...s,
-      level,
-      xp,
-      attributePoints: s.attributePoints + gainedAttr,
-      skillPoints: s.skillPoints + gainedSkill,
-    };
+    const next = withReward(s, { xp: amount });
+    gainedAttr = next.attributePoints - s.attributePoints;
+    gainedSkill = next.skillPoints - s.skillPoints;
+    return next;
   });
 
   const after = getState().level;
@@ -104,6 +92,7 @@ export function spendAttributePoint(key: keyof Attributes): boolean {
 export type Reward = {
   xp?: number;
   gold?: number;
+  food?: number;
   influence?: number;
   careerXp?: Partial<Record<AgentClass, number>>;
   skillXp?: Partial<Record<SkillId, number>>;
@@ -127,4 +116,47 @@ export function derivedInput(s: GameState = getState()) {
 /** Atalho usado em vários lugares. */
 export function troopLimit(s: GameState = getState()): number {
   return maxTroops(derivedInput(s));
+}
+
+/** Pure transaction shared by contracts and encounters. Claim IDs are committed by the caller. */
+export function withReward(s: GameState, reward: Reward): GameState {
+  let level = s.level;
+  let xp = s.xp + Math.max(0, Math.round(reward.xp ?? 0));
+  let attributePoints = s.attributePoints;
+  let skillPoints = s.skillPoints;
+  while (level < MAX_LEVEL && xp >= xpToNextLevel(level)) {
+    xp -= xpToNextLevel(level);
+    level++;
+    skillPoints++;
+    if (level % 2 === 1) attributePoints++;
+  }
+  const careerXp = { ...s.careerXp };
+  for (const [career, amount] of Object.entries(reward.careerXp ?? {})) {
+    careerXp[career as AgentClass] += Math.max(0, Math.round(amount ?? 0));
+  }
+  const skills = { ...s.skills };
+  for (const [id, amount] of Object.entries(reward.skillXp ?? {})) {
+    skills[id as SkillId] = clampSkill(skills[id as SkillId] + Math.max(0, amount ?? 0));
+  }
+  const houseRelations = { ...s.houseRelations };
+  if (reward.houseRelation) {
+    const id = reward.houseRelation.houseId as HouseId;
+    houseRelations[id] = Math.max(-100, Math.min(100, (houseRelations[id] ?? 0) + reward.houseRelation.amount));
+  }
+  const companions = { ...s.companions };
+  const relation = reward.characterRelation;
+  if (relation && companions[relation.characterId]) {
+    const c = companions[relation.characterId];
+    companions[c.id] = { ...c, relation:Math.max(-100, Math.min(100, c.relation + relation.amount)) };
+  }
+  const localInfluence = { ...s.localInfluence };
+  if (reward.localInfluence) {
+    const { poiId, amount } = reward.localInfluence;
+    localInfluence[poiId] = Math.max(0, Math.min(100, (localInfluence[poiId] ?? 0) + amount));
+  }
+  return { ...s, level, xp, attributePoints, skillPoints, skills, careerXp, companions, houseRelations, localInfluence,
+    gold: Math.max(0, s.gold + Math.round(reward.gold ?? 0)),
+    food: Math.max(0, s.food + Math.round(reward.food ?? 0)),
+    influence: Math.max(0, Math.round((s.influence + (reward.influence ?? 0)) * 10) / 10),
+  };
 }

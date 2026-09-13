@@ -1,255 +1,176 @@
-/**
- * Viagem do personagem pela malha de estradas.
- *
- * O marcador nunca interpola em linha reta entre dois lugares: ele percorre a
- * polilinha real da estrada, ponto a ponto. A posição é escrita direto no DOM
- * a cada frame — só mudanças de estado "grandes" (iniciar, chegar, trocar de
- * região) passam pelo React.
- */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { UNITS_PER_HOUR, findPath, nodeBoundaries, routeEdgeById } from "../world/navgraph";
-import { samplePath } from "./samplePath";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { UNITS_PER_HOUR, findPath, nodeBoundaries, routeEdgeById } from '../world/navgraph';
+import { crossingByNodeId, routeNodeById } from '../world/valdoria';
+import type { Point, RegionId, TravelEvents, TravelPath } from '../world/types';
+import { getState, flushGameSave } from '../game/store';
+import { saveJourney, tutorialFlag } from '../game/adventure';
+import { samplePath } from './samplePath';
+import { restoreJourney } from './journey';
 
-import type { Point, RegionId, TravelEvents, TravelPath } from "../world/types";
-import { crossingByNodeId, routeNodeById } from "../world/valdoria";
+const WORLD_HOURS_PER_SECOND=4;
+export type TravelState='idle'|'traveling'|'arrived';
+type Options={startNodeId:string;events?:TravelEvents;blocked?:boolean;onFrame?:(pos:Point,regionId:RegionId)=>void};
 
-/**
- * Horas do mundo que passam por segundo real na velocidade 1×.
- *
- * A animação é medida em TEMPO, não em distância: assim ela acompanha
- * automaticamente o ritmo definido por `DAYS_TO_CROSS_KINGDOM` e não precisa
- * ser reajustada quando o mapa muda de tamanho.
- */
-const WORLD_HOURS_PER_SECOND = 4;
+export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
+  const [initial]=useState(()=>restoreJourney(startNodeId));
+  const markerRef=useRef<SVGGElement|null>(null);
+  const posRef=useRef<Point>(initial.position);
+  const headingRef=useRef(initial.position.heading);
+  const pathRef=useRef(initial.path);
+  const boundariesRef=useRef(initial.boundaries);
+  const progressRef=useRef(initial.distance);
+  const nodeCursorRef=useRef(initial.cursor);
+  const nodeRef=useRef(initial.node.id);
+  const regionRef=useRef<RegionId>(initial.node.regionId);
+  const hoursRef=useRef(initial.hours);
+  const speedRef=useRef(initial.speed);
+  const pausedRef=useRef(initial.paused);
+  const blockedRef=useRef(blocked);
+  blockedRef.current=blocked;
+  const eventsRef=useRef(events);
+  eventsRef.current=events;
+  const rafRef=useRef(0);
+  const lastTimeRef=useRef(0);
+  const lastSaveRef=useRef(0);
+  const lastUiRef=useRef(0);
+  const [state,setState]=useState<TravelState>(initial.path?'traveling':'idle');
+  const [path,setPath]=useState<TravelPath|null>(initial.path);
+  const [currentNodeId,setCurrentNodeId]=useState(initial.node.id);
+  const [regionId,setRegionId]=useState(initial.node.regionId);
+  const [worldHours,setWorldHours]=useState(initial.hours);
+  const [speed,setSpeedState]=useState(initial.speed);
+  const [paused,setPaused]=useState(initial.paused);
 
-export type TravelState = "idle" | "traveling" | "arrived";
-
-type Options = {
-  startNodeId: string;
-  events?: TravelEvents;
-  /** Chamado a cada frame com a posição atual — usado pela câmera. */
-  onFrame?: (pos: Point, regionId: RegionId) => void;
-};
-
-export function useTravel({ startNodeId, events, onFrame }: Options) {
-  const start = routeNodeById.get(startNodeId)!;
-  const markerRef = useRef<SVGGElement | null>(null);
-  const posRef = useRef<Point>({ x: start.x, y: start.y });
-  const headingRef = useRef(0);
-
-  const pathRef = useRef<TravelPath | null>(null);
-  const boundariesRef = useRef<number[]>([]);
-  const progressRef = useRef(0);
-  const nodeCursorRef = useRef(0);
-  const rafRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const speedRef = useRef(1);
-  const eventsRef = useRef(events);
-  eventsRef.current = events;
-
-  const [state, setState] = useState<TravelState>("idle");
-  const [path, setPath] = useState<TravelPath | null>(null);
-  const [currentNodeId, setCurrentNodeId] = useState(startNodeId);
-  const [regionId, setRegionId] = useState<RegionId>(start.regionId);
-  const [worldHours, setWorldHours] = useState(0);
-  const [speed, setSpeedState] = useState(1);
-  const [paused, setPaused] = useState(false);
-  const pausedRef = useRef(false);
-  pausedRef.current = paused;
-  const regionRef = useRef<RegionId>(start.regionId);
-
-  const writeMarker = useCallback(() => {
-    const g = markerRef.current;
-    if (g) g.setAttribute("transform", `translate(${posRef.current.x.toFixed(2)} ${posRef.current.y.toFixed(2)})`);
-    onFrame?.(posRef.current, regionRef.current);
-  }, [onFrame]);
-
-  useEffect(() => {
-    writeMarker();
-  }, [writeMarker]);
-
-  const stop = useCallback(() => {
+  const writeMarker=useCallback(()=>{
+    markerRef.current?.setAttribute('transform',`translate(${posRef.current.x.toFixed(2)} ${posRef.current.y.toFixed(2)})`);
+    onFrame?.(posRef.current,regionRef.current);
+  },[onFrame]);
+  const checkpoint=useCallback(()=>{
+    const p=pathRef.current;
+    saveJourney({currentNodeId:nodeRef.current,fromNodeId:p?.nodeIds[0]??nodeRef.current,
+      destinationId:p?.nodeIds[p.nodeIds.length-1]??null,distance:progressRef.current,
+      hours:hoursRef.current,speed:speedRef.current,paused:pausedRef.current,
+    });
+  },[]);
+  const stop=useCallback(()=>{
     cancelAnimationFrame(rafRef.current);
-    rafRef.current = 0;
-  }, []);
-
-  /** Trecho que está sendo percorrido na distância `d`. */
-  const edgeAtDistance = useCallback((p: TravelPath, d: number) => {
-    const b = boundariesRef.current;
-    for (let i = p.edgeIds.length - 1; i >= 0; i--) {
-      if (d >= b[i]) return routeEdgeById.get(p.edgeIds[i]);
+    rafRef.current=0;
+  },[]);
+  const frame=useCallback((now:number)=>{
+    rafRef.current=0;
+    const p=pathRef.current;
+    if (!p || pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice) return;
+    const dt=Math.min(.05,(now-lastTimeRef.current)/1000);
+    lastTimeRef.current=now;
+    const before=progressRef.current;
+    const edge=routeEdgeById.get(p.edgeIds[nodeCursorRef.current]);
+    const modifier=edge?.movementModifier??1;
+    // Stop exactly at checkpoints; no untravelled distance is credited on an event pause.
+    const nextBoundary=boundariesRef.current[nodeCursorRef.current+1]??p.totalDistance;
+    const after=Math.min(nextBoundary,p.totalDistance,before+WORLD_HOURS_PER_SECOND*speedRef.current*dt*UNITS_PER_HOUR/modifier);
+    progressRef.current=after;
+    const at=samplePath(p,after);
+    posRef.current={x:at.x,y:at.y};
+    headingRef.current=at.heading;
+    hoursRef.current+=((after-before)*modifier)/UNITS_PER_HOUR;
+    if (now-lastUiRef.current>=100) {
+      lastUiRef.current=now;
+      setWorldHours(hoursRef.current);
     }
-    return routeEdgeById.get(p.edgeIds[0]);
-  }, []);
-
-  const frame = useCallback(
-    (now: number) => {
-      const p = pathRef.current;
-      if (!p) return;
-      const dt = Math.min(0.05, (now - lastTimeRef.current) / 1000);
-      lastTimeRef.current = now;
-
-      const before = progressRef.current;
-      // O modificador de terreno freia o marcador de verdade: uma trilha de
-      // montanha avança na tela na metade da velocidade de uma estrada real.
-      const modifier = edgeAtDistance(p, before)?.movementModifier ?? 1;
-      const hours = WORLD_HOURS_PER_SECOND * speedRef.current * dt;
-      const after = Math.min(p.totalDistance, before + (hours * UNITS_PER_HOUR) / modifier);
-      progressRef.current = after;
-      const at = samplePath(p, after);
-      posRef.current = { x: at.x, y: at.y };
-      headingRef.current = at.heading;
-      setWorldHours((h) => h + ((after - before) * modifier) / UNITS_PER_HOUR);
-
-      // Nó alcançado?
-      while (
-        nodeCursorRef.current < p.nodeIds.length - 1 &&
-        after >= boundariesRef.current[nodeCursorRef.current + 1] - 0.5
-      ) {
-        nodeCursorRef.current++;
-        const nodeId = p.nodeIds[nodeCursorRef.current];
-        const node = routeNodeById.get(nodeId)!;
-        setCurrentNodeId(nodeId);
-        eventsRef.current?.onRouteNodeReached?.(nodeId, node);
-
-        const crossing = crossingByNodeId.get(nodeId);
-        if (crossing) {
-          eventsRef.current?.onBorderCrossed?.(crossing);
-          const next = p.edgeIds[nodeCursorRef.current];
-          const nextRegion = routeEdgeById.get(next)?.regionId;
-          const entered =
-            nextRegion ?? (crossing.connects.find((r) => r !== regionRef.current) as RegionId);
-          if (entered && entered !== regionRef.current) {
-            regionRef.current = entered;
-            setRegionId(entered);
-            eventsRef.current?.onRegionEntered?.(entered);
-          }
-        } else if (node.regionId !== regionRef.current) {
-          regionRef.current = node.regionId;
-          setRegionId(node.regionId);
-          eventsRef.current?.onRegionEntered?.(node.regionId);
-        }
-
-        const traversed = routeEdgeById.get(p.edgeIds[nodeCursorRef.current - 1]);
-        if (traversed) {
-          const roll = Math.random();
-          eventsRef.current?.onRandomEventCheck?.(traversed, roll);
-        }
+    const reached=nodeCursorRef.current<p.nodeIds.length-1 && after>=nextBoundary;
+    if (reached) {
+      setWorldHours(hoursRef.current);
+      nodeCursorRef.current++;
+      const node=routeNodeById.get(p.nodeIds[nodeCursorRef.current])!;
+      nodeRef.current=node.id;
+      setCurrentNodeId(node.id);
+      const crossing=crossingByNodeId.get(node.id);
+      const nextRegion=routeEdgeById.get(p.edgeIds[nodeCursorRef.current])?.regionId;
+      const entered=nextRegion??node.regionId;
+      if (entered!==regionRef.current) {
+        regionRef.current=entered;
+        setRegionId(entered);
       }
+      const arrived=nodeCursorRef.current===p.nodeIds.length-1;
+      if (arrived) { pathRef.current=null; setPath(null); setState('arrived'); }
+      checkpoint();
+      eventsRef.current?.onRouteNodeReached?.(node.id,node);
+      if (crossing) eventsRef.current?.onBorderCrossed?.(crossing);
+      if (edge && entered!==edge.regionId) eventsRef.current?.onRegionEntered?.(entered);
+      if (edge) eventsRef.current?.onRandomEventCheck?.(edge,Math.random());
+      if (arrived) eventsRef.current?.onDestinationReached?.(node.id);
+    } else if (now-lastSaveRef.current>1000) {
+      lastSaveRef.current=now;
+      checkpoint();
+    }
+    writeMarker();
+    if (pathRef.current && !getState().adventure.event && !getState().adventure.notice) rafRef.current=requestAnimationFrame(frame);
+  },[checkpoint,writeMarker]);
 
-      writeMarker();
-
-      if (after >= p.totalDistance - 0.01) {
-        stop();
-        setState("arrived");
-        const destination = p.nodeIds[p.nodeIds.length - 1];
-        setCurrentNodeId(destination);
-        eventsRef.current?.onDestinationReached?.(destination);
-        return;
-      }
-      rafRef.current = requestAnimationFrame(frame);
-    },
-    [edgeAtDistance, stop, writeMarker],
-  );
-
-  const travelTo = useCallback(
-    (destinationNodeId: string) => {
-      const from = pathRef.current && state === "traveling" ? currentNodeId : currentNodeId;
-      const found = findPath(from, destinationNodeId);
-      if (!found) return null;
-      stop();
-      pathRef.current = found;
-      boundariesRef.current = nodeBoundaries(found);
-      progressRef.current = 0;
-      nodeCursorRef.current = 0;
-      lastTimeRef.current = performance.now();
-      setPath(found);
-      setState("traveling");
-      setPaused(false);
-      eventsRef.current?.onTravelStart?.(found);
-      rafRef.current = requestAnimationFrame(frame);
-      return found;
-    },
-    [currentNodeId, frame, state, stop],
-  );
-
-  const cancel = useCallback(() => {
+  useEffect(()=>{
     stop();
-    pathRef.current = null;
-    setPath(null);
-    setState("idle");
-  }, [stop]);
+    if (!blocked && !paused && pathRef.current && !document.hidden) {
+      lastTimeRef.current=performance.now();
+      rafRef.current=requestAnimationFrame(frame);
+    }
+    return stop;
+  },[blocked,paused,frame,stop]);
 
-  const setSpeed = useCallback((value: number) => {
-    speedRef.current = value;
-    setSpeedState(value);
-  }, []);
-
-  /**
-   * Pausa o relógio do mundo.
-   *
-   * Parar é parar de verdade: o rAF é cancelado, então nada avança e nada é
-   * desenhado enquanto o jogador está decidindo. Ao voltar, o cronômetro é
-   * rearmado no instante atual — senão o primeiro frame depois da pausa
-   * receberia todo o tempo real parado de uma vez e o marcador saltaria.
-   */
-  const resume = useCallback(() => {
+  const travelTo=useCallback((destinationNodeId:string)=>{
+    if (blockedRef.current || getState().adventure.event || getState().adventure.notice) return null;
+    // Changing destination halfway through a road used to teleport back to a node.
+    if (pathRef.current) return null;
+    const found=findPath(nodeRef.current,destinationNodeId);
+    if (!found || found.totalDistance<=0) return null;
+    stop();
+    pathRef.current=found;
+    boundariesRef.current=nodeBoundaries(found);
+    progressRef.current=0;
+    nodeCursorRef.current=0;
+    setPath(found);
+    setState('traveling');
+    pausedRef.current=false;
     setPaused(false);
-    const p = pathRef.current;
-    if (!p || progressRef.current >= p.totalDistance || rafRef.current) return;
-    lastTimeRef.current = performance.now();
-    rafRef.current = requestAnimationFrame(frame);
-  }, [frame]);
+    checkpoint();
+    tutorialFlag('departed');
+    eventsRef.current?.onTravelStart?.(found);
+    lastTimeRef.current=performance.now();
+    rafRef.current=requestAnimationFrame(frame);
+    return found;
+  },[checkpoint,frame,stop]);
+  const setSpeed=useCallback((value:number)=>{
+    if (![1,2,4].includes(value)) return;
+    speedRef.current=value;
+    setSpeedState(value);
+    checkpoint();
+  },[checkpoint]);
+  const togglePause=useCallback(()=>{
+    if (blockedRef.current) return;
+    pausedRef.current=!pausedRef.current;
+    setPaused(pausedRef.current);
+    checkpoint();
+  },[checkpoint]);
 
-  const pause = useCallback(() => {
-    setPaused(true);
-    stop();
-  }, [stop]);
+  useEffect(()=>{
+    writeMarker();
+    checkpoint();
+    const persist=()=>{checkpoint();flushGameSave();};
+    const visibility=()=>{
+      if (document.hidden) {stop();persist();}
+      else if (!pausedRef.current && !blockedRef.current && pathRef.current) {
+        lastTimeRef.current=performance.now();
+        stop();rafRef.current=requestAnimationFrame(frame);
+      }
+    };
+    window.addEventListener('pagehide',persist);
+    document.addEventListener('visibilitychange',visibility);
+    return ()=>{
+      stop();persist();
+      window.removeEventListener('pagehide',persist);
+      document.removeEventListener('visibilitychange',visibility);
+    };
+  },[checkpoint,frame,stop,writeMarker]);
 
-  const togglePause = useCallback(() => {
-    if (pausedRef.current) resume();
-    else pause();
-  }, [pause, resume]);
-
-
-
-  /** Teleporta o marcador (usado só por debug — nunca pelo jogo). */
-  const placeAt = useCallback(
-    (nodeId: string) => {
-      const node = routeNodeById.get(nodeId);
-      if (!node) return;
-      stop();
-      pathRef.current = null;
-      setPath(null);
-      setState("idle");
-      posRef.current = { x: node.x, y: node.y };
-      regionRef.current = node.regionId;
-      setRegionId(node.regionId);
-      setCurrentNodeId(nodeId);
-      writeMarker();
-    },
-    [stop, writeMarker],
-  );
-
-  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
-
-  return {
-    markerRef,
-    posRef,
-    headingRef,
-    state,
-    path,
-    currentNodeId,
-    regionId,
-    worldHours,
-    speed,
-    setSpeed,
-    paused,
-    togglePause,
-    /** Distância já percorrida na rota atual — lida por frame pelo HUD. */
-    progressRef,
-    travelTo,
-    cancel,
-    placeAt,
-  };
+  return {markerRef,posRef,headingRef,state,path,currentNodeId,regionId,worldHours,speed,setSpeed,
+    paused:paused||blocked,togglePause,progressRef,travelTo};
 }

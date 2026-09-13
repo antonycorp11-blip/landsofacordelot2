@@ -14,6 +14,8 @@ export type CameraLimits = {
   /** Retângulo que o enquadramento inicial deve mostrar (a massa territorial). */
   focus: { minX: number; minY: number; maxX: number; maxY: number };
   maxZoom: number;
+  initialCenter?: Point;
+  initialScale?: number;
 };
 
 type Cam = { cx: number; cy: number; zoom: number };
@@ -26,8 +28,10 @@ export type CameraView = Cam & {
   height: number;
 };
 
-export function useCamera({ world, focus, maxZoom }: CameraLimits) {
+export function useCamera({ world, focus, maxZoom, initialCenter, initialScale }: CameraLimits) {
   const focusCenter = { x: (focus.minX + focus.maxX) / 2, y: (focus.minY + focus.maxY) / 2 };
+  const initialView = useRef({ center: initialCenter, scale: initialScale });
+  const initialized = useRef(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const layerRef = useRef<SVGGElement | null>(null);
   const cam = useRef<Cam>({ cx: focusCenter.x, cy: focusCenter.y, zoom: 1 });
@@ -183,17 +187,18 @@ export function useCamera({ world, focus, maxZoom }: CameraLimits) {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    let first = true;
+
     const ro = new ResizeObserver(() => {
       const r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2) return;
       viewport.current = { w: r.width, h: r.height };
-      if (first) {
-        first = false;
+      if (!initialized.current) {
+        initialized.current = true;
         // Paisagem: mostra o reino inteiro. Retrato: preenche a altura.
         const portrait = r.width / r.height < 0.95;
-        const z = portrait ? Math.min(coverZoom(), 3.2) : containZoom();
-        target.current = { cx: focusCenter.x, cy: focusCenter.y, zoom: z };
+        const z = initialView.current.scale ? initialView.current.scale / baseScale() : portrait ? Math.min(coverZoom(), 3.2) : containZoom();
+        const center = initialView.current.center ?? focusCenter;
+        target.current = { cx: center.x, cy: center.y, zoom: z };
         cam.current = { ...target.current };
       }
       target.current = clamp(target.current);
@@ -205,7 +210,7 @@ export function useCamera({ world, focus, maxZoom }: CameraLimits) {
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [applyNow, clamp, containZoom, coverZoom, focusCenter.x, focusCenter.y]);
+  }, [applyNow, baseScale, clamp, containZoom, coverZoom, focusCenter.x, focusCenter.y]);
 
   /* ------------------------- conversões de espaço ---------------------- */
 

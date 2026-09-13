@@ -1,3 +1,5 @@
+import { isPresent } from "../../game/presence";
+import { useGame } from "../../game/store";
 import { memo, useState } from "react";
 import { charactersAt, characterById } from "../../data/characters";
 import { holdingFor } from "../../data/holdings";
@@ -24,11 +26,14 @@ export const SettlementPanel = memo(function SettlementPanel({
   poi,
   worldHours,
   onClose,
+  onOpenAdventure,
 }: {
   poi: PointOfInterest | null;
   worldHours: number;
   onClose: () => void;
+  onOpenAdventure: (poiId: string) => void;
 }) {
+  const game = useGame();
   const [recruiting, setRecruiting] = useState(false);
   if (!poi) return null;
 
@@ -49,6 +54,10 @@ export const SettlementPanel = memo(function SettlementPanel({
       <SettlementHeader poi={poi} holding={holding} onClose={onClose} />
 
       <div className="sp-body">
+        <button className="btn primary sp-contracts" onClick={() => onOpenAdventure(poi.id)}>
+          {game.adventure.contract?.destinationId === poi.id && isPresent(poi.id,game) ? "Entregar contrato" : "Contratos e conversas"}
+        </button>
+        {!isPresent(poi.id,game) && <p className="empty">Prévia do local. Chegue para aceitar trabalhos ou recrutar.</p>}
         {present.map((c) => (
           <CharacterMiniCard key={c.id} character={c} here />
         ))}
@@ -76,6 +85,7 @@ export const SettlementPanel = memo(function SettlementPanel({
       <SettlementActions
         holding={holding}
         present={present}
+        here={isPresent(poi.id,game)}
         onAction={(id) => id === "recruit" && setRecruiting(true)}
       />
     </aside>

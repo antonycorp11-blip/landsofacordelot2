@@ -19,7 +19,9 @@ import { heroById, heroes, type Attributes } from "../data/heroes";
 import { startingSkills, type SkillValues } from "./progression";
 import { emptyCareerXp, type CareerXp } from "./careers";
 import type { TroopCount, TroopId } from "../data/troops";
-import type { AgentClass, HouseId } from "../world/types";
+import type { AgentClass, FiefOwner, HouseId } from "../world/types";
+
+import { freshAdventure, type AdventureState, type JourneySave } from "./adventureState";
 
 const SAVE_KEY = "acordelot.campanha.v1";
 
@@ -41,6 +43,8 @@ export type CompanionState = {
 
 export type GameState = {
   version: number;
+  journey: JourneySave | null;
+  adventure: AdventureState;
   /** false = ainda na escolha de personagem. */
   started: boolean;
   heroId: string | null;
@@ -58,6 +62,7 @@ export type GameState = {
   /** Peso social e político. Sobe e desce, e não é XP. */
   influence: number;
   gold: number;
+  food: number;
 
   troops: TroopCount;
   companions: Record<string, CompanionState>;
@@ -68,6 +73,8 @@ export type GameState = {
 
   localInfluence: Record<string, number>;
   houseRelations: Partial<Record<HouseId, number>>;
+  /** Senhorios que trocaram de dono nesta campanha. O resto usa o dono histórico. */
+  fiefOwners: Record<string, FiefOwner>;
 };
 
 const DEFAULT_RELATIONS: Partial<Record<HouseId, number>> = {
@@ -80,6 +87,8 @@ const DEFAULT_RELATIONS: Partial<Record<HouseId, number>> = {
 function blank(): GameState {
   return {
     version: 1,
+    journey: null,
+    adventure: freshAdventure(),
     started: false,
     heroId: null,
     level: 1,
@@ -91,12 +100,14 @@ function blank(): GameState {
     skillPoints: 0,
     influence: 5,
     gold: 0,
+    food: 12,
     troops: {},
     companions: {},
     recruitPools: {},
     poolRefreshDay: {},
     localInfluence: {},
     houseRelations: { ...DEFAULT_RELATIONS },
+    fiefOwners: {},
   };
 }
 
@@ -139,12 +150,12 @@ export function update(fn: (s: GameState) => GameState) {
     saveScheduled = true;
     queueMicrotask(() => {
       saveScheduled = false;
-      save();
+      flushGameSave();
     });
   }
 }
 
-function save() {
+export function flushGameSave() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch {
@@ -159,7 +170,12 @@ function load(): GameState | null {
     const parsed = JSON.parse(raw) as GameState;
     if (parsed?.version !== 1) return null;
     // Preenche o que uma versão anterior possa não ter gravado.
-    return { ...blank(), ...parsed, skills: { ...startingSkills({}), ...parsed.skills } };
+    const adventure = freshAdventure();
+    return {
+      ...blank(), ...parsed,
+      skills: { ...startingSkills({}), ...parsed.skills },
+      adventure: { ...adventure, ...parsed.adventure, tutorial: { ...adventure.tutorial, ...parsed.adventure?.tutorial } },
+    };
   } catch {
     return null;
   }
@@ -243,7 +259,7 @@ export function setRecruitPool(poiId: string, pool: TroopCount, day: number) {
 
 export function setCompanionStatus(id: string, status: CompanionStatus) {
   update((s) =>
-    s.companions[id] ? { ...s, companions: { ...s.companions, [id]: { ...s.companions[id], status } } } : s,
+    s.companions[id] ? { ...s, companions: { ...s.companions, [id]: { ...s.companions[id], status, ...(status === "AVAILABLE" && s.companions[id].status === "IN_PARTY" ? {locationPoiId:s.journey?.currentNodeId ?? heroById.get(s.heroId ?? "")?.startPoiId ?? s.companions[id].locationPoiId} : {}) } } } : s,
   );
 }
 

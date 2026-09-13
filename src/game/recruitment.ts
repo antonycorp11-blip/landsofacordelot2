@@ -16,6 +16,7 @@ import { troopById, troopTotal, type TroopCount, type TroopId } from "../data/tr
 import type { PointOfInterest } from "../world/types";
 import { getState, setRecruitPool, spendGold, addTroops } from "./store";
 import { derivedInput, troopLimit } from "./experience";
+import { isPresent } from "./presence";
 import { recruitBonus } from "./progression";
 import { relationWith } from "../data/player";
 
@@ -42,9 +43,10 @@ export function basePool(poi: PointOfInterest, holding: Holding): TroopCount {
   const rng = makeRng(`recruit-${poi.id}`);
   const pool: TroopCount = {};
   // Lugar inseguro tem menos gente disposta; lugar leal, mais.
+  const bonus = Math.min(1.25,recruitBonus(derivedInput()));
   const mood = 0.7 + (holding.security / 100) * 0.3 + (holding.loyalty / 100) * 0.3;
   for (const { id, share } of OFFER[holding.kind] ?? []) {
-    const n = Math.floor(holding.population * share * mood * (0.75 + rng() * 0.5));
+    const n = Math.floor(holding.population * share * mood * bonus * (0.75 + rng() * 0.5));
     if (n > 0) pool[id] = n;
   }
   return pool;
@@ -76,10 +78,11 @@ export function currentPool(poi: PointOfInterest, worldHours: number): TroopCoun
   return next;
 }
 
-export type RecruitBlock = "none" | "hostile" | "gold" | "limit" | "empty";
+export type RecruitBlock = "none" | "away" | "hostile" | "gold" | "limit" | "empty";
 
 /** Por que não dá para recrutar aqui, se for o caso. */
 export function recruitBlocker(poi: PointOfInterest, pool: TroopCount): RecruitBlock {
+  if (!isPresent(poi.id)) return "away";
   const holding = holdingFor(poi);
   if (relationWith(holding.controllerHouseId) <= -50) return "hostile";
   if (troopTotal(pool) === 0) return "empty";
@@ -98,15 +101,14 @@ export type RecruitOffer = {
 export function offersAt(poi: PointOfInterest, worldHours: number): RecruitOffer[] {
   const pool = currentPool(poi, worldHours);
   const s = getState();
-  const bonus = recruitBonus(derivedInput(s));
   const room = Math.max(0, troopLimit(s) - troopTotal(s.troops));
 
   return (Object.entries(pool) as [TroopId, number][])
     .filter(([, n]) => n > 0)
     .map(([id, n]) => {
       const troop = troopById.get(id)!;
-      // Comando e Liderança abrem algumas vagas a mais no mesmo poço.
-      const available = Math.max(1, Math.round(n * Math.min(1.25, bonus)));
+      // O bônus já participa da formação do estoque; a oferta nunca anuncia vagas inexistentes.
+      const available = n;
       return {
         id,
         available,
@@ -127,12 +129,14 @@ export type RecruitResult = { ok: boolean; reason?: RecruitBlock };
  * recrutarem no futuro passem pelas mesmas regras.
  */
 export function recruit(poi: PointOfInterest, id: TroopId, amount: number, worldHours: number): RecruitResult {
-  if (amount <= 0) return { ok: false, reason: "empty" };
+  if (!Number.isInteger(amount) || amount <= 0) return { ok: false, reason: "empty" };
   const troop = troopById.get(id);
   if (!troop) return { ok: false, reason: "empty" };
 
   const s = getState();
   const pool = currentPool(poi, worldHours);
+  const block = recruitBlocker(poi, pool);
+  if (block !== "none") return { ok:false, reason:block };
   const have = pool[id] ?? 0;
   if (have < amount) return { ok: false, reason: "empty" };
 

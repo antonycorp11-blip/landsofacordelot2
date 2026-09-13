@@ -14,6 +14,7 @@ import type { PointOfInterest } from "../../world/types";
  * quantos; se a resposta for não, a razão vem de lá.
  */
 const BLOCK_TEXT: Record<string, string> = {
+  away: "Chegue ao local antes de recrutar.",
   hostile: "A Casa que manda aqui não permite que você levante homens.",
   empty: "Não há ninguém disponível no momento. Volte em alguns dias.",
   gold: "Ouro insuficiente.",

@@ -31,6 +31,9 @@ import { SettlementPanel } from "../ui/settlement/SettlementPanel";
 import { CharacterScreen } from "../ui/hero/CharacterScreen";
 import { AgentPanel } from "../ui/agent/AgentPanel";
 import { useGame } from "../game/store";
+import { checkRoadEvent, recordJourney, tutorialFlag } from "../game/adventure";
+import { AdventurePanel, JourneyTracker, type AdventureView } from "../ui/adventure/AdventurePanel";
+import { restoreJourney } from "../travel/journey";
 import { heroById } from "../data/heroes";
 import { troopTotal } from "../data/troops";
 import type { Wanderer } from "../world/wanderers";
@@ -38,9 +41,12 @@ import { FrontierLayer } from "../render/layers/FrontierLayer";
 import { FrontierPanel } from "../ui/frontier/FrontierPanel";
 import { PoliticalLegend } from "../ui/PoliticalLegend";
 import type { ForeignRealm } from "../world/foreignRealms";
+import { FiefLayer } from "../render/layers/FiefLayer";
+import { FiefPanel } from "../ui/fief/FiefPanel";
+import type { Fief } from "../world/fiefs";
 import { useCamera } from "./useCamera";
 import { Hud, LIGHTING_ORDER } from "../ui/Hud";
-import type { JournalEntry, JournalKind } from "../ui/journal";
+import type { JournalKind } from "../ui/journal";
 
 /** Onde a campanha começa, quando o herói escolhido não disser outra coisa. */
 const FALLBACK_START = "castelo_real";
@@ -69,29 +75,24 @@ export function WorldMap() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [readAgent, setReadAgent] = useState<Wanderer | null>(null);
   const [realm, setRealm] = useState<ForeignRealm | null>(null);
+  const [fief, setFief] = useState<Fief | null>(null);
   /**
    * Vista política: o mapa vira tabuleiro. O cenário sai da frente para que a
    * cor das Casas possa ser comparada de fronteira a fronteira.
    */
   const [political, setPolitical] = useState(false);
-  const [journal, setJournal] = useState<JournalEntry[]>([]);
+  const [adventureView, setAdventureView] = useState<AdventureView | null>(null);
+  const [queuedDestination, setQueuedDestination] = useState<string | null>(null);
+  const [initialPosition] = useState(() => restoreJourney(startNode).position);
+  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.notice || !game.adventure.tutorial.introSeen;
 
   const followRef = useRef(follow);
   followRef.current = follow;
 
-  const camera = useCamera({ world: WORLD, focus: KINGDOM_BOUNDS, maxZoom: 7 * LOD_SCALE });
+  const camera = useCamera({ world: WORLD, focus: KINGDOM_BOUNDS, maxZoom: 24 * LOD_SCALE, initialCenter: initialPosition, initialScale: 0.3 });
   const { centerOn } = camera;
 
-  /**
-   * O diário guarda a hora do mundo de cada acontecimento. Como as horas são
-   * escritas a cada frame pela viagem, a leitura vem de uma ref — o callback
-   * de evento não pode depender do valor capturado no render.
-   */
-  const hoursRef = useRef(0);
-  const entryId = useRef(0);
-  const pushLog = useCallback((kind: JournalKind, text: string) => {
-    setJournal((l) => [{ id: entryId.current++, kind, text, hours: hoursRef.current }, ...l].slice(0, 60));
-  }, []);
+  const pushLog = useCallback((kind: JournalKind, text: string) => recordJourney(kind, text), []);
 
   /** Hooks de viagem — pontos de entrada para eventos aleatórios no futuro. */
   const events: TravelEvents = useMemo(
@@ -104,9 +105,7 @@ export function WorldMap() {
         const poi = poiById.get(id);
         if (poi) pushLog("marco", `Passou por ${poi.name}`);
       },
-      onRandomEventCheck: (edge, roll) => {
-        if (roll < edge.eventChance * 0.35) pushLog("evento", `Algo se move na estrada… (${edge.terrain})`);
-      },
+      onRandomEventCheck: checkRoadEvent,
       onDestinationReached: (id) => {
         pushLog("chegada", `Chegou a ${poiById.get(id)?.name ?? id}`);
         // Chegar a um lugar É a maneira principal de abrir o painel dele.
@@ -118,6 +117,7 @@ export function WorldMap() {
 
   const travel = useTravel({
     startNodeId: startNode,
+    blocked: adventureBlocked,
     events,
     onFrame: useCallback(
       (pos: Point) => {
@@ -126,6 +126,20 @@ export function WorldMap() {
       [centerOn],
     ),
   });
+
+  const openSheet = useCallback(() => {
+    setAdventureView(null);
+    tutorialFlag('sheetViewed');
+    setSheetOpen(true);
+  }, []);
+  useEffect(() => {
+    if (!queuedDestination || adventureBlocked) return;
+    const destination = queuedDestination;
+    setQueuedDestination(null);
+    if (!travel.travelTo(destination)) {
+      pushLog('evento', 'Não foi possível iniciar esta rota. Conclua a viagem atual antes de partir novamente.');
+    }
+  }, [queuedDestination, adventureBlocked, travel.travelTo, pushLog]);
 
   const view = useMemo(
     () => camera.getVisibleRect(),
@@ -140,7 +154,7 @@ export function WorldMap() {
       setSelectedRegion(poi.regionId);
       setPanelPoiId(poi.id);
       if (poi.id === travel.currentNodeId) return;
-      if (!travel.travelTo(poi.id)) pushLog("evento", `Sem rota por estrada até ${poi.name}`);
+      if (!travel.travelTo(poi.id)) pushLog("evento", travel.state === "traveling" ? "Conclua o trecho atual antes de escolher outra rota." : `Sem rota disponível até ${poi.name}`);
     },
     [camera, pushLog, travel],
   );
@@ -172,7 +186,7 @@ export function WorldMap() {
   const region = selectedRegion ? regionById.get(selectedRegion) : null;
   const zoom = camera.zoom;
   const lighting = lightingAt(travel.worldHours, lightingMode);
-  hoursRef.current = travel.worldHours;
+
 
   const destinationId = travel.path?.nodeIds[travel.path.nodeIds.length - 1] ?? null;
   const destinationName = destinationId
@@ -228,6 +242,15 @@ export function WorldMap() {
           )}
           <RiversLayer zoom={zoom} />
           {!political && <NatureLayer zoom={zoom} view={view} />}
+          <FiefLayer
+            zoom={zoom}
+            political={political}
+            selectedFiefId={fief?.id ?? null}
+            onFiefClick={(f) => {
+              if (camera.wasDragged()) return;
+              setFief(f);
+            }}
+          />
           <RoadsLayer zoom={zoom} />
           <BordersLayer zoom={zoom} onCrossingClick={handleCrossingClick} />
           <RouteHighlight path={travel.path} zoom={zoom} />
@@ -324,17 +347,23 @@ export function WorldMap() {
         }
         debug={debug}
         onToggleDebug={() => setDebug((d) => !d)}
-        journal={journal}
+        journal={game.adventure.chronicle}
         coins={game.gold}
         influence={game.influence}
+        food={game.food}
+        heroId={game.heroId}
+        xp={game.xp}
+        onOpenAdventure={() => setAdventureView({tab:"contracts"})}
         level={game.level}
-        onOpenSheet={() => setSheetOpen(true)}
+        onOpenSheet={openSheet}
         political={political}
         onTogglePolitical={() => setPolitical((p) => !p)}
         selected={region ? { name: region.name, biome: region.biome, pois: region.pointsOfInterest.length, settlements: region.settlements.length } : null}
       />
 
       <SettlementPanel
+        key={panelPoiId}
+        onOpenAdventure={(poiId) => setAdventureView({tab:"contracts",poiId})}
         poi={panelPoiId ? poiById.get(panelPoiId) ?? null : null}
         worldHours={travel.worldHours}
         onClose={() => setPanelPoiId(null)}
@@ -342,8 +371,13 @@ export function WorldMap() {
 
       {political && <PoliticalLegend onClose={() => setPolitical(false)} />}
       {realm && <FrontierPanel realm={realm} onClose={() => setRealm(null)} />}
-      {readAgent && !realm && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
+      {fief && !realm && <FiefPanel fief={fief} onClose={() => setFief(null)} />}
+      {readAgent && !realm && !fief && <AgentPanel wanderer={readAgent} onClose={() => setReadAgent(null)} />}
       {sheetOpen && <CharacterScreen onClose={() => setSheetOpen(false)} />}
+      {!adventureBlocked && !panelPoiId && !political && <JourneyTracker onOpen={setAdventureView} />}
+      <AdventurePanel view={adventureView} onView={setAdventureView} onClose={() => setAdventureView(null)}
+        onNavigate={(id) => {setAdventureView(null);setPanelPoiId(null);setQueuedDestination(id);}}
+        onSheet={openSheet} />
     </div>
   );
 }

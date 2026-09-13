@@ -57,10 +57,12 @@ export const SettlementActions = memo(function SettlementActions({
   holding,
   present,
   onAction,
+  here,
 }: {
   holding: Holding;
   present: Character[];
   onAction: (id: string) => void;
+  here: boolean;
 }) {
   const actions = actionsFor(holding, present);
   return (
@@ -69,8 +71,8 @@ export const SettlementActions = memo(function SettlementActions({
         <button
           key={a.id}
           className={`sp-action ${a.primary ? "primary" : ""}`}
-          disabled={!a.enabled}
-          title={a.enabled ? undefined : "Ainda não disponível"}
+          disabled={!a.enabled || !here}
+          title={!here ? "Chegue ao local para agir" : a.enabled ? undefined : "Ainda não disponível"}
           onClick={() => onAction(a.id)}
         >
           {a.label}

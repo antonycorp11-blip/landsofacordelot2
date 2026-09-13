@@ -252,3 +252,70 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
   .hs-card { transition:none; }
   .hs-card:hover,.hs-card[aria-pressed="true"] { transform:none; }
 }
+
+/* Portrait is the entry to the sheet; the ring shows progress within this level. */
+.hud-hero.portrait-button { position:relative; flex:none; width:60px; height:60px; min-width:60px; padding:0; border:0; border-radius:50%; background:#122329; cursor:pointer; box-shadow:0 3px 12px #0006; }
+.hero-xp-ring { position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); fill:none; stroke-width:3; }
+.xp-track { stroke:#54615b; }
+.xp-value { stroke:#ead092; stroke-linecap:round; transition:stroke-dashoffset .35s ease; }
+.hero-avatar { position:absolute; inset:7px; display:block; border-radius:50%; overflow:hidden; background:#384844; }
+.hero-avatar img { position:absolute; width:220%; max-width:none; height:auto; left:-60%; top:-25%; }
+.hero-level-badge { position:absolute; bottom:-3px; right:-1px; min-width:21px; height:21px; display:grid; place-items:center; border:1px solid #e1c585; border-radius:50%; background:#15272c; color:#efdcaa; font:600 10px var(--ui-small); }
+.hud-dock .journey-button { color:#f1d491; background:#bca76b20; border-color:#baa16a55; }
+
+/* Compact, bounded sheet: identity, statistics and careers each have a readable area. */
+.sheet-backdrop { position:absolute; inset:0; z-index:45; background:#061014aa; display:grid; place-items:center; padding:20px; }
+.sheet { position:relative; inset:auto; width:min(1080px,100%); height:min(850px,calc(100dvh - 40px)); border:1px solid #bda76c80; border-radius:10px; overflow:hidden; box-shadow:0 18px 70px #0008; }
+.sheet-heading { padding:20px 24px 15px; }
+.sheet-heading h1 { font-size:27px; }
+.sheet-bar { width:calc(100% - 48px); gap:22px; flex:none; }
+.sheet-body { padding:20px 24px 28px; }
+.sheet-inner.cols { grid-template-columns:175px minmax(0,1fr); gap:18px; }
+.sheet-inner.cols>.panel:first-child { padding:14px; display:flex; flex-direction:column; gap:14px; }
+.sheet-core { display:grid; grid-template-columns:minmax(210px,.9fr) minmax(250px,1.1fr); gap:16px; align-items:start; min-width:0; }
+.sheet-inner.cols>.panel:last-child { grid-column:1/-1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+.sheet-inner.cols>.panel:last-child>.panel-title { grid-column:1/-1; }
+.sheet .id-portrait { width:100%; max-width:145px; margin:auto; }
+.sheet .panel { min-width:0; }
+.sheet .career { min-width:0; }
+.sheet .career-head { align-items:flex-start; flex-direction:column; gap:5px; }
+.sheet .career-rank { font-size:16px; }
+.sheet .pair { font-size:11px; }
+.sheet .attr-eff { font-size:11px; line-height:1.6; }
+.sheet .attr-row { padding:10px 0; }
+.sheet .id-line { font-size:11px; overflow-wrap:anywhere; }
+@media(max-width:950px) {
+  .sheet-core { grid-template-columns:1fr; }
+  .sheet-inner.cols { grid-template-columns:180px minmax(0,1fr); }
+  .sheet-inner.cols>.panel:last-child { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:640px) {
+  .sheet-backdrop { padding:max(7px,env(safe-area-inset-top)) 7px max(7px,env(safe-area-inset-bottom)); }
+  .sheet { height:100%; max-height:100%; border-radius:8px; }
+  .sheet-heading { padding:18px 16px 12px; }
+  .sheet-heading h1 { font-size:24px; }
+  .sheet-bar { width:100%; padding:0 13px; gap:14px; }
+  .sheet-body { padding:14px; }
+  .sheet-inner.cols { grid-template-columns:minmax(0,1fr); gap:14px; }
+  .sheet-inner.cols>.panel:first-child { display:grid; grid-template-columns:98px minmax(0,1fr); align-items:center; padding:12px; }
+  .sheet .id-portrait { max-width:98px; }
+  .sheet .id-portrait .hs-plate b { font-size:8px; }
+  .sheet-inner.cols>.panel:last-child { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .sheet .panel { padding:15px; }
+  .sheet .skill-head { flex-wrap:wrap; }
+  .sheet .skill-name { font-size:15px; }
+  .hud-hero.portrait-button { width:48px; min-width:48px; height:48px; }
+  .hero-avatar { inset:6px; }
+  .hero-level-badge { font-size:9px; height:18px; min-width:18px; }
+}
+@media(prefers-reduced-motion:reduce) { .xp-value { transition:none; } }
+@media(min-width:721px) and (max-width:1280px) {
+  .hud-bar { display:grid; grid-template-columns:minmax(0,1fr) 60px auto; align-items:start; }
+  .hud-bar .spacer { display:none; }
+  .hud-place-chip { grid-column:1; grid-row:1; max-width:none; width:fit-content; max-width:100%; }
+  .hud-hero.portrait-button { grid-column:2; grid-row:1; }
+  .hud-resources { grid-column:3; grid-row:1; }
+  .hud-dock { grid-column:1/-1; grid-row:2; justify-self:end; max-width:100%; overflow-x:auto; }
+}
+.sheet:focus { outline:none; }
+.adv-choice .adv-growth { color:#a5d1bd; }

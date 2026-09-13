@@ -1,0 +1,34 @@
+# Primeira jornada jogável
+
+Entrega de 12/09/2026. Implementa tutorial, contratos, encontros de estrada, recompensas, continuidade da viagem e presença para ações locais. Mantém o mapa, suas dimensões e os retratos existentes.
+
+## Como jogar
+
+1. Escolha uma origem ou continue o save existente. O tutorial oferece o primeiro trabalho na sua localidade. Também pode ser dispensado e reaberto pelo botão **Jornada**.
+2. Aceite um dos quatro contratos. Todos concedem ouro, influência, comida e XP, além de habilidade, carreira e relações. Qualquer personagem pode seguir qualquer carreira.
+3. Use **Viajar ao destino**. O primeiro encontro ensina decisões; depois há seis tipos de encontros aleatórios com intervalo mínimo de 12 horas do mundo.
+4. Decida com a viagem pausada. Cada escolha apresenta custo, atributo, habilidade, chance e ganhos em caso de sucesso ou falha. Resultados que sobem de nível informam os pontos para distribuir.
+5. Na chegada, use **Entregar contrato**. A recompensa só é aplicada uma vez. Abra o retrato com o anel de XP para ver e melhorar a ficha.
+6. Em Jornada → Companheiros, encontre um dos outros protagonistas. Um contrato solicitado por ele rende +12 de relação. Volte ao local para convidá-lo; o requisito é relação 10.
+
+## Regras desta versão
+
+- Um contrato ativo de cada vez. O quadro local se renova a cada três dias do mundo. Concluir, abandonar ou perder o prazo encerra aquela oferta.
+- O prazo considera a duração da rota, com folga. Encerrar ou perder um contrato não paga recompensas.
+- Ouro, comida e influência são recursos persistidos. **A comida já é recebida e armazenada; compra, consumo diário e efeitos de abastecimento ficam para a etapa de economia.** Salários ainda não são cobrados automaticamente.
+- Escolhas probabilísticas usam atributos e habilidades: chance = 40% + atributo × 5,5% + habilidade × 0,3%, limitada a 95%. O sorteio do encontro é salvo antes da decisão.
+- Os ganhos de habilidade são distintos dos pontos de atributo. Cada nível concede um ponto de habilidade; os níveis 3, 5, 7 etc. concedem também um ponto de atributo.
+- Relógio, rota e distância percorrida são salvos durante a jornada, na chegada e quando a aba fica em segundo plano. Uma rota recarregada retorna pausada, na mesma posição.
+- Encontros, resultados, tutorial, contratos e crônica persistem no save existente. Dados antigos recebem os novos campos sem apagar o personagem.
+- Mudar de destino durante um trecho não teleporta o viajante. Termine a rota atual antes de escolher outra.
+- Recrutar tropas ou companheiros exige presença. O estoque anunciado para recrutamento corresponde ao estoque efetivo.
+
+## Interface
+
+O mapa abre próximo ao viajante. O botão da ficha é seu retrato, com um anel circular de XP e indicação de nível. A ficha tem dimensões limitadas ao espaço disponível, áreas de conteúdo menores e rolagem interna. Tutorial, encontros e ficha pausam a viagem.
+
+As conferências de apresentação, experiência de jogo e balanceamento ficam com o usuário, conforme solicitado. A compilação de produção é a conferência técnica da entrega.
+
+## Próxima etapa
+
+Implementar o primeiro combate entre grupos de acordo com [Combate](combate.md), e então conectar abastecimento, ferimentos e mercado à campanha. Outros tipos de recompensa podem usar o mesmo formato de contratos e encontros; itens, prisioneiros e terras dependem de seus respectivos sistemas.

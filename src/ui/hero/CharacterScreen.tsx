@@ -1,5 +1,6 @@
+import { canRecruitCompanion, recruitCompanion, COMPANION_RELATION } from "../../game/adventure";
 import { ResourceIcon } from "../ResourceIcon";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { heroById, ATTRIBUTE_EFFECT, ATTRIBUTE_LABEL, type Attributes } from "../../data/heroes";
 import { heroPortraitUrl } from "../../data/heroAssets";
 import { FAMILY_LABEL, skillsByFamily, type SkillId } from "../../data/skills";
@@ -39,7 +40,7 @@ const STATUS_LABEL: Record<CompanionState["status"], string> = {
 };
 
 /** Relação mínima para alguém aceitar seguir você. */
-export const RECRUIT_RELATION = 10;
+export const RECRUIT_RELATION = COMPANION_RELATION;
 
 function Meter({ label, value, max, tone }: { label: string; value: number; max: number; tone?: "xp" }) {
   return (
@@ -59,6 +60,25 @@ function Meter({ label, value, max, tone }: { label: string; value: number; max:
 }
 
 export function CharacterScreen({ onClose }: { onClose: () => void }) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    sheetRef.current?.focus();
+    const keys = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); }
+      if (event.key !== 'Tab') return;
+      const buttons = Array.from(sheetRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (!first) return;
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === sheetRef.current)) {event.preventDefault();last.focus();}
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === sheetRef.current)) {event.preventDefault();first.focus();}
+    };
+    document.addEventListener('keydown', keys);
+    return () => { document.removeEventListener('keydown', keys); if (previous?.isConnected) previous.focus({preventScroll:true}); };
+  }, []);
+
   const game = useGame();
   const [tab, setTab] = useState<Tab>("visao");
   const hero = game.heroId ? heroById.get(game.heroId) : null;
@@ -73,7 +93,7 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
   const companions = Object.values(game.companions);
 
   return (
-    <div className="sheet" role="dialog" aria-label={`Ficha de ${hero.name}`}>
+    <div className="sheet-backdrop"><div className="sheet" ref={sheetRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`Ficha de ${hero.name}`}>
       <header className="sheet-heading">
         <div><span className="hs-kicker">Crônica do viajante</span><h1>{hero.name}</h1><p>Nível {game.level} · {CAREER_LABEL[hero.archetype]} · Valdória</p></div>
         <button className="sheet-close" onClick={onClose} aria-label="Fechar a ficha">×</button>
@@ -115,7 +135,7 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* --------------------------- números --------------------------- */}
-            <div style={{ display: "grid", gap: 14 }}>
+            <div className="sheet-core">
               <div className="panel">
                 <Meter label="Experiência" value={game.xp} max={xpToNextLevel(game.level)} tone="xp" />
                 <div className="pair">
@@ -242,7 +262,7 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
               {companions.map((c) => {
                 const def = heroById.get(c.id);
                 const at = poiById.get(c.locationPoiId);
-                const canRecruit = c.status === "AVAILABLE" && c.relation >= RECRUIT_RELATION;
+                const canRecruit = canRecruitCompanion(c.id,game);
                 return (
                   <div className="comp" key={c.id}>
                     <div className="comp-portrait">
@@ -265,15 +285,15 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
                     </div>
                     <div className="comp-actions">
                       {c.status === "IN_PARTY" ? (
-                        <button className="btn" onClick={() => setCompanionStatus(c.id, "AVAILABLE")}>
+                        <button className="btn" disabled={!!game.journey?.destinationId} title="Dispense em uma localidade" onClick={() => setCompanionStatus(c.id, "AVAILABLE")}>
                           Dispensar
                         </button>
                       ) : (
                         <button
                           className="btn"
                           disabled={!canRecruit}
-                          title={canRecruit ? undefined : `Precisa de relação ${RECRUIT_RELATION}`}
-                          onClick={() => setCompanionStatus(c.id, "IN_PARTY")}
+                          title={canRecruit ? undefined : `Precisa de relação ${RECRUIT_RELATION} e de sua presença no local`}
+                          onClick={() => recruitCompanion(c.id)}
                         >
                           Recrutar
                         </button>
@@ -348,7 +368,7 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
-    </div>
+    </div></div>
   );
 }
 
