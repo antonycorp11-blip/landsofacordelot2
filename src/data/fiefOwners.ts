@@ -49,6 +49,23 @@ export function playerFiefs(): string[] {
 
 export type BuyBlock = "none" | "gold" | "relation" | "not_for_sale";
 
+/**
+ * O QUE ESTA TERRA CUSTA A VOCÊ.
+ *
+ * Não é o valor de tabela: é o valor menos o que a Casa gosta de você. Uma
+ * Casa que o estima vende por dois terços; uma que o tolera, pelo preço
+ * cheio. Isso faz relação valer dinheiro — e dá uma segunda rota para a
+ * primeira terra além da que a campanha entrega.
+ */
+export function priceFor(fiefId: string): number {
+  const fief = fiefById.get(fiefId);
+  if (!fief) return 0;
+  const owner = ownerOf(fiefId);
+  if (owner === "player") return 0;
+  const relation = Math.max(0, Math.min(70, relationWith(owner)));
+  return Math.round(fief.value * (1 - relation / 200));
+}
+
 /** Relação mínima com a Casa dona para ela sequer ouvir uma oferta. */
 export const BUY_RELATION = 10;
 
@@ -65,7 +82,7 @@ export function buyBlocker(fiefId: string): BuyBlock {
   const owner = ownerOf(fiefId);
   if (owner === "player") return "not_for_sale";
   if (relationWith(owner) < BUY_RELATION) return "relation";
-  if (getState().gold < fief.value) return "gold";
+  if (getState().gold < priceFor(fiefId)) return "gold";
   return "none";
 }
 
@@ -73,10 +90,10 @@ export function buyBlocker(fiefId: string): BuyBlock {
 export function buyFief(fiefId: string): BuyBlock {
   const blocker = buyBlocker(fiefId);
   if (blocker !== "none") return blocker;
-  const fief = fiefById.get(fiefId)!;
+  const price = priceFor(fiefId);
   update((s) => ({
     ...s,
-    gold: s.gold - fief.value,
+    gold: s.gold - price,
     fiefOwners: { ...s.fiefOwners, [fiefId]: "player" },
   }));
   emit();

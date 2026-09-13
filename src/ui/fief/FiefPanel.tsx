@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { TIER_LABEL, type Fief } from "../../world/fiefs";
-import { buyBlocker, buyFief, ownerOf, useFiefOwners, BUY_RELATION } from "../../data/fiefOwners";
+import { buyBlocker, buyFief, ownerOf, priceFor, useFiefOwners, BUY_RELATION } from "../../data/fiefOwners";
 import { houseById } from "../../data/houses";
 import { crestUrl } from "../../data/houseAssets";
 import { characterById, CLASS_LABEL } from "../../data/characters";
@@ -97,7 +97,7 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
 
         <div className="pair" style={{ marginTop: 8 }}>
           <span>Preço</span>
-          <b>{owner === "player" ? "—" : `${fief.value.toLocaleString("pt-BR")} moedas`}</b>
+          <b>{owner === "player" ? "—" : `${priceFor(fief.id).toLocaleString("pt-BR")} moedas`}</b>
         </div>
         {owner !== "player" && (
           <div className="pair">

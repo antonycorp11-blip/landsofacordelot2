@@ -268,7 +268,15 @@ function buildFiefs(): Fief[] {
       const rng = makeRng(`fief-${id}`);
       const noble = tier === "nobre";
       const population = Math.round((noble ? 900 : 320) * (0.7 + rng() * 0.8));
-      const income = Math.round((noble ? 14 : 5) * (0.75 + rng() * 0.6));
+      /**
+       * RENDA QUE MUDA A VIDA.
+       *
+       * A cinco moedas por dia um senhorio não pagava nem um soldado, e a
+       * primeira terra — que é a virada da partida — era simbólica. Agora um
+       * senhorio menor sustenta um punhado de homens e um nobre sustenta uma
+       * companhia. É isso que faz possuir valer mais que trabalhar.
+       */
+      const income = Math.round((noble ? 34 : 13) * (0.75 + rng() * 0.6));
       const defense = Math.round((noble ? 58 : 24) + rng() * 22);
 
       out.push({
@@ -285,8 +293,10 @@ function buildFiefs(): Fief[] {
         lordId: `lord_${id}`,
         population,
         income,
-        // Preço: a renda de uns dois anos, mais o que a muralha vale.
-        value: Math.round(income * 620 + defense * 34 + population * 1.6),
+        // Preço: a renda de uns oito meses, mais o que a muralha vale. O
+        // múltiplo caiu junto com a subida da renda, de propósito: terra
+        // continua custando o mesmo e passa a render o triplo.
+        value: Math.round(income * 250 + defense * 34 + population * 1.6),
         defense,
       });
     });

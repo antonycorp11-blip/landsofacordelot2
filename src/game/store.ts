@@ -23,6 +23,7 @@ import type { TroopCount, TroopId } from "../data/troops";
 import type { AgentClass, FiefOwner, HouseId } from "../world/types";
 
 import { freshAdventure, type AdventureState, type JourneySave } from "./adventureState";
+import type { War } from "./worldSim";
 
 /**
  * A versão faz parte da chave de propósito: quando uma mudança altera o
@@ -85,6 +86,11 @@ export type GameState = {
   /** Senhorios que trocaram de dono nesta campanha. O resto usa o dono histórico. */
   fiefOwners: Record<string, FiefOwner>;
 
+  /** Guerras entre Casas, movidas pelo mundo e não pelo jogador. */
+  wars: War[];
+  /** Último dia em que o tabuleiro se mexeu. */
+  worldTickDay: number;
+
   /** Último dia do mundo já cobrado. Impede pagar salário duas vezes. */
   dayProcessed: number;
   /** Dias seguidos sem soldo ou sem comida. É o que faz homem desertar. */
@@ -122,6 +128,8 @@ function blank(): GameState {
     localInfluence: {},
     houseRelations: { ...DEFAULT_RELATIONS },
     fiefOwners: {},
+    wars: [],
+    worldTickDay: 0,
     dayProcessed: 0,
     hardshipDays: 0,
   };

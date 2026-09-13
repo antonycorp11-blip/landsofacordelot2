@@ -30,10 +30,11 @@ import { SettlementPanel } from "../ui/settlement/SettlementPanel";
 import { CharacterScreen } from "../ui/hero/CharacterScreen";
 import { AgentPanel } from "../ui/agent/AgentPanel";
 import { useGame } from "../game/store";
-import { checkRoadEvent, checkStory, recordJourney, tutorialFlag } from "../game/adventure";
+import { checkOffer, checkOfferArrival, checkRoadEvent, checkStory, recordJourney, tutorialFlag } from "../game/adventure";
 import { AdventurePanel, type AdventureView } from "../ui/adventure/AdventurePanel";
 import { Coach } from "../ui/coach/Coach";
 import { StoryScene } from "../ui/story/StoryScene";
+import { OfferCard } from "../ui/offer/OfferCard";
 import { restoreJourney } from "../travel/journey";
 import { heroById } from "../data/heroes";
 import { troopTotal } from "../data/troops";
@@ -145,7 +146,10 @@ export function WorldMap() {
    * quando não há nada a fazer, que é quase sempre — e assim nenhum sistema
    * precisa lembrar de avisar a história de que algo aconteceu.
    */
-  useEffect(() => { checkStory(); }, [game]);
+  useEffect(() => { checkStory(); checkOfferArrival(); }, [game]);
+  // Chamados só procuram quem está livre, e a posição importa: o recado chega
+  // de um lugar perto de onde você está.
+  useEffect(() => { checkOffer(travel.stop); }, [game, travel.stop]);
 
   const openSheet = useCallback(() => {
     setAdventureView(null);
@@ -429,6 +433,7 @@ export function WorldMap() {
       {/* O guia não é uma tela: é uma linha dizendo a próxima ação, que some
           quando a ação acontece. */}
       <Coach stop={travel.stop} traveling={travel.state === "traveling"} />
+      <OfferCard onTravel={(id) => setQueuedDestination(nodeStop(id))} />
       {sheetOpen && <CharacterScreen onClose={() => setSheetOpen(false)} />}
       <AdventurePanel view={adventureView} onView={setAdventureView} onClose={() => setAdventureView(null)}
         onNavigate={(id) => {setAdventureView(null);setPanelPoiId(null);setQueuedDestination(nodeStop(id));}}

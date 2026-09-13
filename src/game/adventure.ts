@@ -7,11 +7,15 @@ import { makeRaid, resolveRaid, type Raid } from './raid';
 import { beginQuest, closingFor, complicationFor } from './quests';
 import { playRound, startBattle, type Order } from './battle';
 import { allSteps, chapterOfStep, currentStep, triggerMet } from './story';
+import { makeOffer, type Offer } from './offers';
+import type { RoadStop } from '../world/roadStops';
 import { isPresent } from './presence';
 import { applyDay, reportLine } from './daily';
+import { advanceWorld, WORLD_TICK_DAYS } from './worldSim';
 import { heroById } from '../data/heroes';
 import { skillById } from '../data/skills';
 import { CAREER_LABEL } from './careers';
+import { poiById } from '../world/valdoria';
 import type { AgentClass, RouteEdge } from '../world/types';
 import type { JournalKind } from '../ui/journal';
 
@@ -181,6 +185,13 @@ export function settleDays(upToDay: number) {
       const line = reportLine(result.report, next.troops);
       if (line) next = logged(next, 'evento', line);
     }
+    // O tabuleiro se mexe de poucos em poucos dias, e o que muda vira notícia.
+    if (upToDay - (next.worldTickDay || 0) >= WORLD_TICK_DAYS) {
+      const rolls = Array.from({ length: 12 }, () => Math.random());
+      const world = advanceWorld(next, upToDay, rolls);
+      next = world.state;
+      for (const item of world.news) next = logged(next, item.kind === 'paz' ? 'evento' : 'fronteira', item.text);
+    }
     next = { ...next, dayProcessed: upToDay };
     if (deserted > 0) {
       next = { ...next, adventure: { ...next.adventure, notice: {
@@ -313,6 +324,16 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
       const quest=next.adventure.quest!;
       next={...next,adventure:{...next.adventure,quest:{...quest,pending:null,choices:[...quest.choices,won?'venceu':'perdeu']}}};
       if (!won && next.adventure.contract) next=endContract(next,next.adventure.contract,'failed');
+    } else if (g.adventure.offer?.kind === 'cerco' && g.adventure.offer.accepted) {
+      // Cerco quebrado: a recompensa do chamado sai aqui, e não na chegada.
+      const offer = g.adventure.offer;
+      if (won) {
+        next = withReward(next, offer.reward);
+        text += ` O cerco de ${poiName(offer.poiId)} está quebrado, e a aldeia sabe quem o quebrou.`;
+      } else {
+        text += ` O bando continua onde estava, e ${poiName(offer.poiId)} vai pagar por isso.`;
+      }
+      next = { ...next, adventure: { ...next.adventure, offer: null } };
     } else if (!won) {
       // Derrota contra bando avulso: eles levam o que dá.
       const robbed=Math.round(next.gold*0.3);
@@ -382,6 +403,11 @@ export function chooseStoryOption(optionId: string): boolean {
   update(g => {
     let next = withReward(g, { ...(step.reward ?? {}), ...(option.reward ?? {}) });
     const levelUp = next.level > g.level;
+    // A campanha pode ENTREGAR terra. É o caminho para a primeira, que por
+    // compra levaria cinquenta e seis encargos.
+    if (option.grantFief) {
+      next = { ...next, fiefOwners: { ...next.fiefOwners, [option.grantFief]: 'player' } };
+    }
     if (option.flag) {
       next = { ...next, adventure: { ...next.adventure, story: {
         ...next.adventure.story,
@@ -398,3 +424,75 @@ export function chooseStoryOption(optionId: string): boolean {
   });
   return true;
 }
+
+/* ========================== CHAMADOS ================================== */
+
+/**
+ * Faz aparecer um chamado quando o jogador está sem nada nas mãos.
+ *
+ * A condição é deliberada: só procura quem está livre. Um chamado por cima de
+ * um encargo em curso seria ruído; um chamado num jogador ocioso é o que
+ * apaga o silêncio depois de uma entrega.
+ */
+export function checkOffer(stop: RoadStop) {
+  const s = getState();
+  if (!s.started) return;
+  const a = s.adventure;
+  const hours = s.journey?.hours ?? 0;
+  if (a.offer || a.contract || a.event || a.notice || a.raid || a.battle || a.story.pending) return;
+  if (hours < a.nextOfferHour) return;
+  const offer = makeOffer(stop, hours);
+  if (!offer) return;
+  update(g => logged({ ...g, adventure: { ...g.adventure, offer, nextOfferHour: hours + 46 } }, 'evento', `${offer.title}.`));
+}
+
+/** Aceitar põe o chamado no relógio; recusar o manda embora. */
+export function answerOffer(accept: boolean): boolean {
+  const s = getState();
+  const offer = s.adventure.offer;
+  if (!offer) return false;
+  update(g => accept
+    ? { ...g, adventure: { ...g.adventure, offer: { ...offer, accepted: true } } }
+    : logged({ ...g, adventure: { ...g.adventure, offer: null } }, 'evento', `Você deixou passar: ${offer.title}.`));
+  return true;
+}
+
+/** Chegou ao lugar do chamado, ou o prazo acabou. */
+export function checkOfferArrival() {
+  const s = getState();
+  const offer = s.adventure.offer;
+  if (!offer) return;
+  const hours = s.journey?.hours ?? 0;
+
+  if (hours > offer.expiresAt) {
+    update(g => logged({ ...g, adventure: { ...g.adventure, offer: null } }, 'evento',
+      `O prazo de "${offer.title}" acabou sem você.`));
+    return;
+  }
+  if (!offer.accepted || !isPresent(offer.poiId, s)) return;
+
+  // Cerco: chegar não basta, é preciso quebrar o bando.
+  if (offer.kind === 'cerco' && offer.band) {
+    update(g => ({ ...g, adventure: { ...g.adventure, battle: startBattle(g, offer.band!, `Bando em ${poiName(offer.poiId)}`), offer: { ...offer, accepted: true } } }));
+    return;
+  }
+
+  update(g => {
+    const next = withReward(g, offer.reward);
+    const levelUp = next.level > g.level;
+    return logged({ ...next, adventure: { ...next.adventure, offer: null, notice: {
+      title: offer.title,
+      text: (offer.kind === 'convocacao'
+        ? 'Você chega, é recebido e ouve o que tinham a dizer. Foi útil ter vindo.'
+        : 'A caravana chega inteira, e o carroceiro conta as moedas na sua mão sem discutir.')
+        + (levelUp ? ` Nível ${next.level}: abra sua ficha para distribuir os pontos.` : ''),
+      levelUp,
+    } } }, 'evento', `${offer.title}: cumprido.`);
+  });
+}
+
+function poiName(id: string): string {
+  return poiById.get(id)?.name ?? id;
+}
+
+export type { Offer };

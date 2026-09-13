@@ -6,6 +6,7 @@ import type { Raid } from './raid';
 import type { QuestState } from './quests';
 import type { Battle } from './battle';
 import { freshStory, type StoryState } from './story';
+import type { Offer } from './offers';
 
 export type JourneySave = {
   /** Nó em que o viajante está, ou `null` quando ele parou no meio da estrada. */
@@ -61,6 +62,10 @@ export type AdventureState = {
   eventCount: number;
   /** Batalhas vencidas, para a campanha principal poder pedir uma. */
   battlesWon: number;
+  /** Chamado com prazo que apareceu sozinho. Um por vez. */
+  offer: Offer | null;
+  /** Hora do mundo em que o próximo chamado pode aparecer. */
+  nextOfferHour: number;
   /** A linha que atravessa a partida inteira. */
   story: StoryState;
   nextEventHour: number;
@@ -72,7 +77,7 @@ export type AdventureState = {
 export function freshAdventure(): AdventureState {
   return {
     tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, politicsSeen:false },
-    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, eventCount:0, battlesWon:0, story:freshStory(),
+    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, eventCount:0, battlesWon:0, offer:null, nextOfferHour:20, story:freshStory(),
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
 }

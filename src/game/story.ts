@@ -49,6 +49,15 @@ export type StoryOption = {
   reward?: Reward;
   /** Marca deixada na campanha. Passos futuros podem ler. */
   flag?: string;
+  /**
+   * Entrega um senhorio ao jogador.
+   *
+   * É o item mais importante desta estrutura. Comprando, a primeira terra
+   * custaria cinquenta e seis encargos — e ninguém joga cinquenta e seis
+   * encargos para começar a jogar. A campanha DÁ a primeira, cedo e pequena,
+   * e é a partir dela que o jogo deixa de ser um emprego.
+   */
+  grantFief?: string;
 };
 
 export type StoryScene = {
@@ -172,18 +181,36 @@ const CHAPTER_I: Chapter = {
       id: "c1_peso",
       objective: "Ganhar peso suficiente para ser ouvido (influência 25)",
       detail:
-        "Perguntar a um lorde de quem é uma insígnia exige que ele tenha algum motivo para responder. Esse motivo chama-se influência.",
+        "Perguntar a um lorde de quem é uma insígnia exige que ele tenha algum motivo para responder. Esse motivo chama-se influência — e é ela que faz a Coroa lembrar do que prometeu.",
       trigger: { kind: "influence", amount: 25 },
       scene: {
+        speakerId: "aldren_valdoria",
+        poiId: "castelo_real",
         text:
-          "Já não é preciso explicar quem você é ao chegar. Em três regiões o seu nome anda sozinho, e anda antes de você. " +
-          "Agora dá para bater numa porta grande e esperar que ela abra.",
+          "Um mensageiro da Coroa o alcança antes que você chegue a lugar nenhum, e o que ele traz não é uma carta: é uma escritura. " +
+          "«Prometi terra», diz o Rei quando você chega. «Não prometi boa terra.» " +
+          "Ponte Velha é uma torre num vau, com quarenta almas e uma ponte que ninguém conserta há trinta anos. " +
+          "«É pequena e é sua. A partir de hoje você tem o que perder — e homem com o que perder ouve melhor o que lhe dizem.»",
         options: [
           {
-            id: "pronto",
-            label: "Então é hora de perguntar a quem sabe.",
-            result: "É hora. E quem sabe raramente gosta de ser perguntado.",
-            reward: { xp: 120, influence: 5 },
+            id: "aceitar",
+            label: "Aceitar a escritura.",
+            hint: "Ponte Velha passa a render todo dia",
+            result:
+              "Você assina com a mão que não escreve bem e a torre passa a ser sua. Não é um salão. É a primeira coisa neste reino que responde pelo seu nome.",
+            reward: { xp: 160, influence: 6, houseRelation: { houseId: "house_valdoria", amount: 8 } },
+            grantFief: "f_ponte_velha",
+            flag: "tem_terra",
+          },
+          {
+            id: "mais",
+            label: "Eu esperava mais que uma torre caindo.",
+            hint: "Ouro junto · e o Rei registra o que você achou pouco",
+            result:
+              "«Todo mundo esperava.» Ele empurra a escritura e uma bolsa. «Leve as duas e não me faça repetir.»",
+            reward: { xp: 140, gold: 180, influence: 2, houseRelation: { houseId: "house_valdoria", amount: -3 } },
+            grantFief: "f_ponte_velha",
+            flag: "tem_terra",
           },
         ],
       },
