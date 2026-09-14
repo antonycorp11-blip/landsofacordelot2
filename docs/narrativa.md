@@ -39,7 +39,7 @@ que direito.
 
 ## 3. O que aconteceu, de verdade
 
-Há trezentos anos havia sete reinos e **um rei** sobre todos.
+Há trezentos anos havia sete reinos e **um rei** sobre todos: **Antônios**.
 
 Ele morreu sem herdeiro, e a guerra de sucessão começou antes do corpo esfriar.
 
@@ -71,13 +71,13 @@ E há uma coisa que nem as Casas sabem. Está na seção 6.
 
 ### A Casa Valdória
 
-Eles **são** descendentes do velho rei — por um ramo lateral, primos de
+Eles **são** descendentes de Antônios — por um ramo lateral, primos de
 primos, sangue distante demais para ter valido como herança. Foi por isso que
 não herdaram nada em trezentos anos, e é por isso que continuam sendo apenas a
 Casa mais forte.
 
 Eles sabem exatamente o que lhes falta. Um Protetor que junte os sete deixa de
-ser provisório: vira rei, com a lei do próprio fundador nas costas.
+ser provisório: vira rei, com a lei do próprio Antônios nas costas.
 
 Por isso vêm recolhendo em segredo há três gerações — comprando, confiscando,
 tomando de linhagens extintas.
@@ -191,7 +191,7 @@ Ir contra a própria Balança é permitido, é dramático, e é caro.
 
 O segredo que nem as Casas conhecem, e a espinha do Arco V.
 
-**O velho rei tinha um filho.**
+**Antônios tinha um filho.**
 
 Nascido fora do casamento, de uma mulher do povo, e por isso nunca reconhecido.
 O rei o mandou embora com dinheiro e silêncio, e morreu deixando lavrada uma
@@ -217,13 +217,71 @@ Boran Dravenor não abre os portões há três anos, nem para a Coroa, nem para 
 irmão. O reino inteiro tem uma teoria: peste, loucura, um cerco que não acabou.
 
 A verdade é que o arquivista dele achou a confissão no cofre da fortaleza — e
-Boran fez o que ninguém mandou fazer: **seguiu a linhagem.**
+Boran fez o que ninguém mandou fazer: **foi atrás da linhagem.**
 
-Ela termina na região dele. Ele sabe o nome da família. São ninguéns.
+Chegou perto. Não chegou lá. E parou de propósito, porque entendeu, no meio do
+caminho, que no dia em que alguém souber o nome, ou a Coroa mata aquela gente,
+ou coroa um deles como boneco — e ele não conseguia pensar numa terceira saída.
 
-E ele não consegue pensar numa terceira saída: no dia em que mais alguém
-souber, ou a Coroa mata todos eles, ou coroa um deles como boneco. Então ele
-fechou a porta e parou de responder cartas.
+Então fechou a porta, parou de responder cartas, e deixou o trabalho pela
+metade dentro de uma fortaleza que ninguém consegue entrar.
+
+### O que ele não conta a ninguém
+
+**O nome do herdeiro fica em aberto até o fim do jogo.** Não é enrolação: é o
+único fio que atravessa a campanha inteira sem fechar, e é a última coisa que
+o jogador descobre — depois dos sete selos, depois da guerra, na mesa da
+decisão final.
+
+O que Arco V entrega são **três marcas**, e é com elas que o jogador anda pelo
+resto do jogo:
+
+**1. O nome trocado duas vezes.** A família mudou de nome no exílio e mudou
+outra vez cerca de um século depois. Boran achou a primeira troca. A segunda é
+onde ele empacou.
+
+**2. O ofício.** Antônios não mandou o menino embora sem nada: pôs a criança
+num ofício, de propósito humilde, que atravessa séculos sem chamar atenção e
+que uma família passa de pai para filho. A família manteve.
+
+**3. A marca que se ensina.** O que foi passado adiante não é objeto — objeto
+se vende na primeira fome. É um **hábito**: uma coisa que aquela família
+ensina a cada geração sem ninguém saber mais por quê.
+
+E as três apontam para alguém que o jogador conheceu **na primeira hora de
+jogo** e nunca mais pensou a respeito.
+
+### A proposta: o escrivão de Elmwood
+
+*(Escolha de autor. Se for mudar, mude antes de escrever o Arco I.)*
+
+É um dos quatro que olham o selo na primeira hora — aquele que **reconhece uma
+marca de chancelaria que não se usa há três séculos**, num vilarejo de nada, e
+não sabe dizer de onde tirou isso. Aprendeu com o pai. O pai aprendeu com o
+dele.
+
+Ofício de escrivão. Hábito ensinado sem motivo. Nome que já foi outro duas
+vezes.
+
+Está plantado na primeira hora, não custa nada, e recontextualiza a campanha
+inteira quando cai. E o jogador tratou aquele homem de algum jeito, vinte e
+cinco horas antes, sem saber quem ele era.
+
+### O fio, depois do Arco V
+
+A pergunta **"quem é o herdeiro?"** fica aberta no quadro de investigação a
+partir do Arco V e não sai de lá.
+
+- **Arco VI** dá a marca do ofício. Os arquivos do templo de Caelmont guardam
+  três séculos de batismo e ofício, e ninguém nunca teve motivo para cruzá-los.
+- **Arco VII** dá a segunda troca de nome, porque a chancelaria da Coroa é o
+  único lugar do reino que registrou as duas.
+- Quem juntar as três **fecha o nome antes da cena final** e chega à mesa da
+  decisão sabendo.
+
+**É perfeitamente possível não fechar.** Quem ignorar o quadro chega ao fim sem
+saber, decide sem aquilo na balança, e lê no epílogo que um homem morreu velho
+em Elmwood sem nunca ter sabido de nada.
 
 ---
 
@@ -342,34 +400,34 @@ não compensa, e um punhado de caminhos que dependem de gente — um arquivista
 que saiu e não quis dizer por quê, o irmão de Boran, um túnel de escoamento,
 uma negociação com um homem que decidiu não falar com ninguém.
 
-**O que ele acha lá dentro não é o selo.** É a confissão (seção 6). O selo
-está ali também, murado, e naquele momento vira a segunda coisa mais
+**O que ele acha lá dentro não é o selo.** É a confissão de Antônios (seção 6).
+O selo está ali também, murado, e naquele momento vira a segunda coisa mais
 importante da sala.
 
-**Segunda metade: a linhagem.** Ele refaz o caminho que Boran já fez —
-registros de paróquia, uma família que trocou de nome duas vezes, uma herança
-que ninguém reclamou — e chega a **uma pessoa viva**, na região de Dravenor,
-que nunca teve nada e não sabe de nada.
+**Segunda metade: Boran.** O arco não termina num nome — termina numa conversa
+com o homem que passou três anos trancado com essa coisa na mão.
 
-E essa pessoa **não quer.** Tem uma vida, gente, trabalho, e entende
-perfeitamente que aceitar aquilo é morrer.
+Ele mostra até onde chegou, mostra onde empacou, e diz por que parou. E é a
+primeira pessoa do jogo inteiro que faz ao jogador a pergunta que o jogo vai
+fazer no fim: *e se existir alguém com mais direito que você? Você quer mesmo
+saber quem é?*
 
-É o golpe na cabeça do jogador: o dono legítimo de tudo é um plebeu que não
-quer, e a ideia de que alguém nasce para mandar acaba de virar um acidente de
-cartório.
+O jogador sai de Pedra Cinza com **o selo, a confissão e três marcas** — e com
+uma pergunta aberta que não fecha em mais dois arcos.
 
 **Quatro saídas, e a Balança lê cada uma:**
 
 | Saída | | |
 | --- | --- | --- |
-| Queimar a confissão | os selos voltam a significar alguma coisa | **+12 Coroa** |
-| Tomar o herdeiro sob proteção | um boneco seu, com o melhor direito do reino | +8 Coroa |
-| Contar a ele e respeitar a recusa | ele fica com a prova e com o silêncio | −6 Cinzas |
+| Queimar a confissão | os selos voltam a significar alguma coisa, e o fio morre aqui | **+12 Coroa** |
+| Guardar em segredo | a arma fica na sua mão, e só na sua | +4 Coroa |
+| Continuar a busca | você quer o nome, e ainda não sabe para quê | −2 Cinzas |
 | Publicar | o direito de toda Casa desaba junto, a sua inclusive | **−14 Cinzas** |
 
 A confissão publicada é **a arma do Arco VII**: sem ela, tirar Valdória do
 poder é guerra; com ela, a legitimidade da Coroa evapora antes da primeira
-batalha.
+batalha. Queimá-la é o contrário — é escolher que os selos continuem valendo,
+porque os selos são o direito *dele*.
 
 **Ensina:** companheiro, perícia, intriga, infiltração.
 
@@ -386,6 +444,11 @@ Provar isso é destruir uma fé. Convencer o templo é um arco de teologia e
 influência; roubar é fácil e caro — o Vale Sagrado inteiro vira seu inimigo, e
 Caelmont fala por metade do reino no púlpito.
 
+**O fio do herdeiro passa por aqui.** Os arquivos do templo guardam três
+séculos de batismo e ofício, e ninguém nunca teve motivo para cruzá-los. Quem
+procurar acha **a marca do ofício** — e quem não procurar nunca fica sabendo
+que ela estava ali.
+
 **Ensina:** influência, relação com Casa, consequência religiosa, reputação.
 
 ---
@@ -398,7 +461,12 @@ Ela tem dois. Ele tem cinco. Não há investigação que resolva isto.
 É guerra aberta, e ele só a vence se as outras Casas decidirem que uma Coroa
 com dois selos é pior que um plebeu com cinco. Tudo o que ele construiu — a
 Casa, os feudos, os vassalos, o exército, a palavra que deu e cumpriu, e a
-confissão, se ele a tiver publicado — é o que compra essa decisão.
+confissão de Antônios, se ele a tiver publicado — é o que compra essa decisão.
+
+**E a chancelaria da Coroa é o fim do fio.** É o único lugar do reino que
+registrou **as duas trocas de nome**, porque foi a Coroa que assinou as duas.
+Quem entrar no Castelo Real com as outras duas marcas na mão sai com o nome do
+herdeiro — e só descobre para que serve na cena seguinte.
 
 ---
 
@@ -412,9 +480,25 @@ A Balança está no alto da tela desde o primeiro minuto, e agora ela é lida em
 voz alta: as pessoas que o cercam dizem o que esperam dele, e o que esperam é
 o que ele vem fazendo há vinte horas.
 
+E se ele fechou o fio do herdeiro (seção 6), há **uma terceira coisa na mesa**:
+um homem com tinta nos dedos, que não quer nada daquilo e tem mais direito que
+todo mundo naquela sala.
+
+Ele não é uma terceira porta. Ele é o peso que muda o que cada porta significa:
+
+- **reinar** com o herdeiro vivo e conhecido é reinar com um problema para
+  sempre, e ele sabe disso na hora em que põe a coroa;
+- **queimar** é a única coisa que protege aquele homem, porque no dia em que os
+  selos deixam de valer o nome dele deixa de ser perigoso;
+- e há o caminho do meio, que é coroá-lo e ficar atrás dele — o que continua
+  sendo um rei, e a Balança trata como tal.
+
+Quem chegou aqui sem fechar o fio decide sem nada disso, e descobre no epílogo
+o que decidiu sem saber.
+
 ### Reinar
 Um rei vindo do povo. Nenhuma das sete Casas, nenhum sangue, nenhum título
-herdado — só os sete selos e a lei do velho rei.
+herdado — só os sete selos e a lei de Antônios.
 
 ### Queimar
 Reunir os sete e **destruí-los**. Sem selos não há lei; sem lei não há rei; e
@@ -490,12 +574,15 @@ contou a ninguém.
 **Garrick Karneth** — odeia o jogador desde o primeiro dia e é o único que diz
 a verdade na cara.
 
-**Boran Dravenor** — fechou os portões porque descobriu um nome e não
-conseguiu pensar numa terceira saída.
+**Boran Dravenor** — fechou os portões porque chegou perto de um nome e
+entendeu, no meio do caminho, que não queria chegar. Passou três anos sozinho
+com a pergunta que o jogo vai fazer no fim.
 
-**O herdeiro** — vive na região de Dravenor, não sabe de nada e não quer nada.
-Tem o melhor direito do reino e uma vida que gosta. *(Nome e ofício a definir
-— tem de ser um trabalho que o jogador reconheça.)*
+**O escrivão de Elmwood** — um dos quatro que olham o selo na primeira hora.
+Lê marca de chancelaria que não se usa há três séculos e não sabe explicar por
+quê: aprendeu com o pai, que aprendeu com o dele. Tem o melhor direito do
+reino e nunca vai querer nada com isso. *(O jogador só descobre no fim — e o
+tratou de algum jeito vinte e cinco horas antes.)*
 
 **Irmã Venna, de Caelmont** — reza há quarenta anos diante de uma peça de ouro
 sem saber o que ela é.
@@ -509,10 +596,13 @@ aconteceu à Casa Rosethorne.
 
 ## 12. Lacunas — decisão do autor
 
-1. **O nome do último rei dos sete reinos.**
-2. **Nome, ofício e lugar do herdeiro** do Arco V.
-3. **O que aconteceu com o filho bastardo** entre o exílio e hoje — três
+1. **O ofício e o hábito herdados** — que coisa exatamente a família do
+   escrivão ensina há três séculos sem saber por quê. Tem de ser pequena,
+   concreta e mostrável na primeira hora de jogo, sem chamar atenção nenhuma.
+2. **O que aconteceu com o filho de Antônios** entre o exílio e hoje — três
    séculos de uma família que não sabia o que era.
+3. **Por que Antônios não o reconheceu.** Covardia, cálculo, ou proteção. A
+   resposta muda como o jogador lê o velho rei na última hora de jogo.
 
 ---
 
@@ -530,3 +620,7 @@ aconteceu à Casa Rosethorne.
 | **Campanha** | **24h – 29h** |
 | **Com o sandbox** | 45h+ |
 | Segundo estágio | fora do escopo |
+
+O fio do herdeiro atravessa os Arcos V, VI e VII sem tempo próprio: ele não
+tem missão dedicada, só três marcas que caem dentro de arcos que já existem.
+É de graça em horas e é o que o jogador vai lembrar.
