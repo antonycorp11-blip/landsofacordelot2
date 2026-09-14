@@ -9,6 +9,7 @@ import { issuesAt } from '../../game/issues';
 import { formatDuration } from '../../world/time';
 import { resetCampaign, useGame } from '../../game/store';
 import { storyPeople } from '../../data/storyPeople';
+import { audienceOpen, favoursDone, openFavours, FAVOURS_FOR_AUDIENCE } from '../../data/favours';
 import { CAREER_LABEL } from '../../game/careers';
 import { isPresent, locationId } from '../../game/presence';
 import { withReward, type Reward } from '../../game/experience';
@@ -306,6 +307,11 @@ function WorkBoard({game,onNavigate}:{game:ReturnType<typeof useGame>;onNavigate
   const allLeads=game.knowledge.evidence.includes('royal_seal')
     ? storyPeople.filter(p=>!game.storyFlags.includes(p.doneFlag))
     : [];
+  // Pedido aceito vem antes de pista, e pista antes de encargo. É a ordem em
+  // que as coisas cobram o jogador.
+  const errands=openFavours(game.storyFlags);
+  const feitos=favoursDone(game.storyFlags);
+  const audiencia=audienceOpen(game.storyFlags);
 
   // Só a região onde ele está: mandar um recém-chegado atravessar o reino
   // atrás de um encargo de aldeia é o contrário de dar direção.
@@ -330,16 +336,33 @@ function WorkBoard({game,onNavigate}:{game:ReturnType<typeof useGame>;onNavigate
    * está mais perto é o que ele consegue fazer hoje.
    */
   const SLOTS=5;
-  const leads=allLeads.slice(0,3);
-  const around=allAround.slice(0,SLOTS-leads.length);
-  const rest=allLeads.length-leads.length+allAround.length-around.length;
+  const pedidos=errands.slice(0,3);
+  const leads=allLeads.slice(0,Math.max(0,Math.min(3,SLOTS-pedidos.length-(audiencia?1:0))));
+  const around=allAround.slice(0,Math.max(0,SLOTS-pedidos.length-leads.length-(audiencia?1:0)));
+  const rest=errands.length-pedidos.length+allLeads.length-leads.length+allAround.length-around.length;
 
-  if(!allLeads.length&&!allAround.length) return (
+  if(!errands.length&&!audiencia&&!allLeads.length&&!allAround.length) return (
     <div className="adv-location"><h3>Nada chamando você</h3>
       <p>Nenhuma pista aberta e nenhuma localidade desta região com serviço agora. Ande até outra região e pergunte por lá.</p></div>
   );
 
   return <>
+    {audiencia && <>
+      <span className="adv-eyebrow">A porta abriu</span>
+      <article className="adv-work open">
+        <b>Castelo Verde</b><span>Lorde Edran Silvarden recebe você</span>
+        <button className="btn primary" disabled={traveling} onClick={()=>onNavigate('castelo_verde')}>{traveling?'A caminho':'Partir'}</button>
+      </article>
+    </>}
+
+    {pedidos.length>0 && <>
+      <span className="adv-eyebrow">Pediram isto a você{audiencia?'':` · ${feitos} de ${FAVOURS_FOR_AUDIENCE} para ser recebido`}</span>
+      {pedidos.map(f=><article className="adv-work" key={f.id}>
+        <b>{f.short}</b><span>{poiById.get(f.poiId)?.name}</span>
+        <button className="btn" disabled={traveling} onClick={()=>onNavigate(f.poiId)}>{traveling?'A caminho':'Partir'}</button>
+      </article>)}
+    </>}
+
     {leads.length>0 && <>
       <span className="adv-eyebrow">Por causa do que você carrega</span>
       {leads.map(p=><article className="adv-work" key={p.id}>

@@ -3,6 +3,7 @@ import { DialogueScreen, type DialogueOption, type DialogueScene } from "./Dialo
 import { faceKindOf, greetingOf, notablesAt, type Notable } from "../../data/notables";
 import { charactersAt } from "../../data/characters";
 import { storyPeopleAt } from "../../data/storyPeople";
+import { favourAt } from "../../data/favours";
 import { openScene } from "../../game/sceneRunner";
 import { portraitUrl } from "../../data/characterAssets";
 import { holdingFor } from "../../data/holdings";
@@ -54,8 +55,11 @@ export function TownTalk({
   // Gente da história que está aqui e que o jogador ainda não procurou. Elas
   // não entram no fluxo de encargos: abrem cena, que é outra coisa.
   const leads = storyPeopleAt(poi.id, game.storyFlags, game.knowledge.evidence);
+  // Um pedido que se cumpre aqui vem antes de qualquer outra coisa: é o motivo
+  // pelo qual ele atravessou a região.
+  const errand = favourAt(poi.id, game.storyFlags);
   const [node, setNode] = useState<Node>(() =>
-    ({ at: leads.length || people.length > 1 ? "who" : "talk", person: people[0]?.id ?? "" } as Node));
+    ({ at: errand || leads.length || people.length > 1 ? "who" : "talk", person: people[0]?.id ?? "" } as Node));
 
   const house = houseById.get(holding.controllerHouseId);
   const here = isPresent(poi.id, game);
@@ -101,7 +105,13 @@ export function TownTalk({
         ...base({ name: poi.name, role: `${people.length + leads.length} pessoas atendem aqui` }),
         text: `Você entra em ${poi.name}. Há quem responda por este lugar — e cada um responde por uma parte dele.`,
         options: [
-          // Primeiro quem tem a ver com o que você carrega. A cena substitui
+          ...(errand ? [{
+            id: `errand:${errand.id}`,
+            label: errand.short,
+            hint: "O que você veio fazer aqui",
+            onPick: () => { onClose(); openScene(errand.sceneId); },
+          }] : []),
+          // Depois quem tem a ver com o que você carrega. A cena substitui
           // a conversa: fecha esta tela e abre a outra.
           ...leads.map((p) => ({
             id: p.id,

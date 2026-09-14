@@ -36,14 +36,16 @@ Isto é a fila, e está em ordem.
    guarda) hoje aparecem como pistas no quadro e não fazem nada. São a próxima
    coisa a construir, e o escrivão é **Mestre Aled Vern**, que importa muito
    mais do que parece.
-2. **A audiência com Edran Silvarden** — o fim do Arco I, onde o jogador ouve
+2. ~~Os quatro dando serviço~~ — **feito.** Cada um deixa um pedido em
+   `src/data/favours.ts`, com cena de entrega em `scenes/favours.ts`. Três
+   cumpridos abrem o Castelo Verde.
+   **A audiência com Edran Silvarden** — o fim do Arco I, onde o jogador ouve
    "Antônios" e "quem tiver os sete deve reinar" pela primeira vez, e escolhe
    devolver o selo ou ficar com ele.
    *(Com a carta de Aled na mão: ela não abre porta de lorde, abre porta de
    quem abre porta de lorde.)*
-3. **Encargo que nasce de pessoa com nome.** A aba *Trabalho* já diz para onde
-   ir, mas o que espera lá ainda é encargo gerado. Os quatro de Elmwood dão
-   informação e não dão serviço.
+3. **A audiência com Edran** — a cena de fecho do Arco I. A porta já abre com
+   três favores cumpridos; falta a conversa do outro lado dela.
 4. **A localidade como cena**, não como painel.
 5. **Capítulos em `story.ts`** para o fio longo dos Arcos, já que o array está
    vazio.

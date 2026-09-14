@@ -12,6 +12,7 @@
  */
 import { carriageScene } from "./scenes/carriage";
 import { guardScene, merchantScene, priestScene, scribeScene } from "./scenes/leads";
+import { deserterScene, halkaScene, postScene, sawmillScene } from "./scenes/favours";
 import type { Cinematic, SceneChoice, SceneOutcome } from "./cinematics";
 import { startBattle } from "./battle";
 import { withReward } from "./experience";
@@ -25,6 +26,10 @@ const SCENES: Record<string, Cinematic> = {
   [merchantScene.id]: merchantScene,
   [priestScene.id]: priestScene,
   [guardScene.id]: guardScene,
+  [halkaScene.id]: halkaScene,
+  [sawmillScene.id]: sawmillScene,
+  [postScene.id]: postScene,
+  [deserterScene.id]: deserterScene,
 };
 
 export function sceneById(id: string): Cinematic | undefined {

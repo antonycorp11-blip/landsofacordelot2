@@ -178,3 +178,7 @@
   display: inline-flex; align-items: center;
 }
 
+
+/* A porta do lorde: a única linha desta lista que muda de cor. */
+.adv-work.open { border-left-color: var(--ui-gold); background: #c9a85c14; }
+.adv-work.open b { color: #f3dc9b; }
