@@ -27,6 +27,12 @@ export const WanderersLayer = memo(function WanderersLayer({
     <g>
       {agents.map((a) => {
         const house=a.wanderer.houseId?houseById.get(a.wanderer.houseId):undefined;
+        const tracking=a.playerPursuit==="tracking";
+        const searching=a.playerPursuit==="searching";
+        const lost=a.playerPursuit==="lost";
+        const pursuitColors=tracking?{primary:"#ef7c55",secondary:"#5f2724"}
+          :searching?{primary:"#dfb94f",secondary:"#62502d"}
+          :lost?{primary:"#71847c",secondary:"#33403c"}:undefined;
         return (
         <MapAgentSprite
           key={a.wanderer.id}
@@ -35,8 +41,8 @@ export const WanderersLayer = memo(function WanderersLayer({
           pxPerUnit={pxPerUnit}
           moving={a.moving}
           headingRef={a.headingRef}
-          locator={a.wanderer.id === pursuedForceId || a.wanderer.routine === "pilhagem" || a.wanderer.routine === "exército"}
-          colors={a.wanderer.id === pursuedForceId ? { primary: "#e6b84f", secondary: "#78402e" } : a.wanderer.routine === "pilhagem" ? { primary: "#d45c4e", secondary: "#562a26" } : house ? {primary:house.color,secondary:house.secondaryColor}:undefined}
+          locator={tracking||searching||lost||a.wanderer.id === pursuedForceId || a.wanderer.routine === "pilhagem" || a.wanderer.routine === "exército"}
+          colors={pursuitColors??(a.wanderer.id === pursuedForceId ? { primary: "#e6b84f", secondary: "#78402e" } : a.wanderer.routine === "pilhagem" ? { primary: "#d45c4e", secondary: "#562a26" } : house ? {primary:house.color,secondary:house.secondaryColor}:undefined)}
           partySize={troopTotal(a.troops)}
           onSelect={() => onSelect(a)}
         />

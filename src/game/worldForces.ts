@@ -32,8 +32,8 @@ export type WorldForceState = {
   searchRadius: number;
   /** Estado legível da caça ao jogador. */
   playerPursuit: "none" | "tracking" | "searching" | "lost";
-  /** Próximo nó vasculhado, escolhido de forma determinística. */
-  searchTargetId: string | null;
+  /** Próximo ponto vasculhado, escolhido de forma determinística. */
+  searchTargetPosition: Point | null;
 };
 
 export type WorldForceBattleSource = {
@@ -68,7 +68,7 @@ export function freshForceState(id: string, at: string, resting = 0): WorldForce
     lastSeenAt:-1,
     searchRadius:0,
     playerPursuit:"none",
-    searchTargetId:null,
+    searchTargetPosition:null,
   };
 }
 
@@ -79,13 +79,14 @@ export function normalizeForceState(id:string,state:Partial<WorldForceState>&Pic
     cargo:{...(state.cargo??{})},
     position:state.position&&Number.isFinite(state.position.x)&&Number.isFinite(state.position.y)?{...state.position}:null,
     knownPlayerPosition:state.knownPlayerPosition&&Number.isFinite(state.knownPlayerPosition.x)&&Number.isFinite(state.knownPlayerPosition.y)?{...state.knownPlayerPosition}:null,
+    searchTargetPosition:state.searchTargetPosition&&Number.isFinite(state.searchTargetPosition.x)&&Number.isFinite(state.searchTargetPosition.y)?{...state.searchTargetPosition}:null,
   };
 }
 
 /** Ordem usada pela história ou por outro sistema para iniciar uma caçada. */
 export function beginPlayerPursuit(force:WorldForceState,playerPosition:Point,worldHours:number):WorldForceState {
   return {...force,knownPlayerPosition:{...playerPosition},lastSeenAt:worldHours,searchRadius:0,
-    playerPursuit:"tracking",searchTargetId:null};
+    playerPursuit:"tracking",searchTargetPosition:{...playerPosition}};
 }
 
 export function playerPursuitLabel(force:WorldForceState):string|null {

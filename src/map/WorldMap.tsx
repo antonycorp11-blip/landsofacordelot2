@@ -243,7 +243,12 @@ export function WorldMap() {
 
   // Agentes de ambiente: seguem a mesma malha de estradas, a mesma velocidade
   // e a mesma pausa do viajante, mas não escrevem no relógio do mundo.
-  const wanderers = useWanderers({ speed: travel.speed, paused: travel.paused });
+  const wanderers = useWanderers({
+    speed:travel.speed,
+    paused:travel.paused,
+    playerPositionRef:travel.posRef,
+    worldHours:travel.worldHours,
+  });
   const readAgent = readAgentId ? wanderers.find((agent) => agent.wanderer.id === readAgentId) ?? null : null;
   const pursuitAimRef = useRef<Point | null>(null);
 

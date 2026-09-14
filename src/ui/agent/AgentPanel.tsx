@@ -1,7 +1,8 @@
 import { useEffect, useState, type RefObject } from "react";
 import { troops as troopTypes, troopTotal } from "../../data/troops";
 import { readForce, strengthWord } from "../../game/estimate";
-import { aggressionCost, wandererById } from "../../game/worldForces";
+import { aggressionCost, playerPursuitLabel, wandererById } from "../../game/worldForces";
+import { playerTrailConfidence } from "../../game/forceSimulation";
 import { tutorialFlag } from "../../game/adventure";
 import { useGame } from "../../game/store";
 import type { WandererRuntime } from "../../travel/useWanderers";
@@ -55,6 +56,8 @@ export function AgentPanel({agent,playerPositionRef,pursuing,onPursue,onAttack,o
   const force=game.worldForces[wanderer.id];
   const cargo=Object.entries(force?.cargo??{}).filter(([,amount])=>(amount??0)>0);
   const target=force?.targetForceId?wandererById.get(force.targetForceId)?.name:null;
+  const huntingPlayer=force?playerPursuitLabel(force):null;
+  const trailConfidence=force?Math.round(playerTrailConfidence(wanderer.id,force,game.journey?.hours??0)*100):0;
 
   useEffect(()=>{ tutorialFlag("agentInspected");if(wanderer.routine==="exército")tutorialFlag("armyInspected"); },[wanderer.routine]);
   useEffect(()=>{
@@ -72,7 +75,9 @@ export function AgentPanel({agent,playerPositionRef,pursuing,onPursue,onAttack,o
       <div className="pair"><span>Força estimada</span><b>{reading.confidence==="vago"?"Incerta":strengthWord(troops)}</b></div>
       <div className="pair"><span>Comparação</span><b>{reading.verdict}</b></div>
       <div className="pair"><span>Risco</span><b className={`risk ${reading.risk}`}>{RISK_LABEL[reading.risk]}</b></div>
-      <div className="pair"><span>Situação</span><b>{pursuing?"Sendo perseguido":near?"Interceptado":"Fora de alcance"}</b></div>
+      <div className="pair"><span>Situação</span><b className={force?.playerPursuit?`pursuit-${force.playerPursuit}`:""}>{huntingPlayer??(pursuing?"Você está seguindo":near?"Interceptado":"Fora de alcance")}</b></div>
+      {force?.playerPursuit==="searching"&&<div className="pair"><span>Busca</span><b>{Math.round(force.searchRadius)} de raio · {trailConfidence}% de confiança</b></div>}
+      {force?.playerPursuit==="tracking"&&<div className="pair"><span>Último contato</span><b>{Math.max(0,Math.round((game.journey?.hours??0)-force.lastSeenAt))}h atrás</b></div>}
       {force?.ownerHouseId&&<div className="pair"><span>Comando</span><b>{houseById.get(force.ownerHouseId)?.shortName}</b></div>}
       {force&&<div className="agent-objective"><b>Objetivo atual</b><span>{force.objectiveLabel}</span>{target&&<small>Alvo: {target}</small>}</div>}
       {wanderer.routine==="exército"&&force&&<div className="pair"><span>Suprimentos</span><b>{force.food} carga(s)</b></div>}

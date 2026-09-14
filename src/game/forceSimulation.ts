@@ -5,7 +5,7 @@ import { houseById } from "../data/houses";
 import { fiefs } from "../world/fiefs";
 import { makeRng } from "../world/geo";
 import { insideLandcover } from "../world/landcover";
-import { regionAtPoint } from "../world/navigation/navigationGrid";
+import { nearestWalkable, regionAtPoint } from "../world/navigation/navigationGrid";
 import { allPois, poiById, regionById, routeNodeById } from "../world/valdoria";
 import type { Point } from "../world/types";
 import { partyOf } from "../world/wanderers";
@@ -65,36 +65,31 @@ export function playerTrailConfidence(id:string,force:WorldForceState,worldHours
   return Math.max(0,Math.min(1,1-(worldHours-force.lastSeenAt)/timeoutFor(id)));
 }
 
-function nearestRouteNode(point:Point):string|null {
-  let best:string|null=null,bestDistance=Infinity;
-  for(const node of routeNodeById.values()){
-    const d=distance(point,node);
-    if(d<bestDistance){bestDistance=d;best=node.id;}
-  }
-  return best;
-}
-
 function hash(value:string):number {
   let out=2166136261;
   for(let i=0;i<value.length;i++){out^=value.charCodeAt(i);out=Math.imul(out,16777619);}
   return out>>>0;
 }
 
-function searchNode(id:string,force:WorldForceState,worldHours:number,exclude?:string|null):string|null {
+function searchPoint(id:string,force:WorldForceState,worldHours:number,previous?:Point|null):Point|null {
   const center=force.knownPlayerPosition;
   if(!center)return null;
-  const candidates=[...routeNodeById.values()]
-    .filter((node)=>node.id!==exclude&&distance(center,node)<=Math.max(SEARCH_START,force.searchRadius))
-    .sort((a,b)=>a.id.localeCompare(b.id));
-  if(!candidates.length)return nearestRouteNode(center);
   const cycle=Math.floor(Math.max(0,worldHours-force.lastSeenAt)*2);
-  return candidates[hash(`${id}:${cycle}:${exclude??"first"}`)%candidates.length].id;
+  const salt=`${id}:${cycle}:${previous?`${Math.round(previous.x)}:${Math.round(previous.y)}`:"first"}`;
+  const angle=(hash(salt)/0xffffffff)*Math.PI*2;
+  const radius=Math.max(SEARCH_START,force.searchRadius);
+  const reach=radius*(.42+(hash(`${salt}:reach`)%53)/100);
+  const wanted={x:center.x+Math.cos(angle)*reach,y:center.y+Math.sin(angle)*reach};
+  const candidate=nearestWalkable(wanted);
+  // Ajustar um ponto bloqueado para terra firme nunca pode jogar a força para
+  // fora do raio que ela deveria estar vasculhando.
+  return candidate&&distance(center,candidate)<=radius?candidate:center;
 }
 
-/** Nó que o movimento deve alcançar sem ler a posição real do jogador. */
-export function playerPursuitDestination(force:WorldForceState):string|null {
-  if(force.playerPursuit==="tracking")return force.searchTargetId??(force.knownPlayerPosition?nearestRouteNode(force.knownPlayerPosition):null);
-  if(force.playerPursuit==="searching")return force.searchTargetId;
+/** Ponto que o movimento deve alcançar sem ler a posição real do jogador. */
+export function playerPursuitDestination(force:WorldForceState):Point|null {
+  if(force.playerPursuit==="tracking")return force.knownPlayerPosition;
+  if(force.playerPursuit==="searching")return force.searchTargetPosition;
   return null;
 }
 
@@ -133,7 +128,7 @@ export function updatePlayerPursuits(
       (hunting&&force.playerPursuit!=="tracking");
     if(needsWrite)write(id,{...force,knownPlayerPosition:{...player},lastSeenAt:worldHours,
       searchRadius:0,playerPursuit:hunting?"tracking":force.playerPursuit,
-      searchTargetId:nearestRouteNode(player)});
+      searchTargetPosition:{...player}});
   }
 
   // Relato de outra força: só passa adiante quando os grupos se encontram.
@@ -161,36 +156,36 @@ export function updatePlayerPursuits(
         report={point:{x:place.x,y:place.y},seenAt:worldHours};
     }
     if(report)write(id,{...original,knownPlayerPosition:{...report.point},lastSeenAt:report.seenAt,
-      searchRadius:0,playerPursuit:"tracking",searchTargetId:nearestRouteNode(report.point)});
+      searchRadius:0,playerPursuit:"tracking",searchTargetPosition:{...report.point}});
   }
 
   // Sem contato, termina a ida até a última posição e começa uma espiral de
-  // nós ao redor dela. O raio cresce, a confiança cai e o limite é fixo.
+  // pontos ao redor dela. O raio cresce, a confiança cai e o limite é fixo.
   for(const [id,original] of Object.entries(forces)){
     if(direct.has(id)||original.status!=="active"||!["tracking","searching"].includes(original.playerPursuit))continue;
     const at=positions.get(id);if(!at||!original.knownPlayerPosition)continue;
     const since=Math.max(0,worldHours-original.lastSeenAt);
     if(since>=timeoutFor(id)){
-      write(id,{...original,playerPursuit:"lost",searchTargetId:null,searchRadius:Math.min(SEARCH_MAX,original.searchRadius)});
+      write(id,{...original,playerPursuit:"lost",searchTargetPosition:null,searchRadius:Math.min(SEARCH_MAX,original.searchRadius)});
       continue;
     }
 
-    const targetId=original.searchTargetId??nearestRouteNode(original.knownPlayerPosition);
-    const target=targetId?routeNodeById.get(targetId):undefined;
     if(original.playerPursuit==="tracking"){
-      if(target&&distance(at,target)<=ARRIVAL_EPSILON){
+      const target=original.knownPlayerPosition;
+      if(distance(at,target)<=ARRIVAL_EPSILON){
         const searching={...original,playerPursuit:"searching" as const,
           searchRadius:Math.min(SEARCH_MAX,SEARCH_START+since*SEARCH_GROWTH)};
-        write(id,{...searching,searchTargetId:searchNode(id,searching,worldHours,targetId)});
-      }else if(targetId!==original.searchTargetId)write(id,{...original,searchTargetId:targetId});
+        write(id,{...searching,searchTargetPosition:searchPoint(id,searching,worldHours,target)});
+      }else if(!samePoint(original.searchTargetPosition,target))write(id,{...original,searchTargetPosition:{...target}});
       continue;
     }
 
     const radius=Math.min(SEARCH_MAX,SEARCH_START+since*SEARCH_GROWTH);
+    const target=original.searchTargetPosition;
     const arrived=!target||distance(at,target)<=ARRIVAL_EPSILON;
-    const nextTarget=arrived?searchNode(id,{...original,searchRadius:radius},worldHours,targetId):targetId;
-    if(radius!==original.searchRadius||nextTarget!==original.searchTargetId)
-      write(id,{...original,searchRadius:radius,searchTargetId:nextTarget});
+    const nextTarget=arrived?searchPoint(id,{...original,searchRadius:radius},worldHours,target):target;
+    if(radius!==original.searchRadius||!nextTarget||!samePoint(original.searchTargetPosition,nextTarget))
+      write(id,{...original,searchRadius:radius,searchTargetPosition:nextTarget});
   }
   return forces;
 }

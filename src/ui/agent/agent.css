@@ -136,3 +136,6 @@
 .estate-defence small { display: block; font: 8.5px var(--ui-small); letter-spacing: .12em; text-transform: uppercase; color: #b6a97a; }
 .estate-defence b { font-size: 19px; font-weight: 400; color: #f2e5c1; font-variant-numeric: tabular-nums; }
 .estate-defence p { flex: 1; margin: 0; }
+.pair b.pursuit-tracking { color:#ef9a6d; }
+.pair b.pursuit-searching { color:#e0c071; }
+.pair b.pursuit-lost { color:#7f938c; }
