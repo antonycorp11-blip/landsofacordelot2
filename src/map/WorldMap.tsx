@@ -314,6 +314,17 @@ export function WorldMap() {
 
   const zoom = camera.zoom;
 
+  /**
+   * CENA DE HISTÓRIA FECHA A LOCALIDADE.
+   *
+   * A chegada a um lugar também é uma cena agora, e as duas usam a mesma
+   * moldura: quando uma conversa abre a partir do menu da localidade, as duas
+   * apareciam empilhadas, com as escolhas de uma por cima das da outra.
+   */
+  useEffect(() => {
+    if (game.adventure.cinematic) { setPanelPoiId(null); setAdventureView(null); }
+  }, [game.adventure.cinematic]);
+
   const [headingTo, setHeadingTo] = useState<string | null>(null);
   useEffect(() => { if (travel.state !== "traveling") setHeadingTo(null); }, [travel.state]);
 

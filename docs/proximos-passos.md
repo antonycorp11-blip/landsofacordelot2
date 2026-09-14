@@ -44,9 +44,12 @@ Isto é a fila, e está em ordem.
    devolver o selo ou ficar com ele.
    *(Com a carta de Aled na mão: ela não abre porta de lorde, abre porta de
    quem abre porta de lorde.)*
-3. **A audiência com Edran** — a cena de fecho do Arco I. A porta já abre com
-   três favores cumpridos; falta a conversa do outro lado dela.
-4. **A localidade como cena**, não como painel.
+3. ~~A audiência com Edran~~ e ~~a localidade como cena~~ — **feitos.** O Arco I
+   está jogável do começo ao fim: abertura, carruagem, os quatro de Elmwood,
+   quatro favores, audiência e as duas saídas.
+4. **O ARCO II.** O jogador sai do Castelo Verde caçado por duas forças e
+   precisa de teto, renda e homens pagos. Os sistemas existem — feudo,
+   imposto, guarnição, cerco defensivo —, falta a linha que obriga a usá-los.
 5. **Capítulos em `story.ts`** para o fio longo dos Arcos, já que o array está
    vazio.
 

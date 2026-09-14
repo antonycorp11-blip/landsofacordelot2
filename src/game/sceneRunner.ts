@@ -13,11 +13,14 @@
 import { carriageScene } from "./scenes/carriage";
 import { guardScene, merchantScene, priestScene, scribeScene } from "./scenes/leads";
 import { deserterScene, halkaScene, postScene, sawmillScene } from "./scenes/favours";
+import { edranScene } from "./scenes/edran";
 import type { Cinematic, SceneChoice, SceneOutcome } from "./cinematics";
 import { startBattle } from "./battle";
 import { withReward } from "./experience";
 import { getState, update, type GameState } from "./store";
 import { REVEAL_FLAG } from "./balance";
+import { beginPlayerPursuit } from "./worldForces";
+import { loadStop } from "../world/roadStops";
 import type { TroopCount } from "../data/troops";
 
 const SCENES: Record<string, Cinematic> = {
@@ -30,6 +33,7 @@ const SCENES: Record<string, Cinematic> = {
   [sawmillScene.id]: sawmillScene,
   [postScene.id]: postScene,
   [deserterScene.id]: deserterScene,
+  [edranScene.id]: edranScene,
 };
 
 export function sceneById(id: string): Cinematic | undefined {
@@ -54,6 +58,25 @@ export function openScene(sceneId: string, eventId?: string): boolean {
   return true;
 }
 
+/**
+ * QUEM SAI ATRÁS DELE.
+ *
+ * A ordem parte de uma cena, mas a perseguição continua sendo por contato: a
+ * força recebe o lugar onde a cena aconteceu como última posição conhecida e,
+ * a partir daí, tem de achar o homem sozinha.
+ */
+function huntFrom(g: GameState, ids: string[]): GameState["worldForces"] {
+  const at = loadStop(g.journey?.at);
+  if (!at) return g.worldForces;
+  const hours = g.journey?.hours ?? 0;
+  const next = { ...g.worldForces };
+  for (const id of ids) {
+    const force = next[id];
+    if (force) next[id] = beginPlayerPursuit(force, { x: at.x, y: at.y }, hours);
+  }
+  return next;
+}
+
 function applyKnowledge(g: GameState, outcome: SceneOutcome): GameState {
   const add = (list: string[], extra?: string[]) =>
     extra ? [...list, ...extra.filter((x) => !list.includes(x))] : list;
@@ -65,6 +88,8 @@ function applyKnowledge(g: GameState, outcome: SceneOutcome): GameState {
       evidence: add(g.knowledge.evidence, outcome.evidence),
     },
     storyFlags: add(g.storyFlags, outcome.flags),
+    worldForces: outcome.hunt?.length ? huntFrom(g, outcome.hunt) : g.worldForces,
+    fiefOwners: outcome.grantFief ? { ...g.fiefOwners, [outcome.grantFief]: "player" as const } : g.fiefOwners,
     balance: {
       ...g.balance,
       // A cena que mostra o preço de um selo é a que abre o segundo polo.

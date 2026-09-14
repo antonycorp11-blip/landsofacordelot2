@@ -99,7 +99,14 @@ export function favourAt(poiId: string, flags: string[]): Favour | undefined {
   return openFavours(flags).find((f) => f.poiId === poiId);
 }
 
-/** A porta do lorde. */
+/**
+ * A porta do lorde.
+ *
+ * Fecha depois da audiência: seja ficando com o selo ou devolvendo, não há
+ * segunda conversa — e uma linha dourada que continua ali depois do Arco I
+ * acabado é o tipo de coisa que faz o jogador achar que perdeu alguma coisa.
+ */
 export function audienceOpen(flags: string[]): boolean {
+  if (flags.includes("ficou_com_o_selo") || flags.includes("devolveu_o_selo")) return false;
   return favoursDone(flags) >= FAVOURS_FOR_AUDIENCE;
 }

@@ -3,7 +3,7 @@ import { DialogueScreen, type DialogueOption, type DialogueScene } from "./Dialo
 import { faceKindOf, greetingOf, notablesAt, type Notable } from "../../data/notables";
 import { charactersAt } from "../../data/characters";
 import { storyPeopleAt } from "../../data/storyPeople";
-import { favourAt } from "../../data/favours";
+import { audienceOpen, favourAt } from "../../data/favours";
 import { openScene } from "../../game/sceneRunner";
 import { portraitUrl } from "../../data/characterAssets";
 import { holdingFor } from "../../data/holdings";
@@ -58,8 +58,14 @@ export function TownTalk({
   // Um pedido que se cumpre aqui vem antes de qualquer outra coisa: é o motivo
   // pelo qual ele atravessou a região.
   const errand = favourAt(poi.id, game.storyFlags);
+  // A porta do lorde. Vem antes de tudo, inclusive de um pedido pendente.
+  const audience = poi.id === "castelo_verde"
+    && audienceOpen(game.storyFlags)
+    && game.knowledge.evidence.includes("royal_seal")
+    && !game.storyFlags.includes("ficou_com_o_selo")
+    && !game.storyFlags.includes("devolveu_o_selo");
   const [node, setNode] = useState<Node>(() =>
-    ({ at: errand || leads.length || people.length > 1 ? "who" : "talk", person: people[0]?.id ?? "" } as Node));
+    ({ at: audience || errand || leads.length || people.length > 1 ? "who" : "talk", person: people[0]?.id ?? "" } as Node));
 
   const house = houseById.get(holding.controllerHouseId);
   const here = isPresent(poi.id, game);
@@ -105,6 +111,12 @@ export function TownTalk({
         ...base({ name: poi.name, role: `${people.length + leads.length} pessoas atendem aqui` }),
         text: `Você entra em ${poi.name}. Há quem responda por este lugar — e cada um responde por uma parte dele.`,
         options: [
+          ...(audience ? [{
+            id: "audiencia",
+            label: "Pedir audiência a Lorde Edran Silvarden",
+            hint: "Dona Halka disse o seu nome",
+            onPick: () => { onClose(); openScene("audiencia_edran"); },
+          }] : []),
           ...(errand ? [{
             id: `errand:${errand.id}`,
             label: errand.short,
@@ -125,7 +137,9 @@ export function TownTalk({
             hint: p.role,
             onPick: () => setNode({ at: "talk", person: p.id }),
           })),
-          ...(resident ? [{
+          // O "ainda não disponível" some quando a audiência de verdade existe:
+          // duas linhas iguais, uma viva e uma morta, é confusão pura.
+          ...(resident && !audience ? [{
             id: "resident",
             label: `Pedir audiência a ${resident.name}`,
             hint: "Ainda não disponível",

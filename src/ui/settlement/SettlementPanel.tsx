@@ -73,7 +73,8 @@ export const SettlementPanel = memo(function SettlementPanel({
     else if (id === "deliver") { if (!openClosing()) completeContract(); onClose(); }
   };
 
-  const arrival=here&&view==="menu"&&!talking;
+  // Nunca por baixo de uma cena de história: as duas usam a mesma moldura.
+  const arrival=here&&view==="menu"&&!talking&&!game.adventure.cinematic;
 
   return (
     <>

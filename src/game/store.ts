@@ -38,9 +38,9 @@ import { normalizeForceState, type WorldForceState } from "./worldForces";
  * exemplo —, subir o número descarta o save antigo em vez de ressuscitar um
  * estado que o jogo novo não sabe ler.
  */
-const SAVE_KEY = "acordelot.campanha.v6";
+const SAVE_KEY = "acordelot.campanha.v7";
 /** Chaves de versões anteriores, apagadas ao carregar. */
-const OLD_KEYS = ["acordelot.campanha.v1", "acordelot.campanha.v2", "acordelot.campanha.v3", "acordelot.campanha.v4", "acordelot.campanha.v5"];
+const OLD_KEYS = ["acordelot.campanha.v1", "acordelot.campanha.v2", "acordelot.campanha.v3", "acordelot.campanha.v4", "acordelot.campanha.v5", "acordelot.campanha.v6"];
 
 export type CompanionStatus = "IN_PARTY" | "AVAILABLE" | "TRAVELING" | "CAPTURED" | "WOUNDED";
 

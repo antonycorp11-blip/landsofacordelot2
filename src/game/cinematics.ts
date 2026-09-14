@@ -49,6 +49,14 @@ export type SceneOutcome = {
   balance?: number;
   /** Texto curto ao lado da barra explicando o empurrão. */
   balanceReason?: string;
+  /**
+   * Forças que passam a caçar o jogador a partir daqui. Elas não ganham a
+   * posição dele de graça: recebem a ÚLTIMA conhecida, que é onde a cena
+   * aconteceu, e daí em diante dependem de contato como qualquer outra.
+   */
+  hunt?: string[];
+  /** Senhorio que passa a ser do jogador. Terra prometida numa cena é terra. */
+  grantFief?: string;
   /** Próximo momento desta cena. */
   next?: string;
   /** Encerra a cena e devolve o mapa. */
