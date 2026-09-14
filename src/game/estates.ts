@@ -1,9 +1,9 @@
 /**
  * ADMINISTRAR A TERRA.
  *
- * A campanha entrega um senhorio no Capítulo I, e até agora possuí-lo era
- * receber uma renda fixa e mais nada: "Gerir" era um botão desabilitado. Terra
- * sem decisão não é posse, é assinatura mensal.
+ * O jogador ganha terra cedo — e até agora possuí-la era receber uma renda
+ * fixa e mais nada: "Gerir" era um botão desabilitado. Terra sem decisão não é
+ * posse, é assinatura mensal.
  *
  * Aqui ela vira um sistema com três alavancas que se contradizem de propósito:
  *

@@ -78,9 +78,10 @@ certo para passagens de tempo e para momentos em que o mundo muda sozinho.
 ### Marcas (`flag`)
 
 Uma escolha pode deixar uma marca permanente em `story.flags`. Capítulos
-seguintes leem essas marcas para mudar texto e opções — foi assim que o
-Capítulo I faz: quem leu a carta encontra um destinatário diferente de quem
-entregou lacrado.
+seguintes leem essas marcas para mudar texto e opções. É o mesmo mecanismo que
+a cena da carruagem já usa em `storyFlags`: quem guardou o selo por ambição
+carrega uma marca diferente de quem o guardou por causa de uma promessa, e os
+Arcos vão ler as duas.
 
 ## O que já existe do mundo, e pode ser usado sem inventar nada
 
