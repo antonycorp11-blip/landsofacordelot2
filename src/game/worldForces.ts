@@ -1,6 +1,6 @@
 import type { TroopCount } from "../data/troops";
 import type { GoodId } from "../data/goods";
-import type { HouseId, RegionId } from "../world/types";
+import type { HouseId, Point, RegionId } from "../world/types";
 import { partyOf, wanderers, type WandererRoutine } from "../world/wanderers";
 
 /** Parte mutável de cada grupo que percorre o mapa. */
@@ -22,6 +22,18 @@ export type WorldForceState = {
   targetHouseId?: HouseId;
   siegeProgress: number;
   lastActionDay: number;
+  /** Posição física mais recente; evita voltar ao último nó ao redirecionar. */
+  position: Point | null;
+  /** Só muda por visão direta ou por um relato que a força realmente recebeu. */
+  knownPlayerPosition: Point | null;
+  /** Hora do mundo do avistamento que sustenta a informação atual. */
+  lastSeenAt: number;
+  /** Área já aberta pela busca desde o último contato. */
+  searchRadius: number;
+  /** Estado legível da caça ao jogador. */
+  playerPursuit: "none" | "tracking" | "searching" | "lost";
+  /** Próximo nó vasculhado, escolhido de forma determinística. */
+  searchTargetId: string | null;
 };
 
 export type WorldForceBattleSource = {
@@ -51,11 +63,36 @@ export function freshForceState(id: string, at: string, resting = 0): WorldForce
     targetPoiId:null,
     siegeProgress:0,
     lastActionDay:0,
+    position:null,
+    knownPlayerPosition:null,
+    lastSeenAt:-1,
+    searchRadius:0,
+    playerPursuit:"none",
+    searchTargetId:null,
   };
 }
 
 export function normalizeForceState(id:string,state:Partial<WorldForceState>&Pick<WorldForceState,"at">):WorldForceState {
-  return {...freshForceState(id,state.at,state.resting??0),...state,cargo:{...(state.cargo??{})}};
+  return {
+    ...freshForceState(id,state.at,state.resting??0),
+    ...state,
+    cargo:{...(state.cargo??{})},
+    position:state.position&&Number.isFinite(state.position.x)&&Number.isFinite(state.position.y)?{...state.position}:null,
+    knownPlayerPosition:state.knownPlayerPosition&&Number.isFinite(state.knownPlayerPosition.x)&&Number.isFinite(state.knownPlayerPosition.y)?{...state.knownPlayerPosition}:null,
+  };
+}
+
+/** Ordem usada pela história ou por outro sistema para iniciar uma caçada. */
+export function beginPlayerPursuit(force:WorldForceState,playerPosition:Point,worldHours:number):WorldForceState {
+  return {...force,knownPlayerPosition:{...playerPosition},lastSeenAt:worldHours,searchRadius:0,
+    playerPursuit:"tracking",searchTargetId:null};
+}
+
+export function playerPursuitLabel(force:WorldForceState):string|null {
+  if(force.playerPursuit==="tracking")return "No seu encalço";
+  if(force.playerPursuit==="searching")return "Procurando você";
+  if(force.playerPursuit==="lost")return "Perdeu o seu rastro";
+  return null;
 }
 
 export function aggressionCost(routine: WandererRoutine): number {

@@ -5,6 +5,7 @@ import { skillById } from '../../data/skills';
 import { poiById } from '../../world/valdoria';
 import { formatDuration } from '../../world/time';
 import { resetCampaign, useGame } from '../../game/store';
+import { storyPeople } from '../../data/storyPeople';
 import { CAREER_LABEL } from '../../game/careers';
 import { isPresent, locationId } from '../../game/presence';
 import { withReward, type Reward } from '../../game/experience';
@@ -96,7 +97,7 @@ function StoryTab() {
   const step=currentStep(game.adventure.story);
   const chapter=step?chapterOfStep.get(step.id):null;
   const vazio=!k.facts.length&&!k.questions.length&&!k.evidence.length;
-  const caminhos=leadsFor(k.evidence);
+  const caminhos=leadsFor(k.evidence,game.storyFlags);
 
   if(vazio) return <>
     <p className="adv-story">Você chegou a Valdória sem nada que valha registrar. Ainda.</p>
@@ -127,7 +128,7 @@ function StoryTab() {
 
     {caminhos.length>0 && <>
       <span className="adv-eyebrow">Quem saberia dizer</span>
-      <ul className="know-list where">{caminhos.map((c)=><li key={c}>{c}</li>)}</ul>
+      <ul className="know-list where">{caminhos.map((c)=><li key={c.text} className={c.done?'done':undefined}>{c.text}</li>)}</ul>
     </>}
   </>;
 }
@@ -140,14 +141,14 @@ function StoryTab() {
  * um responde de um jeito — o mercador vê preço, o escrivão vê marca, o guarda
  * vê problema.
  */
-function leadsFor(evidence: string[]): string[] {
+function leadsFor(evidence: string[], flags: string[]): { text: string; done: boolean }[] {
   if (!evidence.includes('royal_seal')) return [];
-  return [
-    'Um escrivão reconhece marca de chancelaria.',
-    'Um mercador sabe o que não é joia comum.',
-    'Um sacerdote lembra símbolos antigos.',
-    'A própria Coroa — se você confiar nela.',
-  ];
+  // O LUGAR VAI JUNTO, de propósito. Caminho sem endereço é decoração, e foi
+  // exatamente isso que deixou o jogador sem rumo depois da carruagem.
+  return storyPeople.map((p) => ({
+    text: flags.includes(p.doneFlag) ? p.leadDone : p.lead,
+    done: flags.includes(p.doneFlag),
+  }));
 }
 
 /** Nome legível de cada prova. A função escondida delas não é dita aqui. */

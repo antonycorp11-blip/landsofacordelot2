@@ -2,6 +2,8 @@ import { useState } from "react";
 import { DialogueScreen, type DialogueOption, type DialogueScene } from "./DialogueScreen";
 import { faceKindOf, greetingOf, notablesAt, type Notable } from "../../data/notables";
 import { charactersAt } from "../../data/characters";
+import { storyPeopleAt } from "../../data/storyPeople";
+import { openScene } from "../../game/sceneRunner";
 import { portraitUrl } from "../../data/characterAssets";
 import { holdingFor } from "../../data/holdings";
 import { houseById } from "../../data/houses";
@@ -49,7 +51,11 @@ export function TownTalk({
   const game = useGame();
   const holding = holdingFor(poi);
   const people = notablesAt(poi.id, holding.kind);
-  const [node, setNode] = useState<Node>(() => ({ at: people.length > 1 ? "who" : "talk", person: people[0]?.id ?? "" } as Node));
+  // Gente da história que está aqui e que o jogador ainda não procurou. Elas
+  // não entram no fluxo de encargos: abrem cena, que é outra coisa.
+  const leads = storyPeopleAt(poi.id, game.storyFlags, game.knowledge.evidence);
+  const [node, setNode] = useState<Node>(() =>
+    ({ at: leads.length || people.length > 1 ? "who" : "talk", person: people[0]?.id ?? "" } as Node));
 
   const house = houseById.get(holding.controllerHouseId);
   const here = isPresent(poi.id, game);
@@ -92,9 +98,17 @@ export function TownTalk({
     // Quem procurar, quando há mais de uma pessoa que recebe.
     if (node.at === "who") {
       return {
-        ...base({ name: poi.name, role: `${people.length} pessoas atendem aqui` }),
+        ...base({ name: poi.name, role: `${people.length + leads.length} pessoas atendem aqui` }),
         text: `Você entra em ${poi.name}. Há quem responda por este lugar — e cada um responde por uma parte dele.`,
         options: [
+          // Primeiro quem tem a ver com o que você carrega. A cena substitui
+          // a conversa: fecha esta tela e abre a outra.
+          ...leads.map((p) => ({
+            id: p.id,
+            label: `Procurar ${p.name}`,
+            hint: p.role,
+            onPick: () => { onClose(); openScene(p.sceneId); },
+          })),
           ...people.map((p) => ({
             id: p.id,
             label: `Procurar ${p.name}`,

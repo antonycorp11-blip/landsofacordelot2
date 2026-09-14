@@ -11,6 +11,7 @@
  * quiser.
  */
 import { carriageScene } from "./scenes/carriage";
+import { guardScene, merchantScene, priestScene, scribeScene } from "./scenes/leads";
 import type { Cinematic, SceneChoice, SceneOutcome } from "./cinematics";
 import { startBattle } from "./battle";
 import { withReward } from "./experience";
@@ -20,6 +21,10 @@ import type { TroopCount } from "../data/troops";
 
 const SCENES: Record<string, Cinematic> = {
   [carriageScene.id]: carriageScene,
+  [scribeScene.id]: scribeScene,
+  [merchantScene.id]: merchantScene,
+  [priestScene.id]: priestScene,
+  [guardScene.id]: guardScene,
 };
 
 export function sceneById(id: string): Cinematic | undefined {

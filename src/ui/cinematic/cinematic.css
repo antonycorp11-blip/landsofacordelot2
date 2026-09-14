@@ -41,18 +41,25 @@
 }
 .cine-dot { margin: 0 7px; opacity: 0.6; }
 
+/* A altura mora numa variável porque a imagem precisa dela em pixels.
+   `height:100%` num item de grade cuja linha é `auto` é circular: o navegador
+   desiste, usa o tamanho intrínseco da arte (384px) e ela passa por cima do
+   texto inteiro. Foi o que aconteceu. */
 .cine-art {
-  height:96px;
-  display:grid;
-  place-items:center;
+  --cine-art-h: 96px;
+  height: var(--cine-art-h);
+  display:flex;
+  align-items:center;
+  justify-content:center;
   flex:none;
+  overflow:hidden;
   pointer-events:none;
   margin:-8px 0 -4px;
 }
 .cine-art img {
   display:block;
   width:auto;
-  height:100%;
+  height: var(--cine-art-h);
   max-width:min(100%, 360px);
   object-fit:contain;
   image-rendering:pixelated;
@@ -166,7 +173,7 @@
   .cine-text p, .cine-outcome { font-size: 15px; line-height: 1.5; }
   .cine-speaker b { font-size: 15px; }
   .cine-face { width: 44px !important; height: 44px !important; }
-  .cine-art { height:70px; margin:-6px 0 -3px; }
+  .cine-art { --cine-art-h: 70px; margin:-6px 0 -3px; }
   .cine-choice { padding: 7px 9px; }
   .cine-label { font-size: 14px; }
   .cine-label em { font-size: 10px; }

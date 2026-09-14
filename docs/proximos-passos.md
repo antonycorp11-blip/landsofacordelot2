@@ -39,11 +39,10 @@ Isto é a fila, e está em ordem.
 2. **A audiência com Edran Silvarden** — o fim do Arco I, onde o jogador ouve
    "Antônios" e "quem tiver os sete deve reinar" pela primeira vez, e escolhe
    devolver o selo ou ficar com ele.
-3. **Perseguição de verdade** — `knownPlayerPosition`, `lastSeenAt` e
-   `searchRadius` nas forças. Hoje elas sabem onde o jogador está o tempo
-   todo, e o Arco II depende de fugir de quem procura.
-4. **A localidade como cena**, não como painel.
-5. **Capítulos em `story.ts`** para o fio longo dos Arcos, já que o array está
+   *(Com a carta de Aled na mão: ela não abre porta de lorde, abre porta de
+   quem abre porta de lorde.)*
+3. **A localidade como cena**, não como painel.
+4. **Capítulos em `story.ts`** para o fio longo dos Arcos, já que o array está
    vazio.
 
 ## O que a Balança ainda não faz

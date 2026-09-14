@@ -4,13 +4,196 @@ import { goodById } from "../data/goods";
 import { houseById } from "../data/houses";
 import { fiefs } from "../world/fiefs";
 import { makeRng } from "../world/geo";
-import { allPois, poiById, routeNodeById } from "../world/valdoria";
+import { insideLandcover } from "../world/landcover";
+import { regionAtPoint } from "../world/navigation/navigationGrid";
+import { allPois, poiById, regionById, routeNodeById } from "../world/valdoria";
+import type { Point } from "../world/types";
 import { partyOf } from "../world/wanderers";
 import { canTradeAt, marketStock, primaryExport, quoteAt } from "./economy";
 import type { GameState } from "./store";
 import { wandererById, type WorldForceState } from "./worldForces";
 
 export type ForceNews={text:string;kind:"evento"|"fronteira"};
+
+const SEARCH_START=420;
+const SEARCH_MAX=2800;
+const SEARCH_GROWTH=135;
+const ARRIVAL_EPSILON=190;
+
+const VISION_BY_ROUTINE:Record<string,number>={
+  patrulha:900,comércio:650,correio:820,peregrinação:520,
+  pilhagem:840,cortejo:760,exército:1080,
+};
+
+function distance(a:Point,b:Point){return Math.hypot(a.x-b.x,a.y-b.y);}
+function lerp(a:Point,b:Point,t:number):Point{return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
+
+/**
+ * Alcance de contato, calculado sem sorteio. A floresta onde o jogador está
+ * pesa mais do que a do observador; massas entre os dois quebram a linha de
+ * visão, e terreno alto esconde quem passa atrás dele. Estrada faz o oposto.
+ */
+export function playerVisionRange(forceId:string,observer:Point,player:Point,playerOnRoad:boolean):number {
+  const routine=wandererById.get(forceId)?.routine??"comércio";
+  let range=VISION_BY_ROUTINE[routine]??680;
+  const region=regionAtPoint(player);
+  const biome=region?regionById.get(region)?.biome:undefined;
+
+  if(biome==="plains"||biome==="coastal")range*=1.18;
+  if(biome==="dense_forest")range*=.58;
+  if(biome==="alpine")range*=.72;
+  if(insideLandcover(player,"forest"))range*=.52;
+  if(insideLandcover(player,"highland"))range*=.7;
+  if(insideLandcover(observer,"highland"))range*=1.1;
+
+  for(const t of [.25,.5,.75]){
+    const sample=lerp(observer,player,t);
+    if(insideLandcover(sample,"forest"))range*=.78;
+    if(insideLandcover(sample,"highland"))range*=.84;
+  }
+  if(playerOnRoad)range*=1.48;
+  return Math.max(150,Math.min(1550,range));
+}
+
+function timeoutFor(id:string):number {
+  const routine=wandererById.get(id)?.routine;
+  return routine==="exército"?22:routine==="patrulha"?18:routine==="pilhagem"?14:16;
+}
+
+export function playerTrailConfidence(id:string,force:WorldForceState,worldHours:number):number {
+  if(force.lastSeenAt<0||force.playerPursuit==="none"||force.playerPursuit==="lost")return 0;
+  return Math.max(0,Math.min(1,1-(worldHours-force.lastSeenAt)/timeoutFor(id)));
+}
+
+function nearestRouteNode(point:Point):string|null {
+  let best:string|null=null,bestDistance=Infinity;
+  for(const node of routeNodeById.values()){
+    const d=distance(point,node);
+    if(d<bestDistance){bestDistance=d;best=node.id;}
+  }
+  return best;
+}
+
+function hash(value:string):number {
+  let out=2166136261;
+  for(let i=0;i<value.length;i++){out^=value.charCodeAt(i);out=Math.imul(out,16777619);}
+  return out>>>0;
+}
+
+function searchNode(id:string,force:WorldForceState,worldHours:number,exclude?:string|null):string|null {
+  const center=force.knownPlayerPosition;
+  if(!center)return null;
+  const candidates=[...routeNodeById.values()]
+    .filter((node)=>node.id!==exclude&&distance(center,node)<=Math.max(SEARCH_START,force.searchRadius))
+    .sort((a,b)=>a.id.localeCompare(b.id));
+  if(!candidates.length)return nearestRouteNode(center);
+  const cycle=Math.floor(Math.max(0,worldHours-force.lastSeenAt)*2);
+  return candidates[hash(`${id}:${cycle}:${exclude??"first"}`)%candidates.length].id;
+}
+
+/** Nó que o movimento deve alcançar sem ler a posição real do jogador. */
+export function playerPursuitDestination(force:WorldForceState):string|null {
+  if(force.playerPursuit==="tracking")return force.searchTargetId??(force.knownPlayerPosition?nearestRouteNode(force.knownPlayerPosition):null);
+  if(force.playerPursuit==="searching")return force.searchTargetId;
+  return null;
+}
+
+function samePoint(a:Point|null,b:Point):boolean{return !!a&&distance(a,b)<90;}
+
+/**
+ * Um pulso de percepção. Recebe posições físicas do runtime e devolve somente
+ * a memória das forças. Nenhuma força consulta o destino ou a posição real do
+ * jogador fora desta função.
+ */
+export function updatePlayerPursuits(
+  input:Record<string,WorldForceState>,
+  positions:ReadonlyMap<string,Point>,
+  player:Point,
+  worldHours:number,
+  playerOnRoad:boolean,
+):Record<string,WorldForceState> {
+  let forces=input;
+  const write=(id:string,next:WorldForceState)=>{
+    if(forces===input)forces={...input};
+    forces[id]=next;
+  };
+  const direct=new Set<string>();
+
+  // Contato visual direto. Saqueadores iniciam a caça; forças já ordenadas
+  // pelo enredo apenas renovam a informação que de fato conseguiram ver.
+  for(const [id,force] of Object.entries(input)){
+    const at=positions.get(id);
+    if(!at||force.status!=="active")continue;
+    const seen=distance(at,player)<=playerVisionRange(id,at,player,playerOnRoad);
+    if(!seen)continue;
+    direct.add(id);
+    const hostile=wandererById.get(id)?.routine==="pilhagem";
+    const hunting=force.playerPursuit!=="none"||hostile;
+    const needsWrite=!samePoint(force.knownPlayerPosition,player)||worldHours-force.lastSeenAt>=.2||
+      (hunting&&force.playerPursuit!=="tracking");
+    if(needsWrite)write(id,{...force,knownPlayerPosition:{...player},lastSeenAt:worldHours,
+      searchRadius:0,playerPursuit:hunting?"tracking":force.playerPursuit,
+      searchTargetId:nearestRouteNode(player)});
+  }
+
+  // Relato de outra força: só passa adiante quando os grupos se encontram.
+  // A testemunha carrega a hora real do avistamento, então boato velho não
+  // recupera magicamente uma trilha nova.
+  for(const [id,original] of Object.entries(forces)){
+    if(direct.has(id)||original.status!=="active"||!["tracking","searching"].includes(original.playerPursuit))continue;
+    const at=positions.get(id);if(!at)continue;
+    let report:{point:Point;seenAt:number}|null=null;
+    for(const [witnessId,witness] of Object.entries(forces)){
+      if(witnessId===id||!witness.knownPlayerPosition||witness.lastSeenAt<=original.lastSeenAt+.05)continue;
+      if(worldHours-witness.lastSeenAt>4)continue;
+      const witnessAt=positions.get(witnessId);if(!witnessAt)continue;
+      if(distance(at,witnessAt)<=520||witness.at===original.at){
+        if(!report||witness.lastSeenAt>report.seenAt)report={point:witness.knownPlayerPosition,seenAt:witness.lastSeenAt};
+      }
+    }
+
+    // Uma localidade denuncia quem passa por seus portões a perseguidores na
+    // mesma região. O alcance curto representa o tempo da notícia viajar.
+    if(!report){
+      const place=allPois.find((poi)=>distance(player,poi)<=260);
+      const forceRegion=regionAtPoint(at);
+      if(place&&forceRegion===place.regionId&&distance(at,place)<=2400)
+        report={point:{x:place.x,y:place.y},seenAt:worldHours};
+    }
+    if(report)write(id,{...original,knownPlayerPosition:{...report.point},lastSeenAt:report.seenAt,
+      searchRadius:0,playerPursuit:"tracking",searchTargetId:nearestRouteNode(report.point)});
+  }
+
+  // Sem contato, termina a ida até a última posição e começa uma espiral de
+  // nós ao redor dela. O raio cresce, a confiança cai e o limite é fixo.
+  for(const [id,original] of Object.entries(forces)){
+    if(direct.has(id)||original.status!=="active"||!["tracking","searching"].includes(original.playerPursuit))continue;
+    const at=positions.get(id);if(!at||!original.knownPlayerPosition)continue;
+    const since=Math.max(0,worldHours-original.lastSeenAt);
+    if(since>=timeoutFor(id)){
+      write(id,{...original,playerPursuit:"lost",searchTargetId:null,searchRadius:Math.min(SEARCH_MAX,original.searchRadius)});
+      continue;
+    }
+
+    const targetId=original.searchTargetId??nearestRouteNode(original.knownPlayerPosition);
+    const target=targetId?routeNodeById.get(targetId):undefined;
+    if(original.playerPursuit==="tracking"){
+      if(target&&distance(at,target)<=ARRIVAL_EPSILON){
+        const searching={...original,playerPursuit:"searching" as const,
+          searchRadius:Math.min(SEARCH_MAX,SEARCH_START+since*SEARCH_GROWTH)};
+        write(id,{...searching,searchTargetId:searchNode(id,searching,worldHours,targetId)});
+      }else if(targetId!==original.searchTargetId)write(id,{...original,searchTargetId:targetId});
+      continue;
+    }
+
+    const radius=Math.min(SEARCH_MAX,SEARCH_START+since*SEARCH_GROWTH);
+    const arrived=!target||distance(at,target)<=ARRIVAL_EPSILON;
+    const nextTarget=arrived?searchNode(id,{...original,searchRadius:radius},worldHours,targetId):targetId;
+    if(radius!==original.searchRadius||nextTarget!==original.searchTargetId)
+      write(id,{...original,searchRadius:radius,searchTargetId:nextTarget});
+  }
+  return forces;
+}
 
 function removeShare(count:TroopCount,share:number):TroopCount {
   const next={...count};

@@ -141,3 +141,8 @@
 }
 .know-list.where li { color:#b8c4b4; }
 .know-list.where li::before { content:"→"; color:#8aa0a8; font-size:9px; }
+
+/* Pista já resolvida: continua visível, porque saber quem você já procurou
+   faz parte do quadro. */
+.know-list.where li.done { opacity: 0.55; }
+.know-list.where li.done::marker { color: #7d8a7d; }
