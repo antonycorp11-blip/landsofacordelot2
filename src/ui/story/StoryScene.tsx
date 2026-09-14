@@ -11,7 +11,8 @@ import { DialogueScreen } from "../dialogue/DialogueScreen";
  * UMA CENA DA CAMPANHA PRINCIPAL.
  *
  * Usa a mesma tela das conversas de localidade de propósito: para quem joga,
- * falar com o Rei tem exatamente a forma de falar com um mestre de guilda —
+ * falar com o Protetor do Reino tem exatamente a forma de falar com um mestre
+ * de guilda —
  * retrato, fala, respostas numeradas. O que muda é o peso do que se responde.
  *
  * Quando ninguém fala, a cena narra: sai o retrato e fica o capítulo.

@@ -8,7 +8,7 @@
  * classe, onde está e o que sente pelo jogador.
  *
  * Eles usam o MESMO tipo dos líderes de Casa. Para o painel, para uma
- * audiência e para uma missão, um lorde de aldeia e o Rei são a mesma coisa
+ * audiência e para uma missão, um lorde de aldeia e o Protetor são a mesma coisa
  * com números diferentes.
  */
 import { makeRng } from "../world/geo";

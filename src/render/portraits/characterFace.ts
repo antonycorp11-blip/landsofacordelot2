@@ -15,7 +15,7 @@ import type { FaceTraits } from "./face";
 const FEMININE = /^(Lady|Rainha|Irmã|Dama|Madre)\b|^(Seraphine|Yseld|Ilyra|Lyra|Serah|Gisela|Alwen|Rhian|Marla|Esmer|Hedda|Ilsa|Lorwyn|Maeve|Orla|Quenna|Sable|Vessa|Ysolde|Brida|Delia|Fadwyn)\b/i;
 
 export function faceOf(character: Character): FaceTraits {
-  const bare = character.name.replace(/^(Lorde|Lady|Rei|Rainha|Sir|Mestre|Mestra|Irmã|Irmão|Dama|Madre)\s+/i, "");
+  const bare = character.name.replace(/^(Lorde|Lady|Protetor|Protetora|Rei|Rainha|Sir|Mestre|Mestra|Irmã|Irmão|Dama|Madre)\s+/i, "");
   const h = hashText(character.id);
   return {
     seed: character.id,

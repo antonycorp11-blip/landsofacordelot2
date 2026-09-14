@@ -244,28 +244,50 @@ onde ele empacou.
 num ofício, de propósito humilde, que atravessa séculos sem chamar atenção e
 que uma família passa de pai para filho. A família manteve.
 
-**3. A marca que se ensina.** O que foi passado adiante não é objeto — objeto
-se vende na primeira fome. É um **hábito**: uma coisa que aquela família
-ensina a cada geração sem ninguém saber mais por quê.
+**3. O laço de fecho.** O que foi passado adiante não é objeto — objeto se
+vende na primeira fome. É um **hábito**.
+
+A família nunca termina um documento com o nome e ponto: fecha a assinatura
+com um laço pequeno e apertado embaixo da última linha. Ensinam assim, de pai
+para filho: *"nome sem laço é nome que qualquer um continua."*
+
+Na chancelaria de Antônios era exatamente isso — o traço que fechava documento
+real para que ninguém pudesse acrescentar uma linha depois da assinatura. Isso
+morreu com a monarquia. Três séculos depois é só como a família daquele homem
+termina um recibo.
 
 E as três apontam para alguém que o jogador conheceu **na primeira hora de
 jogo** e nunca mais pensou a respeito.
 
-### A proposta: o escrivão de Elmwood
-
-*(Escolha de autor. Se for mudar, mude antes de escrever o Arco I.)*
+### Quem é: Mestre Aled Vern, escrivão de Elmwood
 
 É um dos quatro que olham o selo na primeira hora — aquele que **reconhece uma
 marca de chancelaria que não se usa há três séculos**, num vilarejo de nada, e
 não sabe dizer de onde tirou isso. Aprendeu com o pai. O pai aprendeu com o
 dele.
 
-Ofício de escrivão. Hábito ensinado sem motivo. Nome que já foi outro duas
+Ofício de escrivão. Laço ensinado sem motivo. Nome que já foi outro duas
 vezes.
 
 Está plantado na primeira hora, não custa nada, e recontextualiza a campanha
 inteira quando cai. E o jogador tratou aquele homem de algum jeito, vinte e
 cinco horas antes, sem saber quem ele era.
+
+**As duas cenas que precisam existir para isso funcionar:**
+
+- **Arco I** — Aled escreve alguma coisa para o jogador (uma cópia, um recibo,
+  uma carta de apresentação) e **fecha com o laço**, na frente dele. É mostrado
+  e não comentado. O jogador vê e não pensa nada.
+- **Arco V** — a confissão de Antônios, de próprio punho, tem **o mesmo laço**
+  embaixo da assinatura, desenhado igual. Nenhum personagem aponta.
+
+Um jogador atento faz a ligação sozinho, vinte e cinco horas depois, antes de
+qualquer um dizer qualquer coisa. É o melhor momento que esta história tem
+para oferecer, e ele custa dois desenhos de três traços.
+
+E explica por que ninguém nunca achou aquela família: um selo se acha, um
+brasão se acha, um nome se rastreia. **Ninguém procura uma linhagem por causa
+de um floreio de escrivão.**
 
 ### O fio, depois do Arco V
 
@@ -578,7 +600,8 @@ a verdade na cara.
 entendeu, no meio do caminho, que não queria chegar. Passou três anos sozinho
 com a pergunta que o jogo vai fazer no fim.
 
-**O escrivão de Elmwood** — um dos quatro que olham o selo na primeira hora.
+**Mestre Aled Vern, escrivão de Elmwood** — um dos quatro que olham o selo na
+primeira hora.
 Lê marca de chancelaria que não se usa há três séculos e não sabe explicar por
 quê: aprendeu com o pai, que aprendeu com o dele. Tem o melhor direito do
 reino e nunca vai querer nada com isso. *(O jogador só descobre no fim — e o
@@ -596,12 +619,9 @@ aconteceu à Casa Rosethorne.
 
 ## 12. Lacunas — decisão do autor
 
-1. **O ofício e o hábito herdados** — que coisa exatamente a família do
-   escrivão ensina há três séculos sem saber por quê. Tem de ser pequena,
-   concreta e mostrável na primeira hora de jogo, sem chamar atenção nenhuma.
-2. **O que aconteceu com o filho de Antônios** entre o exílio e hoje — três
-   séculos de uma família que não sabia o que era.
-3. **Por que Antônios não o reconheceu.** Covardia, cálculo, ou proteção. A
+1. **O que aconteceu com o filho de Antônios** entre o exílio e hoje — três
+   séculos de uma família que não sabia o que era, e as duas trocas de nome.
+2. **Por que Antônios não o reconheceu.** Covardia, cálculo, ou proteção. A
    resposta muda como o jogador lê o velho rei na última hora de jogo.
 
 ---

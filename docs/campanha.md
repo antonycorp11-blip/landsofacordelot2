@@ -84,7 +84,8 @@ entregou lacrado.
 
 ## O que já existe do mundo, e pode ser usado sem inventar nada
 
-- **Rei Aldren Valdória**, no `castelo_real`, com retrato.
+- **Protetor Aldren Valdória**, no `castelo_real`, com retrato. Não é rei:
+  ver [`narrativa.md`](narrativa.md) §2.
 - **Dez Casas** com líderes, brasões e relação inicial com o jogador — e
   Karneth já começa hostil (−18), o que é material de enredo pronto.
 - **Sete regiões**, trinta e cinco senhorios com dono, renda e preço.
@@ -101,7 +102,14 @@ jogador nunca pode saber cedo — está em [`narrativa.md`](narrativa.md).
 
 ## O que falta e é escrita, não código
 
-Os capítulos I e II estão escritos com o que o mundo já estabelece, e existem
-para provar a forma. **A lore verdadeira entra substituindo `CHAPTER_I` e
-`CHAPTER_II` em `story.ts`, e acrescentando capítulos ao array `chapters`.**
-Nada mais precisa mudar.
+**O array `chapters` em `story.ts` está vazio.** A campanha antiga saiu de
+propósito — era um roteiro de serviço genérico e disputava atenção com a
+abertura nova. O motor ficou inteiro: gatilhos, cenas, marcas, concessão de
+terra.
+
+Os Arcos I a VII de [`narrativa.md`](narrativa.md) entram **acrescentando
+capítulos a esse array**. Nada mais precisa mudar.
+
+Uma parte da história não passa por aqui: a abertura acontece no mundo, em
+`worldEvents` e `scenes/`, e é uma cena de `cinematics.ts`, não um capítulo.
+As duas camadas convivem — capítulo para o fio longo, cena para o momento.

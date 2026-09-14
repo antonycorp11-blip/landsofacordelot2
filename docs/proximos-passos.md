@@ -1,55 +1,76 @@
 # Estado do jogo e próximos passos
 
+> A história está em [`narrativa.md`](narrativa.md) e o motor dela em
+> [`campanha.md`](campanha.md). Este documento é só o estado de construção.
+
 ## O que já forma uma partida
 
-- Mapa de Valdória em 24.000 × 16.000, viagem por estradas, terreno, relevo, vegetação, ciclo de luz e agentes circulando.
-- Quatro protagonistas, ficha, atributos, vinte habilidades, níveis, carreiras, companheiros, recrutamento e grupo militar.
-- HUD com retrato e anel de XP, ouro, influência e comida.
-- Campanha principal em capítulos, cenas com retrato, escolhas lembradas e gatilhos por visita, contrato, batalha, nível, influência ou terra.
-- Conversas locais com pessoas nomeadas, trabalho contado em falas e respostas numeradas.
-- Encargos em três atos: pedido, complicação e fechamento. Decisões mostram atributo, habilidade, chance e consequências.
-- Eventos aleatórios, bandos, chamados com prazo e simulação diária de salário, comida, renda, deserção, guerra e conquista.
-- Arena de combate 32-bit com terreno, ordens de formação, moral, mortos, feridos recuperáveis, prisioneiros, rendição, saque e retirada.
-- Mercados regionais com estoque, reposição, preço, provisões, oito mercadorias, capacidade de carga, lucro real e contratos que exigem compra e entrega física.
-- Forças persistentes no mapa: patrulhas, caravanas, correios, peregrinos, cortejos, saqueadores e hostes podem ser lidos, perseguidos, interceptados, abordados e atacados.
+- Mapa de Valdória em 24.000 × 16.000, **movimento livre por estrada e por
+  terreno** com A\* sobre grade de navegação, relevo, vegetação e agentes.
+- Quatro protagonistas, ficha, atributos, vinte habilidades, níveis, carreiras,
+  companheiros, recrutamento e grupo militar.
+- HUD de paisagem sem rolagem em nenhuma tela, com retrato, anel de XP, ouro,
+  influência, comida e **a Balança**.
+- Conversas locais com pessoas nomeadas; encargos em três atos com atributo,
+  habilidade, chance e consequência ditos antes.
+- Eventos aleatórios, bandos, chamados com prazo e simulação diária de salário,
+  comida, renda, deserção, guerra e conquista.
+- Arena tática com terreno, ordens de formação, moral, mortos, feridos
+  recuperáveis, prisioneiros, rendição, saque e retirada.
+- Mercados regionais com estoque, reposição, preço, oito mercadorias,
+  capacidade de carga e contratos que exigem compra e entrega física.
+- Forças persistentes no mapa: patrulhas, caravanas, correios, peregrinos,
+  cortejos, saqueadores e hostes, que podem ser lidos, perseguidos,
+  interceptados, abordados e atacados — e que brigam entre si sem o jogador.
+- Terra: imposto, obras, prosperidade, lealdade, guarnição, revolta.
+  Juramento a uma Casa, serviço, concessão de senhorio, rompimento e
+  **independência** com Casa própria.
+- Eventos parados no mundo (`worldEvents`) e cenas em conversa com rosto
+  gerado (`cinematics.ts` + `sceneRunner.ts`). A abertura é a carruagem.
 
-## O que mudou no ciclo principal
+## O que está escrito e ainda não existe em código
 
-Antes, aceitar um encargo e chegar ao destino bastava. Agora o jogador pode precisar financiar a mercadoria, escolher uma rota, manter comida e salário, enfrentar um bando, decidir entre reputação e dinheiro, passar ou falhar numa barganha e chegar ainda com a carga. O resultado altera ouro, influência, relações, tropas, experiência e disponibilidade do encargo.
+Isto é a fila, e está em ordem.
 
-## Marco de combate concluído
+1. **Arco I** — os quatro que reconhecem o selo (mercador, escrivão, sacerdote,
+   guarda) hoje aparecem como pistas no quadro e não fazem nada. São a próxima
+   coisa a construir, e o escrivão é **Mestre Aled Vern**, que importa muito
+   mais do que parece.
+2. **A audiência com Edran Silvarden** — o fim do Arco I, onde o jogador ouve
+   "Antônios" e "quem tiver os sete deve reinar" pela primeira vez, e escolhe
+   devolver o selo ou ficar com ele.
+3. **Perseguição de verdade** — `knownPlayerPosition`, `lastSeenAt` e
+   `searchRadius` nas forças. Hoje elas sabem onde o jogador está o tempo
+   todo, e o Arco II depende de fugir de quem procura.
+4. **A localidade como cena**, não como painel.
+5. **Capítulos em `story.ts`** para o fio longo dos Arcos, já que o array está
+   vazio.
 
-O combate tático agora conecta a estrada à campanha:
+## O que a Balança ainda não faz
 
-1. A arena representa cada formação e as baixas calculadas pelo motor.
-2. Sete terrenos afetam defesa, arqueiros, cavalaria e retirada.
-3. Infantaria, arqueiros, cavalaria e reserva possuem ordens próprias.
-4. Mortos saem da campanha; feridos recuperam com tempo e comida.
-5. Rendição usa Diplomacia e Persuasão; prisioneiros ocupam carga e rendem resgate no mercado.
-
-## Marco de forças no mapa concluído
-
-Cada grupo guarda posição, destino, tropas e baixas no save. A perseguição recalcula a rota até a interceptação; o painel mostra risco, alcance, recompensa e custo político antes do ataque. Saqueadores derrotados desaparecem por quatro dias e aumentam a segurança regional, reduzindo emboscadas e pressão sobre preços. Agressões contra grupos neutros ou legais removem influência e pioram segurança. O tutorial conduz leitura, perseguição, interceptação e vitória contra um bando.
-
-## Próximo marco recomendado
-
-O mundo estratégico agora está ativo. Caravanas retiram carga de um mercado e abastecem outro; saqueá-las entrega a carga ao vencedor e cria escassez. Patrulhas caçam bandidos, bandidos seguem caravanas e os confrontos podem acontecer sem o jogador. As sete Casas territoriais possuem hostes que recrutam, retiram provisões do mercado, consomem suprimento, sofrem atrito, marcham durante guerras e precisam cumprir três etapas de cerco antes de tomar um senhorio. O jogador pode escoltar, intervir numa caçada, atacar qualquer lado ou reforçar um cerco.
-
-O próximo marco recomendado é aprofundar a progressão de viajante para senhor: equipamento individual, oficina, guarnição e administração de terra; juramento, serviço mercenário e independência; diplomacia de paz, tributo e aliança. A campanha principal deve passar a escolher cenas e finais a partir das Casas ajudadas ou atacadas neste tabuleiro vivo.
-
-Depois disso, o melhor arco de retenção é **subir de viajante para senhor**: reputação local abre audiência, audiência abre juramento ou independência, terra abre guarnição, imposto, oficina e guerra. A campanha principal deve reagir à Casa apoiada, às cartas lidas, às pessoas traídas e aos senhorios controlados, criando finais políticos diferentes.
+Ela mede e aparece. O que falta é ela **ser lida de volta**: cenas que mudam de
+texto conforme a inclinação, gente que comenta o que ele vem fazendo, e o
+ponto de decisão final com o custo de contrariar a própria Balança
+([`narrativa.md`](narrativa.md) §8).
 
 ## Direção para diálogos e história
 
-Conversas futuras devem manter quatro regras:
+Quatro regras que valem para toda conversa nova:
 
-- a pessoa fala por seu interesse e posição, sem despejar explicação de mundo;
-- uma opção arriscada mostra atributo, habilidade, chance e resultado econômico ou político;
+- a pessoa fala pelo interesse e pela posição dela, sem despejar explicação de
+  mundo — se a fala parece enciclopédia, está errada;
+- uma opção arriscada mostra atributo, habilidade, chance e consequência antes;
 - o dado é decidido uma vez e persistido, sem repetição ao reabrir a tela;
-- personagens lembram marcas relevantes e mudam saudação, preço, acesso e pedidos.
+- personagens lembram marcas e mudam saudação, preço, acesso e pedidos.
 
-O próximo conjunto de cenas deve girar em torno da crise já plantada: quem sabia da emboscada, os três nomes da carta, a expansão de Karneth e a resposta do Rei Aldren. Cada capítulo deve pedir vida no mundo aberto entre cenas: comércio, recrutamento, influência, batalha e posse de terra.
+E uma regra de desenho: **nenhuma escolha pode ser falsa**. Observar dá
+informação que outro caminho não dá; conversar pode arrancar um nome; atacar
+rende prova e cobra perseguição; ir embora é permitido e custa o que não se
+viu.
 
 ## Critério do próximo marco
 
-Uma sessão de 30 minutos precisa permitir duas trajetórias diferentes: enriquecer em uma rota mercantil protegida ou montar uma tropa e limpar a mesma estrada. As duas devem alterar preços, relações e o capítulo seguinte, com perdas e ganhos legíveis antes e depois das decisões.
+Uma sessão de 30 minutos tem de permitir duas trajetórias diferentes:
+enriquecer numa rota mercantil protegida, ou montar tropa e limpar a mesma
+estrada. As duas alteram preços, relações, a Balança e o que a próxima cena
+diz — com perdas e ganhos legíveis antes e depois da decisão.

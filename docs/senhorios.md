@@ -76,5 +76,5 @@ Os trinta e cinco **lordes são gerados**, não escritos à mão: nome sorteado 
 forma estável pelo id do senhorio, sobrenome da Casa dona. Escrever trinta e
 cinco biografias agora seria inventar texto que a primeira missão reescreve — o
 que precisa existir já é a pessoa. Eles usam o mesmo tipo dos líderes de Casa:
-para o painel e para uma audiência, um lorde de aldeia e o Rei são a mesma
-coisa com números diferentes.
+para o painel e para uma audiência, um lorde de aldeia e o Protetor do Reino
+são a mesma coisa com números diferentes.

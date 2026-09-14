@@ -84,7 +84,7 @@ export function DialogueScreen({ scene, onClose }: { scene: DialogueScene; onClo
               ? <img src={scene.portraitUrl} alt="" />
               : scene.face
               ? <FacePortrait {...scene.face} size={62} className="dlg-face" />
-              : <span className="dlg-monogram" aria-hidden="true">{scene.speakerName.replace(/^(Lorde|Lady|Rei|Rainha|Sir|Mestre|Irmã|Irmão)\s+/i, "")[0]}</span>}
+              : <span className="dlg-monogram" aria-hidden="true">{scene.speakerName.replace(/^(Lorde|Lady|Protetor|Protetora|Rei|Rainha|Sir|Mestre|Irmã|Irmão)\s+/i, "")[0]}</span>}
           </div>}
           <div className="dlg-plate">
             <b>{scene.speakerName}</b>

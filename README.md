@@ -1,8 +1,24 @@
 # Lands of Acordelot — Mapa de Valdória
 
-Campanha jogável em Valdória: mapa estratégico 32-bit, viagem por estradas,
-personagens e diálogos, história em capítulos, política territorial, contratos,
-economia diária, mercados regionais e arena tática para combate entre grupos.
+Campanha jogável em Valdória: mapa estratégico 32-bit, viagem livre por estrada
+e terreno, personagens e diálogos, política territorial, contratos, economia
+diária, mercados regionais e arena tática para combate entre grupos.
+
+## Antes de mexer na história, leia nesta ordem
+
+1. [`docs/narrativa.md`](docs/narrativa.md) — **a história inteira**: a premissa,
+   os sete selos, a Balança, os sete arcos e os dois finais. É a fonte da
+   verdade sobre enredo. **Contém spoiler do jogo inteiro.**
+2. [`docs/campanha.md`](docs/campanha.md) — como o motor de capítulos funciona e
+   onde o enredo entra no código.
+3. [`docs/retratos.md`](docs/retratos.md) — as faces, para quem for gerar arte.
+4. [`docs/proximos-passos.md`](docs/proximos-passos.md) — o que está pronto e o
+   que vem em seguida.
+
+Três fatos que contradizem qualquer texto antigo que sobrar em algum canto:
+**não existe rei** (Valdória governa como Casa mais forte, e o chefe dela é o
+*Protetor do Reino*), a Coroa tem **dois** selos, e o array `chapters` de
+`story.ts` está **vazio** de propósito.
 
 ```bash
 npm install
