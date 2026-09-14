@@ -26,6 +26,7 @@ export const carriageScene: Cinematic = {
       id: "chegada",
       place: "Bosque de Elmwood",
       time: "Manhã",
+      art: "carriage_wrecked",
       text: [
         "Uma carruagem atravessada entre as árvores. Dois cavalos mortos, ainda arreados.",
         "Três homens vasculham a carga com pressa. Um quarto se mexe debaixo da carroça.",
@@ -114,6 +115,7 @@ export const carriageScene: Cinematic = {
     escondido: {
       id: "escondido",
       place: "Bosque de Elmwood",
+      art: "carriage_wrecked",
       text: [
         "Um deles chuta a lona e diz alguma coisa curta. Os três montam sem discutir e saem pela estrada, para o norte.",
         "O homem debaixo da carroça ainda respira.",
@@ -146,7 +148,11 @@ export const carriageScene: Cinematic = {
     conversa: {
       id: "conversa",
       place: "Bosque de Elmwood",
-      speaker: { name: "Harn", role: "Diz-se um viajante", seed: "harn_carriage", age: 0.55 },
+      speaker: {
+        name: "Harn", role: "Diz-se um viajante", seed: "harn_carriage", age: 0.55,
+        portraitKey: "portrait_harn", expressionSequence: ["attentive", "hard"],
+      },
+      art: "carriage_wrecked",
       text: [
         "«Siga o seu caminho. Isto aqui já está resolvido.»",
         "Ele não se mexe do lugar onde está. Atrás dele, os outros dois esperam que você decida alguma coisa.",
@@ -188,6 +194,7 @@ export const carriageScene: Cinematic = {
     avistado: {
       id: "avistado",
       place: "Bosque de Elmwood",
+      art: "carriage_wrecked",
       text: [
         "Os três se espalham sem uma palavra. Um contorna pela direita. Ninguém pergunta quem você é.",
       ],
@@ -233,6 +240,7 @@ export const carriageScene: Cinematic = {
       id: "decisao",
       place: "Bosque de Elmwood",
       time: "Pouco depois",
+      art: "seal_box_open",
       text: [
         "Você fica sozinho com um homem morto e uma caixa aberta na mão.",
         "A coisa sensata é óbvia: descer até o primeiro mercador, vender depressa e sumir antes que alguém venha procurar. Ouro assim paga três anos de vida.",
@@ -246,6 +254,7 @@ export const carriageScene: Cinematic = {
           outcome: {
             text:
               "Você fecha a caixa e a enfia por dentro da roupa, contra as costelas, onde ninguém esbarra sem querer.\n\nNão é um plano. É só a primeira coisa em muito tempo que depende de você.",
+            art: "seal_box_closed",
             questions: ["Quanto vale, de verdade, o que eu estou carregando?"],
             flags: ["guardou_para_entender"],
             balance: 2,
@@ -259,6 +268,7 @@ export const carriageScene: Cinematic = {
           outcome: {
             text:
               "Homens armados vieram ao bosque por esta caixa. Homens que respondem a alguém com anel no dedo.\n\nA vida inteira você foi coisa que se empurra de um lado para o outro. Pela primeira vez você está com a única coisa da estrada que alguém importante quer — e ela cabe no seu punho.",
+            art: "royal_seal",
             facts: ["Alguém com poder mandou matar por este selo. Eu estou com ele."],
             flags: ["guardou_por_ambicao"],
             balance: 8,
@@ -272,6 +282,7 @@ export const carriageScene: Cinematic = {
           outcome: {
             text:
               "Ele não era ninguém. Levava a caixa de outro, ganhava por trajeto, e morreu numa estrada de terra sem ninguém saber o nome dele.\n\nVocê conhece essa morte. Metade da gente que você conhece vai ter essa morte.\n\nVocê cava o que dá para cavar e segue com a caixa.",
+            art: "seal_box_closed",
             facts: ["O mensageiro morreu sem nome numa estrada, levando coisa de outro."],
             flags: ["guardou_pela_promessa"],
             balance: -4,
@@ -283,7 +294,11 @@ export const carriageScene: Cinematic = {
     sobrevivente: {
       id: "sobrevivente",
       place: "Bosque de Elmwood",
-      speaker: { name: "Um homem ferido", role: "Sob a carruagem", seed: "dying_courier", age: 0.5 },
+      speaker: {
+        name: "Um homem ferido", role: "Sob a carruagem", seed: "dying_courier", age: 0.5,
+        portraitKey: "portrait_messenger", expressionSequence: ["urgent", "offering", "fading"],
+      },
+      art: "seal_box_closed",
       text: [
         "O eixo saiu de cima dele e não adiantou nada. Ele procura o seu braço sem enxergar direito.",
         "Põe na sua mão uma caixa pequena, lacrada, do tamanho de um punho.",
@@ -296,6 +311,7 @@ export const carriageScene: Cinematic = {
           outcome: {
             text:
               "Ele não responde. A mão aperta a sua com uma força que não devia ter sobrado.\n\n«Não deixe que encontrem o sétimo.»\n\nDepois disso ele não diz mais nada.",
+            art: "royal_seal",
             facts: [
               "O homem da carruagem carregava um selo autêntico da Coroa.",
               "As últimas palavras dele foram: não deixe que encontrem o sétimo.",
@@ -317,6 +333,7 @@ export const carriageScene: Cinematic = {
           outcome: {
             text:
               "Ele ri uma vez, e a risada vira outra coisa.\n\n«Porque foi de lá que...»\n\nA frase não termina. A mão dele abre.\n\nDentro da caixa há um selo. Autêntico, com a marca da chancelaria Real.",
+            art: "seal_box_open",
             facts: [
               "O homem da carruagem carregava um selo autêntico da Coroa.",
               "Ele começou a dizer que a ordem partira da própria Coroa, e morreu antes de terminar.",

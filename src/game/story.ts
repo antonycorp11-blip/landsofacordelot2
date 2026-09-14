@@ -23,6 +23,7 @@
  */
 import type { Reward } from "./experience";
 import type { GameState } from "./store";
+import type { PortraitExpression } from "../data/storyPortraits";
 
 export type StoryTrigger =
   /** Chegar a um lugar. */
@@ -63,6 +64,9 @@ export type StoryOption = {
 export type StoryScene = {
   /** Quem fala, quando é gente de nome. Usa o retrato do personagem. */
   speakerId?: string;
+  /** O rosto acompanha o tom da cena; sequências servem a mudanças curtas. */
+  expression?: PortraitExpression;
+  expressionSequence?: PortraitExpression[];
   /** Onde a cena acontece, para o cabeçalho. */
   poiId?: string;
   text: string;

@@ -21,6 +21,7 @@ import { ResourceIcon } from '../ResourceIcon';
 import { goodById } from '../../data/goods';
 import { amountOwned } from '../../game/economy';
 import { questOptionChance } from '../../game/quests';
+import royalSealArt from '../../assets/story/seal/royal_seal.png?url';
 import { BattleArena } from '../battle/BattleArena';
 import './adventure.css';
 
@@ -118,7 +119,10 @@ function StoryTab() {
 
     {k.evidence.length>0 && <>
       <span className="adv-eyebrow">Em suas mãos</span>
-      <ul className="know-list proof">{k.evidence.map((id)=><li key={id}>{EVIDENCE_NAME[id]??id}</li>)}</ul>
+      <ul className="know-list proof">{k.evidence.map((id)=><li key={id}>
+        {EVIDENCE_ART[id] && <img src={EVIDENCE_ART[id]} alt="" />}
+        <span>{EVIDENCE_NAME[id]??id}</span>
+      </li>)}</ul>
     </>}
 
     {caminhos.length>0 && <>
@@ -150,6 +154,7 @@ function leadsFor(evidence: string[]): string[] {
 const EVIDENCE_NAME: Record<string,string> = {
   royal_seal: "Selo Real de Valdória — encontrado junto à carruagem atacada",
 };
+const EVIDENCE_ART: Record<string,string> = { royal_seal: royalSealArt };
 
 function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGame>['adventure']['quest']>['pending']>}) {
   const game=useGame();

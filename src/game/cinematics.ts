@@ -16,6 +16,8 @@
 import type { Reward } from "./experience";
 import type { Attributes } from "../data/heroes";
 import type { SkillId } from "../data/skills";
+import type { PortraitExpression } from "../data/storyPortraits";
+import type { StoryArtKey } from "../data/storyArt";
 
 export type SceneCheck = {
   attribute: keyof Attributes;
@@ -28,6 +30,8 @@ export type SceneCheck = {
 export type SceneOutcome = {
   /** O que acontece, dito em uma ou duas linhas. */
   text: string;
+  /** Objeto revelado junto do resultado. */
+  art?: StoryArtKey;
   reward?: Reward;
   /** Coisas que o jogador passa a saber. */
   facts?: string[];
@@ -72,7 +76,19 @@ export type SceneBeat = {
   place?: string;
   time?: string;
   /** Quem fala, quando há alguém. */
-  speaker?: { name: string; role?: string; seed?: string; female?: boolean; age?: number };
+  speaker?: {
+    name: string;
+    role?: string;
+    seed?: string;
+    female?: boolean;
+    age?: number;
+    portraitKey?: string;
+    expression?: PortraitExpression;
+    /** Sequência curta para falas que mudam diante do jogador. */
+    expressionSequence?: PortraitExpression[];
+  };
+  /** Ilustração do lugar ou objeto que sustenta este momento. */
+  art?: StoryArtKey;
   /** Uma a três linhas curtas. */
   text: string[];
   choices: SceneChoice[];

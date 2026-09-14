@@ -1,0 +1,21 @@
+.expression-portrait { display:block; position:relative; overflow:hidden; }
+.expression-portrait-frame {
+  position:absolute; inset:0;
+  display:block;
+  background-repeat:no-repeat;
+  image-rendering:pixelated;
+  animation:portrait-expression-in 260ms ease-out, portrait-breathe 4.8s ease-in-out 260ms infinite;
+  transform-origin:50% 72%;
+}
+@keyframes portrait-expression-in {
+  from { opacity:.35; transform:scale(1.025) translateY(1px); }
+  to { opacity:1; transform:scale(1); }
+}
+@keyframes portrait-breathe {
+  0%,100% { transform:scale(1) translateY(0); }
+  48% { transform:scale(1.008) translateY(-.5px); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .expression-portrait-frame { animation:none; }
+}
+

@@ -61,12 +61,13 @@ export function TownTalk({
   const leave: DialogueOption = { id: "leave", label: "Fique bem.", onPick: onClose };
   const person = (id: string): Notable | undefined => people.find((p) => p.id === id);
 
-  function base(speaker: { name: string; role: string; portrait?: string; notable?: Notable }): Omit<DialogueScene, "text" | "options"> {
+  function base(speaker: { name: string; role: string; portrait?: string; portraitSet?: string; notable?: Notable }): Omit<DialogueScene, "text" | "options"> {
     const n = speaker.notable;
     return {
       speakerName: speaker.name,
       speakerRole: speaker.role,
       portraitUrl: speaker.portrait,
+      portraitSetKey: speaker.portraitSet,
       // Sem arte, o rosto é gerado a partir do id da pessoa — e é sempre o mesmo.
       face: n ? { seed: n.id, female: n.female, age: n.age, accent: house?.color, kind: faceKindOf(n.career) } : undefined,
       accent: house?.color,
@@ -116,6 +117,7 @@ export function TownTalk({
     const speaker = {
       name: who.name, role: who.role,
       portrait: resident && people.length === 1 ? portraitUrl(resident.portraitAssetKey) : undefined,
+      portraitSet: resident && people.length === 1 ? resident.portraitAssetKey : undefined,
       notable: who,
     };
 

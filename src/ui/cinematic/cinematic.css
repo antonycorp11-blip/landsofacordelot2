@@ -41,10 +41,28 @@
 }
 .cine-dot { margin: 0 7px; opacity: 0.6; }
 
+.cine-art {
+  height:96px;
+  display:grid;
+  place-items:center;
+  flex:none;
+  pointer-events:none;
+  margin:-8px 0 -4px;
+}
+.cine-art img {
+  display:block;
+  width:auto;
+  height:100%;
+  max-width:min(100%, 360px);
+  object-fit:contain;
+  image-rendering:pixelated;
+  filter:drop-shadow(0 10px 12px #0009);
+}
+
 /* --------------------------- quem está falando -------------------------- */
 
 .cine-who { display: flex; align-items: center; gap: 10px; }
-.cine-face { border-radius: 50%; flex: none; box-shadow: 0 3px 14px #0008; }
+.cine-face { width:44px; height:44px; border-radius: 50%; flex: none; box-shadow: 0 3px 14px #0008; }
 .cine-who span { display: flex; flex-direction: column; gap: 2px; }
 .cine-who b { font-size: 16px; font-weight: 400; color: #f2e5c1; }
 .cine-who em {
@@ -87,7 +105,7 @@
   color: #f4e9cd;
   max-width: 54ch;
 }
-.cine-bubble-face { flex: none; border-radius: 50%; margin-top: 2px; box-shadow: 0 2px 8px #0007; }
+.cine-bubble-face { width:26px; height:26px; flex: none; border-radius: 50%; margin-top: 2px; box-shadow: 0 2px 8px #0007; }
 
 /* ------------------------------- escolhas ------------------------------- */
 
@@ -148,6 +166,7 @@
   .cine-text p, .cine-outcome { font-size: 15px; line-height: 1.5; }
   .cine-speaker b { font-size: 15px; }
   .cine-face { width: 44px !important; height: 44px !important; }
+  .cine-art { height:70px; margin:-6px 0 -3px; }
   .cine-choice { padding: 7px 9px; }
   .cine-label { font-size: 14px; }
   .cine-label em { font-size: 10px; }

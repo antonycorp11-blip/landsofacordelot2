@@ -26,7 +26,7 @@ Raio de percepção: 520 unidades. O nome só aparece depois de descoberto; ante
 
 ## Desenho
 
-`WorldEventLayer` desenha em código, sem arte nova. A carruagem é um corpo
+`WorldEventLayer` usa o conjunto 32-bit em `src/assets/story/carriage/`. A carruagem é um corpo
 inclinado, uma roda ainda no eixo, outra solta ao lado, o varal partido
 apontando para cima e dois volumes de carga caídos.
 

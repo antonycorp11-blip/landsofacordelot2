@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { FacePortrait } from "../../render/portraits/FacePortrait";
 import type { FaceTraits } from "../../render/portraits/face";
+import { ExpressionPortrait } from "../portrait/ExpressionPortrait";
+import type { PortraitExpression } from "../../data/storyPortraits";
 import "./dialogue.css";
 
 /**
@@ -27,6 +29,10 @@ export type DialogueScene = {
   /** Cargo ou função — "Capitão da guarda", "Senhor das Marchas". */
   speakerRole?: string;
   portraitUrl?: string;
+  /** Atlas emocional usado pela campanha; tem prioridade sobre a carta antiga. */
+  portraitSetKey?: string;
+  expression?: PortraitExpression;
+  expressionSequence?: PortraitExpression[];
   /** Cor da Casa, quando houver: a faixa do retrato herda dela. */
   accent?: string;
   /** Onde a conversa acontece. */
@@ -80,7 +86,14 @@ export function DialogueScreen({ scene, onClose }: { scene: DialogueScene; onClo
       >
         <div className="dlg-speaker">
           {!scene.narration && <div className="dlg-portrait">
-            {scene.portraitUrl
+            {scene.portraitSetKey
+              ? <ExpressionPortrait
+                  portraitKey={scene.portraitSetKey}
+                  expression={scene.expression}
+                  sequence={scene.expressionSequence}
+                  className="dlg-expression"
+                />
+              : scene.portraitUrl
               ? <img src={scene.portraitUrl} alt="" />
               : scene.face
               ? <FacePortrait {...scene.face} size={62} className="dlg-face" />

@@ -101,13 +101,13 @@ export const characters: Character[] = [
     relationWithPlayer: 8,
   },
   {
-    // Sem retrato: ver a lista de arte que falta em docs/casas.md.
     id: "cassian_caelmont",
     name: "Lorde-Príncipe Cassian Caelmont",
     houseId: "house_caelmont",
     title: "Lorde-Príncipe do Vale Sagrado",
     primaryClass: "POLITICS",
     secondaryClass: "RELIGION",
+    portraitAssetKey: "portrait_cassian_caelmont",
     locationPoiId: "luminaria",
     status: "available",
     relationWithPlayer: 0,
@@ -146,15 +146,13 @@ export const characters: Character[] = [
     relationWithPlayer: 15,
   },
   {
-    // O retrato entregue para esta Casa é de uma mulher; o nome do briefing é
-    // de um homem. Mantive o nome do briefing e deixei o retrato de fora até
-    // você decidir — ver docs/casas.md.
     id: "edric_rosethorne",
     name: "Lorde Edric Rosethorne",
     houseId: "house_rosethorne",
     title: "Senhor de Rosethorne",
     primaryClass: "TRADE",
     secondaryClass: "POLITICS",
+    portraitAssetKey: "portrait_edric_rosethorne",
     locationPoiId: "mercado_de_graos",
     status: "available",
     relationWithPlayer: 2,

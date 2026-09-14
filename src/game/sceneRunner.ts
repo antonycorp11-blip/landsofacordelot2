@@ -69,8 +69,10 @@ function applyKnowledge(g: GameState, outcome: SceneOutcome): GameState {
   };
 }
 
-/** A escolha do jogador. Devolve o texto do que aconteceu, para a cena mostrar. */
-export function chooseScene(choiceId: string): string | null {
+export type SceneResolution = { text: string; art?: SceneOutcome["art"] };
+
+/** A escolha do jogador. Devolve o que aconteceu para a cena mostrar. */
+export function chooseScene(choiceId: string): SceneResolution | null {
   const s = getState();
   const active = s.adventure.cinematic;
   if (!active) return null;
@@ -114,7 +116,7 @@ export function chooseScene(choiceId: string): string | null {
     };
   });
 
-  return outcome.text || null;
+  return outcome.text ? { text: outcome.text, art: outcome.art } : null;
 }
 
 export function closeScene() {

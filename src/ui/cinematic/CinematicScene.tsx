@@ -2,6 +2,9 @@ import { useState } from "react";
 import { FacePortrait } from "../../render/portraits/FacePortrait";
 import { chooseScene, closeScene, sceneById, sceneChance } from "../../game/sceneRunner";
 import { useGame } from "../../game/store";
+import { storyArt } from "../../data/storyArt";
+import { ExpressionPortrait } from "../portrait/ExpressionPortrait";
+import type { SceneResolution } from "../../game/sceneRunner";
 import "./cinematic.css";
 
 /**
@@ -20,7 +23,7 @@ import "./cinematic.css";
 export function CinematicScene() {
   const game = useGame();
   const active = game.adventure.cinematic;
-  const [outcome, setOutcome] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<SceneResolution | null>(null);
 
   /**
    * O resultado aparece ANTES de qualquer outra coisa, inclusive depois de a
@@ -31,8 +34,9 @@ export function CinematicScene() {
     return (
       <div className="cine">
         <div className="cine-frame">
+          {outcome.art && <div className="cine-art"><img src={storyArt[outcome.art]} alt="" /></div>}
           <div className="cine-thread">
-            {outcome.split("\n\n").map((part, i) => (
+            {outcome.text.split("\n\n").map((part, i) => (
               <p key={i} className={part.trim().startsWith("«") ? "said" : "seen"}>
                 <span>{part}</span>
               </p>
@@ -53,7 +57,7 @@ export function CinematicScene() {
   const beat = scene?.beats[active.beatId];
   if (!beat) return null;
 
-  const face = beat.speaker && {
+  const face = beat.speaker && !beat.speaker.portraitKey && {
     seed: beat.speaker.seed ?? beat.speaker.name,
     female: beat.speaker.female,
     age: beat.speaker.age ?? 0.45,
@@ -61,8 +65,8 @@ export function CinematicScene() {
   };
 
   const pick = (id: string) => {
-    const text = chooseScene(id);
-    if (text) setOutcome(text);
+    const result = chooseScene(id);
+    if (result) setOutcome(result);
   };
 
   return (
@@ -76,9 +80,18 @@ export function CinematicScene() {
           </div>
         )}
 
-        {beat.speaker && face && (
+        {beat.art && <div className="cine-art"><img src={storyArt[beat.art]} alt="" /></div>}
+
+        {beat.speaker && (
           <div className="cine-who">
-            <FacePortrait {...face} size={44} className="cine-face" />
+            {beat.speaker.portraitKey
+              ? <ExpressionPortrait
+                  portraitKey={beat.speaker.portraitKey}
+                  expression={beat.speaker.expression}
+                  sequence={beat.speaker.expressionSequence}
+                  className="cine-face"
+                />
+              : face && <FacePortrait {...face} size={44} className="cine-face" />}
             <span>
               <b>{beat.speaker.name}</b>
               {beat.speaker.role && <em>{beat.speaker.role}</em>}
@@ -91,6 +104,14 @@ export function CinematicScene() {
             const spoken = line.trim().startsWith("«");
             return (
               <p key={i} className={spoken ? "said" : "seen"}>
+                {spoken && beat.speaker?.portraitKey && (
+                  <ExpressionPortrait
+                    portraitKey={beat.speaker.portraitKey}
+                    expression={beat.speaker.expression}
+                    sequence={beat.speaker.expressionSequence}
+                    className="cine-bubble-face"
+                  />
+                )}
                 {spoken && face && <FacePortrait {...face} size={26} className="cine-bubble-face" />}
                 <span>{line}</span>
               </p>

@@ -58,6 +58,7 @@
   box-shadow: 0 3px 12px #0007;
 }
 .dlg-portrait img { position: absolute; width: 210%; max-width: none; height: auto; left: -55%; top: -20%; }
+.dlg-expression { position:absolute; inset:0; width:100%; height:100%; }
 .dlg-monogram { position: absolute; inset: 0; display: grid; place-items: center; font-size: 25px; color: #e2d5ae; }
 .dlg-plate { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
 .dlg-plate b { font-size: 17.5px; font-weight: 400; line-height: 1.15; color: #f2e5c1; }

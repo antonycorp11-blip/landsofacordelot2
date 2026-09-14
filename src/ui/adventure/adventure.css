@@ -133,5 +133,11 @@
 .know-list.ask li::before { content:"?"; color:#c9a85c; font-weight:700; }
 .know-list.proof li { color:#d9c48d; }
 .know-list.proof li::before { content:"◆"; color:#c9a85c; font-size:8px; top:3px; }
+.know-list.proof li:has(img) { display:flex; align-items:center; gap:8px; padding-left:0; }
+.know-list.proof li:has(img)::before { content:none; }
+.know-list.proof img {
+  width:42px; height:42px; flex:none; object-fit:contain;
+  image-rendering:pixelated; filter:drop-shadow(0 3px 4px #0008);
+}
 .know-list.where li { color:#b8c4b4; }
 .know-list.where li::before { content:"→"; color:#8aa0a8; font-size:9px; }
