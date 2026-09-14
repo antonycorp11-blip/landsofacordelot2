@@ -16,6 +16,7 @@ import type { Cinematic } from "../cinematics";
 /* ------------------------------ o conselho ------------------------------ */
 export const councilScene: Cinematic = {
   id: "arco7_conselho",
+  noEscape: true,
   first: "mesa",
   beats: {
     mesa: {
@@ -136,6 +137,10 @@ export const councilScene: Cinematic = {
           id: "procurar",
           label: "Procurar a segunda troca de nome.",
           hint: "Ofício de escrivão, linhagem sem interrupção, há cerca de cem anos.",
+          needsFlag: {
+            flag: "tem_a_marca_do_oficio",
+            blocked: "Trezentos anos de registro, e você não sabe que ofício procurar. O arquivo do Vale sabia.",
+          },
           check: { attribute: "stewardship", skills: ["avaliacao", "logistica"], label: "Administração / Paciência" },
           outcome: {
             text:
@@ -172,6 +177,181 @@ export const councilScene: Cinematic = {
     },
   },
 };
+
+
+/* -------------------------------- a guerra ------------------------------ */
+/**
+ * O QUE FALTAVA.
+ *
+ * O Conselho terminava em «é guerra» e a cena seguinte já dizia «o Castelo
+ * Real é seu, sete peças numa mesa» — o jogador nunca tomava os dois selos da
+ * Coroa, e o final inteiro ficava sem ser ganho. Isto é a guerra.
+ */
+export const warScene: Cinematic = {
+  id: "arco7_guerra",
+  noEscape: true,
+  first: "campo",
+  beats: {
+    campo: {
+      id: "campo",
+      place: "Diante do Castelo Real",
+      time: "Quarto dia de cerco",
+      text: [
+        "O Castelo Real nunca foi tomado. Também nunca foi cercado por gente que não queria saque: quem vem aqui vem por um trono, e trono não se rompe com fome.",
+        "As Casas que vieram estão à sua direita e à sua esquerda, e vieram por coisas que você fez, uma por uma.",
+        "No quarto dia o portão do lado norte abre por dentro, e ninguém do lado de fora mandou abrir.",
+      ],
+      choices: [
+        {
+          id: "entrar",
+          label: "Entrar pelo portão que abriram.",
+          hint: "Alguém lá dentro decidiu por você.",
+          outcome: {
+            text:
+              "A guarda do portão norte está de joelhos no chão do próprio posto, com as armas encostadas na parede, e é a princesa que está de pé no meio deles.\n\n«Eu li a lei. Nenhum dos dois tem direito.» Elira não sai do caminho. «Mas um de vocês vai queimar a cidade para entrar, e o outro já mandou queimar o celeiro para que ela passasse fome.»\n\nAí ela sai.\n\n«Meu pai está no salão. Meu irmão não vai estar.»",
+            facts: ["Elira Valdória abriu o portão norte do Castelo Real."],
+            flags: ["elira_abriu_o_portao"],
+            reward: { xp: 300, influence: 20 },
+            next: "salao",
+          },
+        },
+        {
+          id: "romper",
+          label: "Não confiar. Romper pela muralha oeste.",
+          hint: "Portão que abre sozinho costuma ser boca de armadilha.",
+          outcome: {
+            text:
+              "Você manda a coluna para o oeste, onde a pedra é velha, e paga o preço de uma muralha em homens.\n\nO portão norte estava aberto de verdade. A princesa esperou ali a manhã inteira, e depois mandou fechar.",
+            flags: ["recusou_o_portao"],
+            battle: { name: "Guarda Real de Valdória", band: { infantaria: 14, arqueiros: 8, cavaleiros: 6 }, resume: "salao" },
+          },
+        },
+      ],
+    },
+
+    salao: {
+      id: "salao",
+      place: "Salão do Castelo Real",
+      speaker: {
+        name: "Protetor Aldren Valdória", role: "Protetor do Reino",
+        portraitKey: "portrait_aldren_valdoria", expressionSequence: ["exhausted", "shaken"],
+      },
+      text: [
+        "Ele está sentado, sozinho, num salão feito para duzentas pessoas. Não há guarda. Não há filho.",
+        "Sobre a mesa, diante dele, há duas peças de ouro e um pano dobrado ao lado, como quem já tinha embrulhado para entregar.",
+        "«Três gerações.» A voz dele está seca. «Meu avô começou, meu pai continuou, e eu nunca tive coragem de parar nem de terminar.»",
+      ],
+      choices: [
+        {
+          id: "perguntar",
+          label: "«Por que não terminou?»",
+          outcome: {
+            text:
+              "«Porque eu sabia o que faltava e sabia o que custava.» Ele empurra as duas peças pela mesa sem levantar. «Aurenna foi comprada de um herdeiro endividado por um sexto do que valia. A nossa foi herdada de um ramo que nunca teve direito a nada. Trezentos anos chamando isso de provisório.»\n\nEle olha para você pela primeira vez.\n\n«Meu filho teria terminado. E teria achado que estava salvando o reino, que é a parte que me tira o sono.»",
+            facts: [
+              "Os dois selos da Coroa: um comprado de um herdeiro endividado, outro herdado por um ramo sem direito.",
+              "Aldren Valdória entregou os dois em vez de terminar o plano de três gerações.",
+            ],
+            evidence: ["selo_valdoria", "selo_aurenna"],
+            flags: ["tem_os_sete", "aldren_entregou"],
+            reward: { xp: 700, influence: 40 },
+            balance: -4,
+            balanceReason: "Recebeu em vez de tomar",
+            next: "caelan",
+          },
+        },
+        {
+          id: "pegar",
+          label: "Pegar as duas e não dizer nada.",
+          hint: "Ele não vai reagir. E é isso que faz ser pior.",
+          outcome: {
+            text:
+              "Você recolhe as duas peças da mesa e ele não move um músculo.\n\nNa porta, ele fala com as suas costas, sem levantar a voz:\n\n«Eu também não disse nada quando as recebi. Foi assim que começou.»",
+            facts: ["Os dois selos da Coroa são seus."],
+            evidence: ["selo_valdoria", "selo_aurenna"],
+            flags: ["tem_os_sete", "tomou_de_aldren"],
+            reward: { xp: 650, influence: 30 },
+            balance: 6,
+            balanceReason: "Tomou de um homem que não reagiu",
+            next: "caelan",
+          },
+        },
+      ],
+    },
+
+    caelan: {
+      id: "caelan",
+      place: "Pátio interno",
+      speaker: {
+        name: "Príncipe Caelan Valdória", role: "Herdeiro do Protetor",
+        portraitKey: "portrait_caelan_valdoria", expressionSequence: ["neutral", "hard"],
+      },
+      text: [
+        "Ele está no pátio com trinta homens que ainda respondem a ele, e não parece derrotado. Parece contrariado, que é outra coisa.",
+        "«O senhor entende que isto não acaba com o meu pai entregando ouro numa mesa.»",
+        "«Eu ia unir sete reinos. O senhor vai fazer o quê com eles?»",
+      ],
+      choices: [
+        {
+          id: "responder",
+          label: "Responder.",
+          hint: "Ele fez uma pergunta de verdade.",
+          check: { attribute: "conviction", skills: ["persuasao", "lideranca"], label: "Convicção / Liderança" },
+          outcome: {
+            text:
+              "O que você diz não convence os trinta homens. Convence Caelan, que é pior para ele.\n\nEle olha o próprio punho fechado por um tempo longo.\n\n«Então o senhor pensou nisso.» Ele manda os trinta baixarem as armas com um gesto curto. «Eu passei a vida achando que era o único que tinha pensado.»\n\nSai pelo portão sul a pé, sem escolta, e ninguém o vê de novo enquanto esta história durar.",
+            facts: ["Caelan Valdória deixou o Castelo Real a pé, sem escolta."],
+            flags: ["caelan_se_foi"],
+            reward: { xp: 400, influence: 20 },
+            balance: -3,
+            balanceReason: "Respondeu em vez de mandar",
+            next: "fim_da_guerra",
+          },
+          failure: {
+            text:
+              "Você diz o que diria a uma sala de Casas, e ele não é uma sala de Casas.\n\n«Eu esperava melhor.» Ele desembainha sem pressa nenhuma. «É uma pena. O senhor teria sido um rei suportável.»",
+            flags: ["caelan_lutou"],
+            battle: { name: "Príncipe Caelan e os trinta", band: { infantaria: 12, cavaleiros: 8, arqueiros: 6 }, resume: "fim_da_guerra" },
+          },
+        },
+        {
+          id: "acabar",
+          label: "Não há o que responder.",
+          hint: "Trinta homens contra tudo o que você trouxe.",
+          outcome: {
+            text: "Ele faz que sim com a cabeça, como quem confirma uma suspeita antiga, e desembainha.",
+            flags: ["caelan_lutou"],
+            battle: { name: "Príncipe Caelan e os trinta", band: { infantaria: 12, cavaleiros: 8, arqueiros: 6 }, resume: "fim_da_guerra" },
+          },
+        },
+      ],
+    },
+
+    fim_da_guerra: {
+      id: "fim_da_guerra",
+      place: "Castelo Real",
+      time: "Acabou",
+      text: [
+        "O Castelo Real é seu, e é um prédio grande e frio onde todo mundo agora espera que você diga alguma coisa.",
+        "Sete peças. A lei de um rei morto há trezentos anos diz o que fazer com elas.",
+        "Falta você decidir se acredita nessa lei.",
+      ],
+      choices: [
+        {
+          id: "subir",
+          label: "Subir ao salão.",
+          outcome: {
+            text: "",
+            flags: ["guerra_vencida"],
+            reward: { xp: 500, influence: 30 },
+            end: true,
+          },
+        },
+      ],
+    },
+  },
+};
+
 
 /* --------------------------- o ponto de decisão -------------------------- */
 /**

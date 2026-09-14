@@ -146,7 +146,9 @@ const CHAPTER_II: Chapter = {
       // "sumir de quem está atrás de você" estaria cumprido no primeiro
       // minuto de jogo, porque ninguém está atrás de ninguém ainda.
       id: "c2_espera",
-      objective: "Descobrir o que você está carregando.",
+      // Serve para quem ficou com o selo e para quem o devolveu: os dois
+      // continuam sem entender o que aconteceu naquela estrada.
+      objective: "Entender o que aconteceu naquela estrada.",
       detail: "A joia da carruagem tem dono, história e gente atrás dela.",
       trigger: { kind: "flag", flag: "arco_ii_aberto" },
     },
@@ -304,10 +306,17 @@ const CHAPTER_VII: Chapter = {
       cinematic: "arco7_conselho",
     },
     {
+      id: "c7_guerra",
+      objective: "Marchar sobre o Castelo Real.",
+      detail: "Ela tem dois e não entrega em mesa. Não há investigação que resolva isto.",
+      trigger: { kind: "visit", poiId: "castelo_real" },
+      cinematic: "arco7_guerra",
+    },
+    {
       id: "c7_decisao",
       objective: "Sentar diante dos sete.",
       detail: "O reino está na sua mão. Falta decidir o que ele vai ser.",
-      trigger: { kind: "visit", poiId: "castelo_real" },
+      trigger: { kind: "flag", flag: "guerra_vencida" },
       cinematic: "arco7_decisao",
     },
   ],

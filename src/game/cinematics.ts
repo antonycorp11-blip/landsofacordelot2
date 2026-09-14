@@ -39,6 +39,13 @@ export type SceneOutcome = {
   questions?: string[];
   /** Provas materiais. */
   evidence?: string[];
+  /**
+   * Provas que DEIXAM de estar com você.
+   *
+   * Sem isto, devolver o selo a Edran deixava o selo no quadro de investigação
+   * e as quatro pistas de Elmwood abertas — com o objeto na mão de um morto.
+   */
+  removeEvidence?: string[];
   /** Marcas permanentes da escolha. */
   flags?: string[];
   /**
@@ -94,6 +101,14 @@ export type SceneChoice = {
   /** Linha de apoio curta: o que você pretende fazer. */
   hint?: string;
   check?: SceneCheck;
+  /**
+   * Exige uma marca para estar disponível.
+   *
+   * Aparece assim mesmo, trancada e com o motivo dito — saber que existe um
+   * caminho que você não pode tomar é informação, e esconder a opção seria
+   * esconder que faltou alguma coisa.
+   */
+  needsFlag?: { flag: string; blocked: string };
   /** Sem teste: acontece. Com teste: `outcome` é o sucesso. */
   outcome: SceneOutcome;
   failure?: SceneOutcome;

@@ -15,6 +15,7 @@ import type { Cinematic } from "../cinematics";
 /* -------------------------------- o fôlego ------------------------------ */
 export const breathScene: Cinematic = {
   id: "arco2_folego",
+  noEscape: true,
   first: "mato",
   beats: {
     mato: {
@@ -53,6 +54,7 @@ export const breathScene: Cinematic = {
  */
 export const widowScene: Cinematic = {
   id: "arco2_viuva",
+  noEscape: true,
   first: "portao",
   beats: {
     portao: {
@@ -155,6 +157,7 @@ export const widowScene: Cinematic = {
 /* ------------------------------- a renda -------------------------------- */
 export const incomeScene: Cinematic = {
   id: "arco2_renda",
+  noEscape: true,
   first: "livro",
   beats: {
     livro: {
@@ -188,6 +191,7 @@ export const incomeScene: Cinematic = {
 /* ----------------------------- a guarnição ------------------------------ */
 export const garrisonScene: Cinematic = {
   id: "arco2_guarnicao",
+  noEscape: true,
   first: "cerca",
   beats: {
     cerca: {
@@ -226,6 +230,7 @@ export const garrisonScene: Cinematic = {
  */
 export const siegeScene: Cinematic = {
   id: "arco2_cerco",
+  noEscape: true,
   first: "chegam",
   beats: {
     chegam: {

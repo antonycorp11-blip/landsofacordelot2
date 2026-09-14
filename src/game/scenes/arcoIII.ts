@@ -18,6 +18,7 @@ import { REVEAL_FLAG } from "../balance";
 /* ------------------------------ Tomas Elmwood --------------------------- */
 export const tomasScene: Cinematic = {
   id: "arco3_tomas",
+  noEscape: true,
   first: "salao",
   beats: {
     salao: {
@@ -83,6 +84,7 @@ export const tomasScene: Cinematic = {
 /** Ilyra Veyr chegou primeiro. Ela vai chegar primeiro o arco inteiro. */
 export const auctionScene: Cinematic = {
   id: "arco3_leiloeiro",
+  noEscape: true,
   first: "tenda",
   beats: {
     tenda: {
@@ -174,6 +176,7 @@ export const auctionScene: Cinematic = {
 /* -------------------------------- a viúva ------------------------------- */
 export const goldsmithWidowScene: Cinematic = {
   id: "arco3_viuva_ourives",
+  noEscape: true,
   first: "pouso",
   beats: {
     pouso: {
@@ -262,6 +265,7 @@ export const goldsmithWidowScene: Cinematic = {
  */
 export const barrowScene: Cinematic = {
   id: "arco3_barrow",
+  noEscape: true,
   first: "moinho",
   beats: {
     moinho: {

@@ -13,6 +13,7 @@ import type { Cinematic } from "../cinematics";
 
 export const garrickScene: Cinematic = {
   id: "arco4_garrick",
+  noEscape: true,
   first: "patio",
   beats: {
     patio: {

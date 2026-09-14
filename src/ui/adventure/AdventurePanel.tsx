@@ -178,11 +178,14 @@ const EVIDENCE_NAME: Record<string,string> = {
   selo_caelmont: "Selo Real da Casa Caelmont — refundido dentro da Lâmpada do Vale",
   confissao_antonios: "Confissão do rei Antônios — de próprio punho, com um laço embaixo da assinatura",
   linhagem_vern: "A linha da chancelaria — duas trocas de nome, e o sobrenome de hoje",
+  selo_valdoria: "Selo Real da Casa Valdória — herdado por um ramo que nunca teve direito",
+  selo_aurenna: "Selo Real da Casa Aurenna — comprado de um herdeiro endividado por um sexto do valor",
 };
 // Os selos são peças irmãs: a mesma arte serve às duas até haver outra.
 const EVIDENCE_ART: Record<string,string> = {
   royal_seal: royalSealArt, selo_elmwood: royalSealArt, selo_karneth: royalSealArt,
   selo_dravenor: royalSealArt, selo_caelmont: royalSealArt,
+  selo_valdoria: royalSealArt, selo_aurenna: royalSealArt,
 };
 
 function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGame>['adventure']['quest']>['pending']>}) {

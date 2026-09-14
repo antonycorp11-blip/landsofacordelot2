@@ -17,6 +17,7 @@ import type { Cinematic } from "../cinematics";
 
 export const edranScene: Cinematic = {
   id: "audiencia_edran",
+  noEscape: true,
   first: "antessala",
   beats: {
     antessala: {
@@ -170,6 +171,7 @@ export const edranScene: Cinematic = {
             facts: ["Edran Silvarden foi morto na mesma noite em que recebeu o selo. O selo desapareceu."],
             questions: ["Quem entrou numa sala trancada por dentro?"],
             flags: ["devolveu_o_selo", "edran_morto"],
+            removeEvidence: ["royal_seal"],
             grantFief: "f_texugo",
             reward: { xp: 260, gold: 300, influence: 20 },
             balance: -6,

@@ -237,6 +237,8 @@
 .cine-choice:hover { border-left-color: #c9a85c; color: #f6ecd2; background: #ffffff08; }
 .cine-choice:focus-visible { outline: 1px solid #d8b85c; outline-offset: -1px; }
 .cine-choice.continue { border-left-color: #c9a85c; color: #f3dc9b; }
+.cine-choice.locked { opacity: 0.42; cursor: default; }
+.cine-choice.locked:hover { border-left-color: transparent; background: none; color: #cbd2c4; }
 @media (prefers-reduced-motion: reduce) { .cine-choice { transition: none; } }
 
 .cine-number { flex: none; font: 10px var(--ui-small); color: #8a7d5c; width: 12px; }

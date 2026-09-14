@@ -12,6 +12,7 @@ import type { Cinematic } from "../cinematics";
 
 export const gateScene: Cinematic = {
   id: "arco5_portao",
+  noEscape: true,
   first: "muralha",
   beats: {
     muralha: {

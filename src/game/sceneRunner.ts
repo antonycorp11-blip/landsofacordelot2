@@ -18,7 +18,7 @@ import { auctionScene, barrowScene, goldsmithWidowScene, tomasScene } from "./sc
 import { garrickScene } from "./scenes/arcoIV";
 import { gateScene } from "./scenes/arcoV";
 import { relicScene } from "./scenes/arcoVI";
-import { councilScene, endingScene } from "./scenes/arcoVII";
+import { councilScene, endingScene, warScene } from "./scenes/arcoVII";
 import { edranScene } from "./scenes/edran";
 import type { Cinematic, SceneChoice, SceneOutcome } from "./cinematics";
 import { startBattle } from "./battle";
@@ -54,6 +54,7 @@ const SCENES: Record<string, Cinematic> = {
   [gateScene.id]: gateScene,
   [relicScene.id]: relicScene,
   [councilScene.id]: councilScene,
+  [warScene.id]: warScene,
   [endingScene.id]: endingScene,
 };
 
@@ -133,12 +134,14 @@ function callGarrison(g: GameState): GameState {
 function applyKnowledge(g: GameState, outcome: SceneOutcome): GameState {
   const add = (list: string[], extra?: string[]) =>
     extra ? [...list, ...extra.filter((x) => !list.includes(x))] : list;
+  const drop = (list: string[], gone?: string[]) =>
+    gone ? list.filter((x) => !gone.includes(x)) : list;
   return {
     ...g,
     knowledge: {
       facts: add(g.knowledge.facts, outcome.facts),
       questions: add(g.knowledge.questions, outcome.questions),
-      evidence: add(g.knowledge.evidence, outcome.evidence),
+      evidence: drop(add(g.knowledge.evidence, outcome.evidence), outcome.removeEvidence),
     },
     storyFlags: add(g.storyFlags, outcome.flags),
     worldForces: outcome.hunt?.length ? huntFrom(g, outcome.hunt) : g.worldForces,

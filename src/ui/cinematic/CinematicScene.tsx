@@ -152,17 +152,24 @@ export function CinematicScene() {
             ) : (
               beat!.choices.map((choice, i) => {
                 const chance = choice.check ? Math.round(sceneChance(choice, game) * 100) : null;
+                // Caminho que existe e que você não pode tomar: aparece
+                // trancado, com o motivo. Esconder seria esconder que faltou
+                // alguma coisa lá atrás.
+                const locked = !!choice.needsFlag && !game.storyFlags.includes(choice.needsFlag.flag);
                 return (
                   <button
                     key={choice.id}
-                    className="cine-choice"
-                    tabIndex={typed.done ? 0 : -1}
-                    onClick={(e) => { e.stopPropagation(); pick(choice.id); }}
+                    className={`cine-choice ${locked ? "locked" : ""}`}
+                    disabled={locked}
+                    tabIndex={typed.done && !locked ? 0 : -1}
+                    onClick={(e) => { e.stopPropagation(); if (!locked) pick(choice.id); }}
                   >
                     <span className="cine-number">{i + 1}</span>
                     <span className="cine-label">
                       {choice.label}
-                      {choice.hint && <em>{choice.hint}</em>}
+                      {(locked ? choice.needsFlag!.blocked : choice.hint) && (
+                        <em>{locked ? choice.needsFlag!.blocked : choice.hint}</em>
+                      )}
                     </span>
                     {choice.check && (
                       <span className="cine-check">

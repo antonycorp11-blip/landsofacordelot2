@@ -12,6 +12,7 @@ import type { Cinematic } from "../cinematics";
 
 export const relicScene: Cinematic = {
   id: "arco6_reliquia",
+  noEscape: true,
   first: "catedral",
   beats: {
     catedral: {
