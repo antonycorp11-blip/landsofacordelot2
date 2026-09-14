@@ -188,7 +188,57 @@ const CHAPTER_II: Chapter = {
   ],
 };
 
-export const chapters: Chapter[] = [CHAPTER_II];
+/**
+ * CAPÍTULO III — O SELO QUE FOI VENDIDO.
+ *
+ * Um rastro de papel de quatro gerações, e no fim dele gente que não fez nada
+ * a ninguém. É o arco que abre o segundo lado da Balança — e abre porque o
+ * jogador VÊ o preço, não porque alguém explica.
+ */
+const CHAPTER_III: Chapter = {
+  number: 3,
+  title: "O selo que foi vendido",
+  blurb:
+    "O selo de Elmwood saiu da Casa há quatro gerações e ninguém sabe onde parou. O rastro é de papel, e na ponta dele há uma família que não faz ideia do que tem — e um forno aceso.",
+  steps: [
+    {
+      id: "c3_espera",
+      objective: "Descobrir onde estão os outros seis.",
+      detail: "Uma ordem sem registro é um começo. A Casa Elmwood é outro.",
+      trigger: { kind: "flag", flag: "arco_iii_aberto" },
+    },
+    {
+      id: "c3_tomas",
+      objective: "Perguntar a Lorde Tomas Elmwood pelo selo da Casa dele.",
+      detail: "O celeiro de Valdória não tem voz nas mesas grandes, e há um motivo antigo para isso.",
+      trigger: { kind: "visit", poiId: "castelo_de_campo_alto" },
+      cinematic: "arco3_tomas",
+    },
+    {
+      id: "c3_leilao",
+      objective: "Achar o livro de leilões de Wexley, no Mercado de Grãos.",
+      detail: "Espólio de credor morto vira lote. Lote tem número, e número fica escrito.",
+      trigger: { kind: "visit", poiId: "mercado_de_graos" },
+      cinematic: "arco3_leiloeiro",
+    },
+    {
+      id: "c3_viuva",
+      objective: "Procurar a viúva do ourives, no Pouso dos Mercadores.",
+      detail: "Ela se lembra de tudo e mente sobre metade. Descobrir qual metade é o seu problema.",
+      trigger: { kind: "visit", poiId: "pouso_dos_mercadores" },
+      cinematic: "arco3_viuva_ourives",
+    },
+    {
+      id: "c3_barrow",
+      objective: "Chegar aos Grandes Moinhos antes de segunda-feira.",
+      detail: "Segunda-feira a peça vira aliança, e ouro velho vale por peso.",
+      trigger: { kind: "visit", poiId: "grandes_moinhos" },
+      cinematic: "arco3_barrow",
+    },
+  ],
+};
+
+export const chapters: Chapter[] = [CHAPTER_II, CHAPTER_III];
 
 export const allSteps: StoryStep[] = chapters.flatMap((c) => c.steps);
 export const chapterOfStep = new Map<string, Chapter>(

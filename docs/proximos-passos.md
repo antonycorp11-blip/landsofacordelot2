@@ -50,16 +50,19 @@ Isto é a fila, e está em ordem.
 4. ~~O Arco II~~ e ~~capítulos em `story.ts`~~ — **feitos.** O Capítulo II está
    em `story.ts` com gatilhos novos (`flag`, `unhunted`, `garrison`,
    `prosperity`) e cenas do sistema novo via `StoryStep.cinematic`.
-5. **O ARCO III — o selo que foi vendido.** Rastro de papel, uma viúva que
-   mente sobre metade, e uma corrida contra a fundição. É onde Ilyra Veyr
-   entra pela primeira vez, e onde a Balança ganha o segundo polo para o fio longo dos Arcos, já que o array está
+5. ~~O Arco III~~ — **feito.** A Balança ganha o segundo polo no fim dele, e
+   o jogador sai com dois selos.
+6. **O ARCO IV — Karneth não esconde.** Garrick diz na cara que é dele e manda
+   vir buscar. Guerra de verdade ou o problema interno que ele não pode
+   admitir — e é aqui que o jogador funda a própria Casa. para o fio longo dos Arcos, já que o array está
    vazio.
 
 ## O que a Balança ainda não faz
 
-Ela mede e aparece. O que falta é ela **ser lida de volta**: cenas que mudam de
-texto conforme a inclinação, gente que comenta o que ele vem fazendo, e o
-ponto de decisão final com o custo de contrariar a própria Balança
+O segundo polo já abre no fim do Arco III, e as cenas dos três arcos a movem.
+O que falta é ela **ser lida de volta**: cenas que mudam de texto conforme a
+inclinação, gente que comenta o que ele vem fazendo, e o ponto de decisão
+final com o custo de contrariar a própria Balança
 ([`narrativa.md`](narrativa.md) §8).
 
 ## Direção para diálogos e história

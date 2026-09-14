@@ -172,8 +172,10 @@ const EVIDENCE_NAME: Record<string,string> = {
   carta_do_escrivao: "Carta de Mestre Aled Vern — fechada com um laço embaixo da assinatura",
   ordem_da_cancela: "Ordem de abrir a cancela do bosque — a letra não é a do intendente",
   ordem_sem_registro: "Ordem da Coroa — levar o selo ao Castelo Real sem escolta e sem registro",
+  selo_elmwood: "Selo Real da Casa Elmwood — penhorado há quatro gerações por trinta e quatro moedas",
 };
-const EVIDENCE_ART: Record<string,string> = { royal_seal: royalSealArt };
+// Os selos são peças irmãs: a mesma arte serve às duas até haver outra.
+const EVIDENCE_ART: Record<string,string> = { royal_seal: royalSealArt, selo_elmwood: royalSealArt };
 
 function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGame>['adventure']['quest']>['pending']>}) {
   const game=useGame();

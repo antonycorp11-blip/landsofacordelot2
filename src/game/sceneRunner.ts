@@ -14,6 +14,7 @@ import { carriageScene } from "./scenes/carriage";
 import { guardScene, merchantScene, priestScene, scribeScene } from "./scenes/leads";
 import { deserterScene, halkaScene, postScene, sawmillScene } from "./scenes/favours";
 import { breathScene, garrisonScene, incomeScene, siegeScene, widowScene } from "./scenes/arcoII";
+import { auctionScene, barrowScene, goldsmithWidowScene, tomasScene } from "./scenes/arcoIII";
 import { edranScene } from "./scenes/edran";
 import type { Cinematic, SceneChoice, SceneOutcome } from "./cinematics";
 import { startBattle } from "./battle";
@@ -40,6 +41,10 @@ const SCENES: Record<string, Cinematic> = {
   [incomeScene.id]: incomeScene,
   [garrisonScene.id]: garrisonScene,
   [siegeScene.id]: siegeScene,
+  [tomasScene.id]: tomasScene,
+  [auctionScene.id]: auctionScene,
+  [goldsmithWidowScene.id]: goldsmithWidowScene,
+  [barrowScene.id]: barrowScene,
 };
 
 export function sceneById(id: string): Cinematic | undefined {
