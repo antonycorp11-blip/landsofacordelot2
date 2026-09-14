@@ -15,6 +15,9 @@ import { TownTalk } from "../dialogue/TownTalk";
 import { notablesAt } from "../../data/notables";
 import { canTradeAt } from "../../game/economy";
 import { MarketPanel } from "../market/MarketPanel";
+import { estateOf } from "../../game/estates";
+import { fiefAt } from "../../world/fiefs";
+import { SettlementArrival } from "./SettlementArrival";
 import "./panel.css";
 
 /**
@@ -42,6 +45,7 @@ export const SettlementPanel = memo(function SettlementPanel({
   const game = useGame();
   const [view, setView] = useState<"menu" | "recruit" | "market" | "info">("menu");
   const [talking, setTalking] = useState(false);
+  const [arrivalSeen,setArrivalSeen]=useState(false);
   if (!poi) return null;
 
   const holding = holdingFor(poi);
@@ -56,19 +60,29 @@ export const SettlementPanel = memo(function SettlementPanel({
 
   const contract = game.adventure.contract;
   const canDeliver = !!contract && contract.destinationId === poi.id;
+  const canRecruit = ["castle","city","town","village","military","market","port","mine","estate"].includes(holding.kind);
+  const fief=fiefAt(poi);
+  const prosperity=fief&&game.fiefEstates?.[fief.id]?estateOf(game,fief.id).prosperity:holding.prosperity;
 
   const pick = (id: string) => {
     if (id === "travel") { onTravel(poi.id); onClose(); }
-    else if (id === "talk") setTalking(true);
-    else if (id === "recruit") setView("recruit");
-    else if (id === "market") setView("market");
-    else if (id === "info") setView(view === "info" ? "menu" : "info");
+    else if (id === "talk") {setArrivalSeen(true);setTalking(true);}
+    else if (id === "recruit") {setArrivalSeen(true);setView("recruit");}
+    else if (id === "market") {setArrivalSeen(true);setView("market");}
+    else if (id === "info") {setArrivalSeen(true);setView(view === "info" ? "menu" : "info");}
     else if (id === "deliver") { if (!openClosing()) completeContract(); onClose(); }
   };
 
+  const arrival=here&&view==="menu"&&!talking;
+
   return (
     <>
-      <aside className="settlement-panel" style={{ ["--house" as string]: controller?.color }}>
+      {arrival?<SettlementArrival
+        poi={poi} holding={holding} prosperity={prosperity}
+        canMarket={canTradeAt(poi)} canRecruit={canRecruit} canDeliver={canDeliver} revealed={arrivalSeen}
+        onTalk={()=>pick("talk")} onMarket={()=>pick("market")} onRecruit={()=>pick("recruit")}
+        onInfo={()=>pick("info")} onDeliver={()=>pick("deliver")} onLeave={onClose}
+      />:<aside className="settlement-panel" style={{ ["--house" as string]: controller?.color }}>
         <SettlementHeader poi={poi} holding={holding} onClose={onClose} />
 
         <div className="sp-body">
@@ -89,7 +103,7 @@ export const SettlementPanel = memo(function SettlementPanel({
             </>
           )}
         </div>
-      </aside>
+      </aside>}
 
       {talking && <TownTalk poi={poi} onClose={() => setTalking(false)} onTravel={onTravel} onRecruit={() => { setTalking(false); setView("recruit"); }} />}
     </>

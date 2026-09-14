@@ -241,6 +241,17 @@
 }
 .cine-escape:hover { color: #cbbf9d; background: #ffffff0d; }
 
+/* Chegada a uma localidade usa o mesmo palco, com a cor política do lugar. */
+.cine-arrival {
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 22% 52%, color-mix(in srgb, var(--house, #31544d) 25%, #07100f) 0%, transparent 48%),
+    linear-gradient(105deg, #050908ed, #071010e8 62%, #020505fa);
+}
+.cine-arrival .cine-frame { overflow: hidden; }
+.cine-arrival .cine-name em { color: color-mix(in srgb, var(--house, #9a8b63) 38%, #c5b785); }
+.cine-arrival .cine-choice.continue { margin-top: 2px; border-top: 1px solid #ffffff0b; }
+
 /* ------------------------------- deitado -------------------------------- */
 
 @media (orientation: landscape) and (max-height: 560px) {
@@ -251,6 +262,12 @@
   .cine-thread { gap: 7px; }
   .cine-choice { padding: 6px 9px; }
   .cine-name b { font-size: 15px; }
+  .cine-arrival .cine-side { gap: 5px; }
+  .cine-arrival .cine-thread { gap: 5px; }
+  .cine-arrival .cine-thread p.seen { font-size: 13px; line-height: 1.34; }
+  .cine-arrival .cine-choice { padding: 4px 9px; }
+  .cine-arrival .cine-label { font-size: 13px; line-height: 1.2; }
+  .cine-arrival .cine-label em { font-size: 9px; }
 }
 
 /* Em pé o busto não cabe ao lado: sobe para cima do texto, menor. */
