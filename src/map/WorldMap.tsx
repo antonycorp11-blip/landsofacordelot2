@@ -30,7 +30,7 @@ import { SettlementPanel } from "../ui/settlement/SettlementPanel";
 import { CharacterScreen } from "../ui/hero/CharacterScreen";
 import { AgentPanel } from "../ui/agent/AgentPanel";
 import { update, useGame } from "../game/store";
-import { checkForceEscort, checkOffer, checkOfferArrival, checkRoadEvent, checkStory, recordJourney, startForceEscort, startWorldForceBattle, supportArmySiege, tutorialFlag } from "../game/adventure";
+import { checkForceEscort, checkOffer, checkOfferArrival, checkRoadEvent, checkStory, dismissNotice, recordJourney, startForceEscort, startWorldForceBattle, supportArmySiege, tutorialFlag } from "../game/adventure";
 import { AdventurePanel, type AdventureView } from "../ui/adventure/AdventurePanel";
 import { Coach } from "../ui/coach/Coach";
 import { StoryScene } from "../ui/story/StoryScene";
@@ -98,7 +98,15 @@ export function WorldMap() {
   const [adventureView, setAdventureView] = useState<AdventureView | null>(null);
   const [queuedDestination, setQueuedDestination] = useState<RoadStop | null>(null);
   const [initialPosition] = useState(() => restoreJourney(startNode).position);
-  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.notice || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending || !!game.adventure.story.pending || !!game.adventure.cinematic;
+  /**
+   * O QUE REALMENTE IMPEDE DE ANDAR.
+   *
+   * `notice` saiu daqui. Um aviso é informação, não janela modal — e enquanto
+   * ele estava nesta lista, o cartão "Você carrega um selo da Coroa" ficava
+   * aberto no canto e NENHUM clique no mapa funcionava: nem castelo, nem
+   * estrada, nem nada. O jogador só via o jogo parar de responder.
+   */
+  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending || !!game.adventure.story.pending || !!game.adventure.cinematic;
 
   const followRef = useRef(follow);
   followRef.current = follow;
@@ -188,8 +196,13 @@ export function WorldMap() {
       setSelectedRegion(poi.regionId);
       // Já está aqui: abre o menu. Senão, PARTE — tocar num lugar é ir até
       // ele, e o menu abre sozinho na chegada.
-      if (travel.currentNodeId === poi.id) setPanelPoiId(poi.id);
-      else setQueuedDestination(nodeStop(poi.id));
+      if (travel.currentNodeId === poi.id) { setPanelPoiId(poi.id); return; }
+      // Nem toda localidade é nó de estrada — lago, bosque e posto não são. Sem
+      // o recuo pelo terreno, tocar nelas não fazia absolutamente nada.
+      const node = nodeStop(poi.id);
+      if (node) { setQueuedDestination(node); return; }
+      const target = nearestWalkable({ x: poi.x, y: poi.y });
+      if (target) setQueuedDestination({ kind: "free", x: target.x, y: target.y });
     },
     [camera, travel.currentNodeId],
   );
@@ -215,10 +228,11 @@ export function WorldMap() {
       const world = camera.screenToWorld(e.clientX, e.clientY);
       const target = nearestWalkable(world);
       if (!target) return;
+      if (game.adventure.notice) dismissNotice();
       setPanelPoiId(null);
       setQueuedDestination({ kind: "free", x: target.x, y: target.y });
     },
-    [adventureBlocked, camera],
+    [adventureBlocked, camera, game.adventure.notice],
   );
 
   const handleRegionClick = useCallback(

@@ -15,8 +15,8 @@
  * jogo precisa cabe em cem linhas e não justifica uma dependência.
  */
 import { useSyncExternalStore } from "react";
-import { openingStop, saveStop } from "../world/roadStops";
-import { openingCarriage } from "./scenes/spawn";
+import { saveStop } from "../world/roadStops";
+import { openingCarriage, openingStart } from "./scenes/spawn";
 import { heroById, heroes, type Attributes } from "../data/heroes";
 import { startingSkills, type SkillValues } from "./progression";
 import { emptyCareerXp, type CareerXp } from "./careers";
@@ -38,9 +38,9 @@ import { normalizeForceState, type WorldForceState } from "./worldForces";
  * exemplo —, subir o número descarta o save antigo em vez de ressuscitar um
  * estado que o jogo novo não sabe ler.
  */
-const SAVE_KEY = "acordelot.campanha.v5";
+const SAVE_KEY = "acordelot.campanha.v6";
 /** Chaves de versões anteriores, apagadas ao carregar. */
-const OLD_KEYS = ["acordelot.campanha.v1", "acordelot.campanha.v2", "acordelot.campanha.v3", "acordelot.campanha.v4"];
+const OLD_KEYS = ["acordelot.campanha.v1", "acordelot.campanha.v2", "acordelot.campanha.v3", "acordelot.campanha.v4", "acordelot.campanha.v5"];
 
 export type CompanionStatus = "IN_PARTY" | "AVAILABLE" | "TRAVELING" | "CAPTURED" | "WOUNDED";
 
@@ -326,13 +326,13 @@ export function startCampaign(heroId: string) {
     // Humilde de propósito: a primeira tropa tem de ser conquistada.
     gold: 120,
     companions,
-    // A campanha não começa num salão: começa num trecho de estrada dentro
-    // do bosque, sem título e sem rumo. Gravar a parada inicial aqui é o que
-    // faz o mapa abrir lá em vez de num portão de castelo.
+    // A campanha não começa num salão nem com o jogador olhando o mapa sem
+    // saber o que fazer: começa na cena da carruagem, e ele já está lá quando
+    // o texto acaba.
     journey: {
       currentNodeId: null,
       destinationId: null,
-      at: saveStop(openingStop()),
+      at: saveStop(openingStart()),
       from: null,
       to: null,
       distance: 0,
@@ -349,6 +349,12 @@ export function startCampaign(heroId: string) {
      * porque uma seta o mandou. Ignorá-la é permitido — e é uma escolha.
      */
     worldEvents: (() => { const c = openingCarriage(); return { [c.id]: c }; })(),
+    adventure: {
+      ...freshAdventure(),
+      // Abre no escuro, com o texto sendo escrito. Nada de tutorial e nada de
+      // seta: três linhas e a curva da trilha.
+      cinematic: { sceneId: "wrecked_carriage", beatId: "abertura", eventId: "we_carruagem" },
+    },
   }));
 }
 

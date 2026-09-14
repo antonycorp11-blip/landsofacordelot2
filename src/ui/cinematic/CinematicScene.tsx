@@ -4,65 +4,119 @@ import { chooseScene, closeScene, sceneById, sceneChance } from "../../game/scen
 import { useGame } from "../../game/store";
 import { storyArt } from "../../data/storyArt";
 import { ExpressionPortrait } from "../portrait/ExpressionPortrait";
+import { useTyped, type TypedLine } from "./useTyped";
 import type { SceneResolution } from "../../game/sceneRunner";
+import type { SceneBeat } from "../../game/cinematics";
 import "./cinematic.css";
 
 /**
- * UMA CENA, LIDA COMO CONVERSA.
+ * UMA CENA.
  *
- * O mapa continua atrás, escurecido — o jogo não trocou de tela, ele parou por
- * um momento. E o que acontece é lido como uma troca de mensagens, que é como
- * se lê hoje:
+ * O rosto é o ponto. Os retratos foram feitos para que conversar não fosse
+ * "um monte de texto na cara" — então o busto ocupa um terço da tela, inteiro,
+ * e o texto divide o resto com as escolhas.
  *
- *   o que se VÊ vem recuado e sem rosto — é a voz de quem está olhando;
- *   o que alguém DIZ vem numa bolha, com o rosto de quem disse ao lado.
+ * A conversa é ESCRITA na frente do jogador, linha por linha. O que já foi
+ * dito sobe, escurece e sai por cima; o que está sendo dito fica embaixo, no
+ * claro. As escolhas só aparecem quando a última linha termina — antes disso
+ * não há o que escolher, e mostrá-las cedo é pedir para o jogador pular a
+ * cena.
  *
- * A marca de fala é o «» do próprio texto, então escrever a cena e escrever o
- * layout são a mesma coisa: quem redige decide o que é fala.
+ * Um toque em qualquer lugar completa o texto na hora.
  */
+
+/** Quanto mais velha a linha, mais apagada. É o que faz a conversa "subir". */
+function fade(indexFromEnd: number): number {
+  return [1, 0.58, 0.34, 0.2][indexFromEnd] ?? 0.12;
+}
+
+function Thread({ lines }: { lines: TypedLine[] }) {
+  return (
+    <div className="cine-thread">
+      {lines.map((line, i) => {
+        const spoken = line.text.trim().startsWith("«");
+        return (
+          <p
+            key={i}
+            className={spoken ? "said" : "seen"}
+            style={{ opacity: fade(lines.length - 1 - i) }}
+          >
+            <span>
+              {line.text}
+              {!line.done && <i className="cine-caret" />}
+            </span>
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * O palco: quem fala, em tamanho de gente.
+ *
+ * Quando não há ninguém falando, o lugar é do objeto — a caixa, o selo, a
+ * carruagem —, que é o assunto daquele momento e merece o mesmo espaço.
+ */
+function Stage({ beat }: { beat: Pick<SceneBeat, "speaker" | "art"> }) {
+  const { speaker, art } = beat;
+  if (!speaker && !art) return null;
+
+  const face = speaker && !speaker.portraitKey && {
+    seed: speaker.seed ?? speaker.name,
+    female: speaker.female,
+    age: speaker.age ?? 0.45,
+    accent: "#7b6a4c",
+  };
+
+  return (
+    <div className="cine-stage">
+      <div className="cine-bust">
+        {speaker?.portraitKey ? (
+          <ExpressionPortrait
+            portraitKey={speaker.portraitKey}
+            expression={speaker.expression}
+            sequence={speaker.expressionSequence}
+            className="cine-bust-art"
+          />
+        ) : face ? (
+          <FacePortrait {...face} size={320} className="cine-bust-art" />
+        ) : (
+          art && <img className="cine-bust-art item" src={storyArt[art]} alt="" />
+        )}
+        {/* Objeto e pessoa na mesma cena: o objeto vira um encarte no canto. */}
+        {speaker && art && <img className="cine-inset" src={storyArt[art]} alt="" />}
+      </div>
+      {speaker && (
+        <div className="cine-name">
+          <b>{speaker.name}</b>
+          {speaker.role && <em>{speaker.role}</em>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CinematicScene() {
   const game = useGame();
   const active = game.adventure.cinematic;
   const [outcome, setOutcome] = useState<SceneResolution | null>(null);
 
-  /**
-   * O resultado aparece ANTES de qualquer outra coisa, inclusive depois de a
-   * cena ter acabado: a escolha que encerra limpa o estado na hora, e sem esta
-   * ordem a última fala — a que entrega o mistério — sumia sem ser mostrada.
-   */
-  if (outcome) {
-    return (
-      <div className="cine">
-        <div className="cine-frame">
-          {outcome.art && <div className="cine-art"><img src={storyArt[outcome.art]} alt="" /></div>}
-          <div className="cine-thread">
-            {outcome.text.split("\n\n").map((part, i) => (
-              <p key={i} className={part.trim().startsWith("«") ? "said" : "seen"}>
-                <span>{part}</span>
-              </p>
-            ))}
-          </div>
-          <div className="cine-choices">
-            <button className="cine-choice continue" onClick={() => setOutcome(null)}>
-              <span className="cine-label">Continuar</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const scene = active ? sceneById(active.sceneId) : undefined;
+  const beat = active && scene ? scene.beats[active.beatId] : undefined;
 
-  if (!active) return null;
-  const scene = sceneById(active.sceneId);
-  const beat = scene?.beats[active.beatId];
-  if (!beat) return null;
+  // O desfecho tem prioridade sobre tudo, inclusive sobre a cena já encerrada:
+  // a escolha que fecha limpa o estado na hora, e sem esta ordem a última fala
+  // — a que entrega o mistério — sumia sem ser lida.
+  const lines = outcome ? outcome.text.split("\n\n") : beat?.text ?? [];
+  const key = outcome ? `outcome:${outcome.text.slice(0, 24)}` : `${active?.sceneId}:${active?.beatId}`;
+  const typed = useTyped(lines, key);
 
-  const face = beat.speaker && !beat.speaker.portraitKey && {
-    seed: beat.speaker.seed ?? beat.speaker.name,
-    female: beat.speaker.female,
-    age: beat.speaker.age ?? 0.45,
-    accent: "#7b6a4c",
-  };
+  if (!outcome && !beat) return null;
+
+  const stage: Pick<SceneBeat, "speaker" | "art"> = outcome
+    ? { art: outcome.art, speaker: undefined }
+    : { speaker: beat!.speaker, art: beat!.art };
 
   const pick = (id: string) => {
     const result = chooseScene(id);
@@ -70,78 +124,61 @@ export function CinematicScene() {
   };
 
   return (
-    <div className="cine">
+    <div
+      // Sem ninguém e sem objeto, é narração pura: a tela apaga de vez, e o
+      // mapa some. É a abertura, e é para parecer o começo de um livro.
+      className={`cine ${stage.speaker || stage.art ? "" : "solo"}`}
+      onClick={() => { if (!typed.done) typed.skip(); }}
+    >
       <div className="cine-frame">
-        {(beat.place || beat.time) && (
-          <div className="cine-where">
-            {beat.place}
-            {beat.place && beat.time && <span className="cine-dot">·</span>}
-            {beat.time}
-          </div>
-        )}
+        <Stage beat={stage} />
 
-        {beat.art && <div className="cine-art"><img src={storyArt[beat.art]} alt="" /></div>}
+        <div className="cine-side">
+          {!outcome && (beat!.place || beat!.time) && (
+            <div className="cine-where">
+              {beat!.place}
+              {beat!.place && beat!.time && <span className="cine-dot">·</span>}
+              {beat!.time}
+            </div>
+          )}
 
-        {beat.speaker && (
-          <div className="cine-who">
-            {beat.speaker.portraitKey
-              ? <ExpressionPortrait
-                  portraitKey={beat.speaker.portraitKey}
-                  expression={beat.speaker.expression}
-                  sequence={beat.speaker.expressionSequence}
-                  className="cine-face"
-                />
-              : face && <FacePortrait {...face} size={44} className="cine-face" />}
-            <span>
-              <b>{beat.speaker.name}</b>
-              {beat.speaker.role && <em>{beat.speaker.role}</em>}
-            </span>
-          </div>
-        )}
+          <Thread lines={typed.shown} />
 
-        <div className="cine-thread">
-          {beat.text.map((line, i) => {
-            const spoken = line.trim().startsWith("«");
-            return (
-              <p key={i} className={spoken ? "said" : "seen"}>
-                {spoken && beat.speaker?.portraitKey && (
-                  <ExpressionPortrait
-                    portraitKey={beat.speaker.portraitKey}
-                    expression={beat.speaker.expression}
-                    sequence={beat.speaker.expressionSequence}
-                    className="cine-bubble-face"
-                  />
-                )}
-                {spoken && face && <FacePortrait {...face} size={26} className="cine-bubble-face" />}
-                <span>{line}</span>
-              </p>
-            );
-          })}
-        </div>
-
-        <div className="cine-choices">
-          {beat.choices.map((choice, i) => {
-            const chance = choice.check ? Math.round(sceneChance(choice, game) * 100) : null;
-            return (
-              <button key={choice.id} className="cine-choice" onClick={() => pick(choice.id)}>
-                <span className="cine-number">{i + 1}</span>
-                <span className="cine-label">
-                  {choice.label}
-                  {choice.hint && <em>{choice.hint}</em>}
-                </span>
-                {choice.check && (
-                  <span className="cine-check">
-                    {choice.check.label}
-                    <b>{chance}%</b>
-                  </span>
-                )}
+          <div className={`cine-choices ${typed.done ? "ready" : "waiting"}`}>
+            {outcome ? (
+              <button className="cine-choice continue" onClick={() => setOutcome(null)}>
+                <span className="cine-label">Continuar</span>
               </button>
-            );
-          })}
+            ) : (
+              beat!.choices.map((choice, i) => {
+                const chance = choice.check ? Math.round(sceneChance(choice, game) * 100) : null;
+                return (
+                  <button
+                    key={choice.id}
+                    className="cine-choice"
+                    tabIndex={typed.done ? 0 : -1}
+                    onClick={(e) => { e.stopPropagation(); pick(choice.id); }}
+                  >
+                    <span className="cine-number">{i + 1}</span>
+                    <span className="cine-label">
+                      {choice.label}
+                      {choice.hint && <em>{choice.hint}</em>}
+                    </span>
+                    {choice.check && (
+                      <span className="cine-check">
+                        {choice.check.label}
+                        <b>{chance}%</b>
+                      </span>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
       {/* Saída de emergência: cena travada é pior que cena pulada. */}
-      <button className="cine-escape" onClick={closeScene} aria-label="Afastar-se">×</button>
+      <button className="cine-escape" onClick={(e) => { e.stopPropagation(); closeScene(); }} aria-label="Afastar-se">×</button>
     </div>
   );
 }

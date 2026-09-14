@@ -1,9 +1,14 @@
 /**
  * A CENA.
  *
- * O mapa fica atrás, escurecido — não é outra tela, é o jogo parando. Nenhuma
- * moldura de painel: só uma faixa de conteúdo sobre o escuro, com o texto em
- * serifa e as escolhas em linhas finas. Nada aqui pode parecer formulário.
+ * O mapa fica atrás, escurecido — não é outra tela, é o jogo parando.
+ *
+ * Duas colunas: o BUSTO à esquerda, em tamanho de gente, e à direita a
+ * conversa com as escolhas embaixo. O rosto é o motivo de tudo isto existir,
+ * então ele tem a maior peça da tela e não um selo de 44 pixels.
+ *
+ * A altura é toda distribuída: só a conversa cede espaço. Escolha some da tela
+ * é bug, e foi o que estava acontecendo.
  */
 .cine {
   position: absolute;
@@ -13,27 +18,102 @@
   place-items: center;
   padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
            max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
-  /* Vinheta: o mundo continua lá, mais escuro nas bordas. */
-  background:
-    radial-gradient(ellipse at 50% 45%, #05090ac4 0%, #04070899 42%, #020405f2 100%);
-  backdrop-filter: blur(2.5px) saturate(0.75);
-  -webkit-backdrop-filter: blur(2.5px) saturate(0.75);
-  animation: cine-in 420ms ease-out;
+  background: radial-gradient(ellipse at 34% 50%, #05090ad9 0%, #040708c2 46%, #020405fa 100%);
+  backdrop-filter: blur(3px) saturate(0.7);
+  -webkit-backdrop-filter: blur(3px) saturate(0.7);
+  animation: cine-in 380ms ease-out;
 }
+/* Narração sem rosto e sem objeto: o mundo sai de cena. */
+.cine.solo {
+  background: radial-gradient(ellipse at 50% 55%, #04070a 0%, #020405 60%, #000 100%);
+  backdrop-filter: blur(8px) saturate(0.2);
+  -webkit-backdrop-filter: blur(8px) saturate(0.2);
+}
+.cine.solo .cine-side { align-items: flex-start; }
+.cine.solo .cine-thread p.seen { max-width: 70ch; }
+
 @keyframes cine-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .cine { animation: none; } }
 
 .cine-frame {
-  width: min(680px, 100%);
-  max-height: 100%;
+  width: min(900px, 100%);
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: clamp(12px, 3vw, 26px);
+  color: #e9dec3;
+}
+
+/* ------------------------------- o palco -------------------------------- */
+
+.cine-stage {
+  flex: none;
+  width: clamp(150px, 34%, 300px);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  color: #e9dec3;
-  font-family: inherit;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 0;
+  padding-bottom: 2px;
+}
+.cine-bust {
+  position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  align-self: stretch;
+}
+.cine-bust-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Pixel art cresce por blocos; suavizar destrói o desenho. */
+  image-rendering: pixelated;
+  border-radius: 4px;
+  /* A borda inferior dissolve no escuro: busto recortado fica com cara de
+     adesivo, e o retrato foi pintado para ser uma pessoa numa sala. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+  filter: drop-shadow(0 14px 22px #000a);
+}
+.cine-bust-art.item {
+  object-fit: contain;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+/* Objeto e pessoa na mesma cena. */
+.cine-inset {
+  position: absolute;
+  right: -4px;
+  bottom: 4px;
+  width: 38%;
+  max-width: 96px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 6px 12px #000c);
+}
+
+.cine-name { display: flex; flex-direction: column; gap: 2px; flex: none; }
+.cine-name b { font-size: clamp(14px, 2.1vw, 18px); font-weight: 400; color: #f2e5c1; }
+.cine-name em {
+  font: 9.5px var(--ui-small); font-style: normal;
+  letter-spacing: 0.12em; text-transform: uppercase; color: #9a8b63;
+}
+
+/* ------------------------------- a conversa ----------------------------- */
+
+.cine-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 0;
+  padding: 10px 0;
 }
 
 .cine-where {
+  flex: none;
   font: 9px var(--ui-small);
   letter-spacing: 0.22em;
   text-transform: uppercase;
@@ -41,89 +121,89 @@
 }
 .cine-dot { margin: 0 7px; opacity: 0.6; }
 
-/* A altura mora numa variável porque a imagem precisa dela em pixels.
-   `height:100%` num item de grade cuja linha é `auto` é circular: o navegador
-   desiste, usa o tamanho intrínseco da arte (384px) e ela passa por cima do
-   texto inteiro. Foi o que aconteceu. */
-.cine-art {
-  --cine-art-h: 96px;
-  height: var(--cine-art-h);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex:none;
-  overflow:hidden;
-  pointer-events:none;
-  margin:-8px 0 -4px;
+/*
+ * A conversa cresce de baixo para cima. O que já foi lido sai pelo topo,
+ * apagando — daí `justify-content:flex-end`, o recorte e a máscara.
+ */
+.cine-thread {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 9px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 16%, #000 100%);
 }
-.cine-art img {
-  display:block;
-  width:auto;
-  height: var(--cine-art-h);
-  max-width:min(100%, 360px);
-  object-fit:contain;
-  image-rendering:pixelated;
-  filter:drop-shadow(0 10px 12px #0009);
-}
-
-/* --------------------------- quem está falando -------------------------- */
-
-.cine-who { display: flex; align-items: center; gap: 10px; }
-.cine-face { width:44px; height:44px; border-radius: 50%; flex: none; box-shadow: 0 3px 14px #0008; }
-.cine-who span { display: flex; flex-direction: column; gap: 2px; }
-.cine-who b { font-size: 16px; font-weight: 400; color: #f2e5c1; }
-.cine-who em {
-  font: 9.5px var(--ui-small); font-style: normal;
-  letter-spacing: 0.12em; text-transform: uppercase; color: #9a8b63;
-}
-
-/* ------------------------------- a conversa ------------------------------ */
-
-.cine-thread { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
-
 .cine-thread p {
   margin: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
+  flex: none;
   font-family: Georgia, serif;
-  line-height: 1.55;
+  line-height: 1.5;
   text-wrap: pretty;
   white-space: pre-line;
+  transition: opacity 320ms ease;
 }
+@media (prefers-reduced-motion: reduce) { .cine-thread p { transition: none; } }
 
-/* O que se vê: recuado, sem rosto, mais apagado — é a voz de quem olha. */
+/* O que se vê: recuado, sem bolha — é a voz de quem está olhando. */
 .cine-thread p.seen {
-  font-size: 16px;
+  font-size: clamp(14px, 1.9vw, 16.5px);
   color: #cfc5a8;
   padding-left: 12px;
   border-left: 1px solid #6b6047;
-  max-width: 66ch;
+  max-width: 62ch;
 }
 
-/* O que alguém diz: bolha com o rosto ao lado. */
+/* O que alguém diz: bolha. O rosto já está do lado, não se repete aqui. */
 .cine-thread p.said > span {
-  flex: 0 1 auto;
-  padding: 8px 13px;
-  border-radius: 3px 12px 12px 12px;
-  background: #1b2a2ecc;
-  border: 1px solid #c1a96a2e;
-  font-size: 17px;
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 3px 13px 13px 13px;
+  background: #1b2a2ed9;
+  border: 1px solid #c1a96a33;
+  font-size: clamp(15px, 2vw, 17.5px);
   color: #f4e9cd;
-  max-width: 54ch;
+  max-width: 52ch;
 }
-.cine-bubble-face { width:26px; height:26px; flex: none; border-radius: 50%; margin-top: 2px; box-shadow: 0 2px 8px #0007; }
+
+/* O cursor da máquina de escrever. */
+.cine-caret {
+  display: inline-block;
+  width: 0.55em; height: 1.05em;
+  margin-left: 1px;
+  vertical-align: -0.16em;
+  background: #d8c489;
+  animation: cine-blink 760ms steps(1) infinite;
+}
+@keyframes cine-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .cine-caret { animation: none; } }
 
 /* ------------------------------- escolhas ------------------------------- */
 
-.cine-choices { display: flex; flex-direction: column; gap: 1px; flex: none; }
+/*
+ * Só depois que a última linha termina. Antes disso elas ocupam o lugar sem
+ * aparecer, para o texto não dar um pulo quando elas chegam.
+ */
+.cine-choices {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  transition: opacity 260ms ease;
+}
+.cine-choices.waiting { opacity: 0; pointer-events: none; }
+.cine-choices.ready { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .cine-choices { transition: none; } }
+
 .cine-choice {
   display: flex;
   align-items: baseline;
   gap: 11px;
   width: 100%;
   text-align: left;
-  padding: 9px 10px;
+  padding: 8px 10px;
   border: 0;
   border-left: 2px solid transparent;
   background: none;
@@ -137,13 +217,8 @@
 .cine-choice.continue { border-left-color: #c9a85c; color: #f3dc9b; }
 @media (prefers-reduced-motion: reduce) { .cine-choice { transition: none; } }
 
-.cine-number {
-  flex: none;
-  font: 10px var(--ui-small);
-  color: #8a7d5c;
-  width: 12px;
-}
-.cine-label { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: 15.5px; line-height: 1.3; }
+.cine-number { flex: none; font: 10px var(--ui-small); color: #8a7d5c; width: 12px; }
+.cine-label { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: clamp(13.5px, 1.8vw, 15.5px); line-height: 1.3; }
 .cine-label em { font: 10.5px/1.4 var(--ui-small); font-style: normal; color: #8e9488; }
 .cine-check {
   flex: none;
@@ -169,13 +244,19 @@
 /* ------------------------------- deitado -------------------------------- */
 
 @media (orientation: landscape) and (max-height: 560px) {
-  .cine-frame { width: min(640px, 100%); gap: 10px; }
-  .cine-text p, .cine-outcome { font-size: 15px; line-height: 1.5; }
-  .cine-speaker b { font-size: 15px; }
-  .cine-face { width: 44px !important; height: 44px !important; }
-  .cine-art { --cine-art-h: 70px; margin:-6px 0 -3px; }
-  .cine-choice { padding: 7px 9px; }
-  .cine-label { font-size: 14px; }
-  .cine-label em { font-size: 10px; }
-  .cine-where { font-size: 8.5px; }
+  .cine { padding: 6px max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left)); }
+  .cine-frame { width: min(860px, 100%); gap: 14px; }
+  .cine-stage { width: clamp(132px, 30%, 230px); }
+  .cine-side { padding: 4px 0; gap: 7px; }
+  .cine-thread { gap: 7px; }
+  .cine-choice { padding: 6px 9px; }
+  .cine-name b { font-size: 15px; }
+}
+
+/* Em pé o busto não cabe ao lado: sobe para cima do texto, menor. */
+@media (orientation: portrait) {
+  .cine-frame { flex-direction: column; align-items: stretch; }
+  .cine-stage { width: auto; flex-direction: row; align-items: flex-end; gap: 12px; }
+  .cine-bust { width: 40%; max-width: 190px; align-self: auto; }
+  .cine-name { padding-bottom: 8px; }
 }

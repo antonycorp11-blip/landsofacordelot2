@@ -20,8 +20,37 @@ import type { Cinematic } from "../cinematics";
  */
 export const carriageScene: Cinematic = {
   id: "wrecked_carriage",
-  first: "chegada",
+  first: "abertura",
   beats: {
+    /**
+     * A ABERTURA.
+     *
+     * O jogo não começa com o jogador olhando um mapa e sem saber o que
+     * fazer: começa no escuro, com três linhas sendo escritas, e desemboca na
+     * carruagem sem que ele precise viajar até lá.
+     *
+     * Sem rosto e sem arte de propósito — é só a voz de quem está andando, e
+     * é a última vez no jogo que ninguém está olhando para ele.
+     */
+    abertura: {
+      id: "abertura",
+      place: "Bosque de Elmwood",
+      time: "Terceiro dia",
+      text: [
+        "Faz três dias que você anda por dentro do bosque, e o bosque não tem pressa nenhuma.",
+        "Você saiu de casa por um motivo que já não parece grande. Ninguém está esperando você em lugar nenhum, e ninguém vai reparar se você não chegar.",
+        "Ao meio-dia a trilha faz uma curva, e do outro lado dela o cheiro muda. Cavalo. E sangue.",
+      ],
+      choices: [
+        {
+          id: "seguir",
+          label: "Chegar mais perto.",
+          hint: "Dar meia-volta também é uma opção. Você não dá.",
+          outcome: { text: "", next: "chegada" },
+        },
+      ],
+    },
+
     chegada: {
       id: "chegada",
       place: "Bosque de Elmwood",
