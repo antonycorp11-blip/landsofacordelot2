@@ -39,7 +39,15 @@ export type StoryTrigger =
   /** Ganhar batalhas. */
   | { kind: "battles"; count: number }
   /** Só a cena; completa ao ser lida. */
-  | { kind: "scene" };
+  | { kind: "scene" }
+  /** Uma marca deixada por uma cena. */
+  | { kind: "flag"; flag: string }
+  /** Ninguém no seu encalço: nenhuma força rastreando nem procurando. */
+  | { kind: "unhunted" }
+  /** Homens postados nas suas terras. */
+  | { kind: "garrison"; count: number }
+  /** Prosperidade da sua melhor terra. */
+  | { kind: "prosperity"; value: number };
 
 export type StoryOption = {
   id: string;
@@ -81,6 +89,14 @@ export type StoryStep = {
   detail: string;
   trigger: StoryTrigger;
   scene?: StoryScene;
+  /**
+   * Cena do sistema novo — busto grande, texto escrito, escolhas no fim.
+   *
+   * Quando existe, é ela que acontece no lugar de `scene`, e o passo avança
+   * assim que ela abre. O drama mora na cena; o passo só guarda o objetivo
+   * que o jogador lê no guia.
+   */
+  cinematic?: string;
   reward?: Reward;
 };
 
@@ -107,7 +123,72 @@ export type Chapter = {
  * carregar os Atos I a VII quando eles forem escritos. O que saiu foi só o
  * conteúdo velho, para não disputar a atenção com a abertura nova.
  */
-export const chapters: Chapter[] = [];
+/**
+ * CAPÍTULO II — ALGUÉM SABE QUE VOCÊ TEM.
+ *
+ * O primeiro capítulo escrito para este motor, e ele existe porque o Arco I
+ * termina com o jogador caçado e sem chão. Cada passo aqui é uma NECESSIDADE,
+ * não uma tarefa: o objetivo que o guia mostra é o que ele faria de qualquer
+ * jeito se entendesse o próprio problema.
+ *
+ * O drama mora nas cenas (`cinematic`), que são as do sistema novo — busto
+ * grande, texto escrito, escolhas no fim. O passo só guarda a linha que o
+ * jogador lê no guia e o gatilho que a cumpre.
+ */
+const CHAPTER_II: Chapter = {
+  number: 2,
+  title: "Alguém sabe que você tem",
+  blurb:
+    "Duas Casas querem a sua cabeça e você dorme na estrada. Um homem sozinho não sobrevive a isso: é preciso teto, renda e gente paga — nesta ordem, e antes que eles cheguem.",
+  steps: [
+    {
+      // Porteiro: o capítulo não existe antes de o Arco I acabar. Sem isto,
+      // "sumir de quem está atrás de você" estaria cumprido no primeiro
+      // minuto de jogo, porque ninguém está atrás de ninguém ainda.
+      id: "c2_espera",
+      objective: "Descobrir o que você está carregando.",
+      detail: "A joia da carruagem tem dono, história e gente atrás dela.",
+      trigger: { kind: "flag", flag: "arco_ii_aberto" },
+    },
+    {
+      id: "c2_fuga",
+      objective: "Sumir de quem está atrás de você.",
+      detail: "Mata fechada encurta a vista de quem procura. Estrada faz o contrário.",
+      trigger: { kind: "unhunted" },
+      cinematic: "arco2_folego",
+    },
+    {
+      id: "c2_passo",
+      objective: "Subir até a Passagem do Norte, no Passo de Pedra Cinza.",
+      detail: "Em Elmwood o seu nome está numa lista. Dravenor não responde cartas da Coroa há três anos.",
+      trigger: { kind: "visit", poiId: "passagem_do_norte" },
+      cinematic: "arco2_viuva",
+    },
+    {
+      id: "c2_renda",
+      objective: "Fazer Ninho do Corvo render.",
+      detail: "Imposto, obras e povo. Uma terra que não rende não paga homem nenhum.",
+      trigger: { kind: "prosperity", value: 45 },
+      cinematic: "arco2_renda",
+    },
+    {
+      id: "c2_guarnicao",
+      objective: "Pôr dez homens na cerca.",
+      detail: "Guarnição não rende nada. Guarnição decide se você continua dono.",
+      trigger: { kind: "garrison", count: 10 },
+      cinematic: "arco2_guarnicao",
+    },
+    {
+      id: "c2_cerco",
+      objective: "Estar na cerca quando eles chegarem.",
+      detail: "Um correio de Elmwood já subiu o passo.",
+      trigger: { kind: "scene" },
+      cinematic: "arco2_cerco",
+    },
+  ],
+};
+
+export const chapters: Chapter[] = [CHAPTER_II];
 
 export const allSteps: StoryStep[] = chapters.flatMap((c) => c.steps);
 export const chapterOfStep = new Map<string, Chapter>(
@@ -152,5 +233,26 @@ export function triggerMet(s: GameState, step: StoryStep): boolean {
       return (a.battlesWon ?? 0) >= step.trigger.count;
     case "scene":
       return true;
+    case "flag":
+      return s.storyFlags.includes(step.trigger.flag);
+    case "unhunted":
+      return !Object.values(s.worldForces).some(
+        (f) => f.playerPursuit === "tracking" || f.playerPursuit === "searching",
+      );
+    case "garrison": {
+      let total = 0;
+      for (const [id, owner] of Object.entries(s.fiefOwners)) {
+        if (owner !== "player") continue;
+        const estate = s.fiefEstates[id];
+        if (estate) for (const n of Object.values(estate.garrison)) total += n ?? 0;
+      }
+      return total >= step.trigger.count;
+    }
+    case "prosperity": {
+      const wanted = step.trigger.value;
+      return Object.entries(s.fiefOwners).some(
+        ([id, owner]) => owner === "player" && (s.fiefEstates[id]?.prosperity ?? 0) >= wanted,
+      );
+    }
   }
 }

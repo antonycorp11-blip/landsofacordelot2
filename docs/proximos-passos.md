@@ -47,10 +47,12 @@ Isto é a fila, e está em ordem.
 3. ~~A audiência com Edran~~ e ~~a localidade como cena~~ — **feitos.** O Arco I
    está jogável do começo ao fim: abertura, carruagem, os quatro de Elmwood,
    quatro favores, audiência e as duas saídas.
-4. **O ARCO II.** O jogador sai do Castelo Verde caçado por duas forças e
-   precisa de teto, renda e homens pagos. Os sistemas existem — feudo,
-   imposto, guarnição, cerco defensivo —, falta a linha que obriga a usá-los.
-5. **Capítulos em `story.ts`** para o fio longo dos Arcos, já que o array está
+4. ~~O Arco II~~ e ~~capítulos em `story.ts`~~ — **feitos.** O Capítulo II está
+   em `story.ts` com gatilhos novos (`flag`, `unhunted`, `garrison`,
+   `prosperity`) e cenas do sistema novo via `StoryStep.cinematic`.
+5. **O ARCO III — o selo que foi vendido.** Rastro de papel, uma viúva que
+   mente sobre metade, e uma corrida contra a fundição. É onde Ilyra Veyr
+   entra pela primeira vez, e onde a Balança ganha o segundo polo para o fio longo dos Arcos, já que o array está
    vazio.
 
 ## O que a Balança ainda não faz

@@ -13,6 +13,7 @@
 import { carriageScene } from "./scenes/carriage";
 import { guardScene, merchantScene, priestScene, scribeScene } from "./scenes/leads";
 import { deserterScene, halkaScene, postScene, sawmillScene } from "./scenes/favours";
+import { breathScene, garrisonScene, incomeScene, siegeScene, widowScene } from "./scenes/arcoII";
 import { edranScene } from "./scenes/edran";
 import type { Cinematic, SceneChoice, SceneOutcome } from "./cinematics";
 import { startBattle } from "./battle";
@@ -34,10 +35,20 @@ const SCENES: Record<string, Cinematic> = {
   [postScene.id]: postScene,
   [deserterScene.id]: deserterScene,
   [edranScene.id]: edranScene,
+  [breathScene.id]: breathScene,
+  [widowScene.id]: widowScene,
+  [incomeScene.id]: incomeScene,
+  [garrisonScene.id]: garrisonScene,
+  [siegeScene.id]: siegeScene,
 };
 
 export function sceneById(id: string): Cinematic | undefined {
   return SCENES[id];
+}
+
+/** Primeiro momento de uma cena, para quem abre sem passar por `openScene`. */
+export function sceneFirstBeat(id: string): string {
+  return SCENES[id]?.first ?? "";
 }
 
 /** Chance de passar num teste da cena: atributo pesa, a melhor perícia soma. */
@@ -75,6 +86,25 @@ function huntFrom(g: GameState, ids: string[]): GameState["worldForces"] {
     if (force) next[id] = beginPlayerPursuit(force, { x: at.x, y: at.y }, hours);
   }
   return next;
+}
+
+/** Tira os homens das cercas e põe na linha. Eles voltam pelo painel da terra. */
+function callGarrison(g: GameState): GameState {
+  const troops: Record<string, number> = { ...(g.troops as Record<string, number>) };
+  const estates = { ...g.fiefEstates };
+  let moved = false;
+  for (const [id, owner] of Object.entries(g.fiefOwners)) {
+    if (owner !== "player") continue;
+    const estate = estates[id];
+    if (!estate) continue;
+    for (const [troop, n] of Object.entries(estate.garrison)) {
+      if (!n) continue;
+      troops[troop] = (troops[troop] ?? 0) + n;
+      moved = true;
+    }
+    estates[id] = { ...estate, garrison: {} };
+  }
+  return moved ? { ...g, troops: troops as GameState["troops"], fiefEstates: estates } : g;
 }
 
 function applyKnowledge(g: GameState, outcome: SceneOutcome): GameState {
@@ -129,6 +159,9 @@ export function chooseScene(choiceId: string): SceneResolution | null {
         ...next.worldEvents[active.eventId], state: outcome.eventState, resolved: true,
       } } };
     }
+
+    // A guarnição desce da cerca antes de a linha ser formada.
+    if (outcome.callGarrison) next = callGarrison(next);
 
     // Briga interrompe a cena: ela volta quando o campo estiver resolvido.
     if (outcome.battle) {

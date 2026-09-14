@@ -57,6 +57,14 @@ export type SceneOutcome = {
   hunt?: string[];
   /** Senhorio que passa a ser do jogador. Terra prometida numa cena é terra. */
   grantFief?: string;
+  /**
+   * Chama a guarnição das suas terras para a linha.
+   *
+   * A batalha usa a tropa que anda com você, e a guarnição fica parada no
+   * feudo. Numa defesa isso é o contrário do que faz sentido: os homens que
+   * você pagou o mês inteiro têm de estar na estrada quando eles chegam.
+   */
+  callGarrison?: boolean;
   /** Próximo momento desta cena. */
   next?: string;
   /** Encerra a cena e devolve o mapa. */

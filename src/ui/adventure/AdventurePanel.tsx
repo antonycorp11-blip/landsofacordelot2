@@ -113,26 +113,26 @@ function StoryTab() {
     {step && <p className="adv-caption">{step.objective}</p>}
 
     {k.questions.length>0 && <>
-      <span className="adv-eyebrow">Perguntas em aberto</span>
-      <ul className="know-list ask">{k.questions.map((q)=><li key={q}>{q}</li>)}</ul>
+      <span className="adv-eyebrow">Perguntas em aberto{k.questions.length>3?` · ${k.questions.length}`:''}</span>
+      <ul className="know-list ask">{ultimos(k.questions,3).map((q)=><li key={q}>{q}</li>)}</ul>
     </>}
 
     {k.facts.length>0 && <>
-      <span className="adv-eyebrow">O que você sabe</span>
-      <ul className="know-list">{k.facts.map((f)=><li key={f}>{f}</li>)}</ul>
+      <span className="adv-eyebrow">O que você sabe{k.facts.length>3?` · ${k.facts.length}`:''}</span>
+      <ul className="know-list">{ultimos(k.facts,3).map((f)=><li key={f}>{f}</li>)}</ul>
     </>}
 
     {k.evidence.length>0 && <>
       <span className="adv-eyebrow">Em suas mãos</span>
-      <ul className="know-list proof">{k.evidence.map((id)=><li key={id}>
+      <ul className="know-list proof">{ultimos(k.evidence,3).map((id)=><li key={id}>
         {EVIDENCE_ART[id] && <img src={EVIDENCE_ART[id]} alt="" />}
         <span>{EVIDENCE_NAME[id]??id}</span>
       </li>)}</ul>
     </>}
 
     {caminhos.length>0 && <>
-      <span className="adv-eyebrow">Quem saberia dizer</span>
-      <ul className="know-list where">{caminhos.map((c)=><li key={c.text} className={c.done?'done':undefined}>{c.text}</li>)}</ul>
+      <span className="adv-eyebrow">Quem saberia dizer{caminhos.length>3?` · ${caminhos.length}`:''}</span>
+      <ul className="know-list where">{ultimos(caminhos,3).map((c)=><li key={c.text} className={c.done?'done':undefined}>{c.text}</li>)}</ul>
     </>}
   </>;
 }
@@ -145,6 +145,17 @@ function StoryTab() {
  * um responde de um jeito — o mercador vê preço, o escrivão vê marca, o guarda
  * vê problema.
  */
+/**
+ * O QUADRO NÃO PODE CRESCER PARA SEMPRE.
+ *
+ * Ele acumula a campanha inteira, e a tela deitada tem duzentos e oitenta
+ * pixels. Mostra o que chegou por último, que é o que ainda está vivo, e o
+ * número ao lado do título diz quanto mais existe.
+ */
+function ultimos<T>(list: T[], n: number): T[] {
+  return list.length <= n ? list : list.slice(-n);
+}
+
 function leadsFor(evidence: string[], flags: string[]): { text: string; done: boolean }[] {
   if (!evidence.includes('royal_seal')) return [];
   // O LUGAR VAI JUNTO, de propósito. Caminho sem endereço é decoração, e foi
@@ -158,6 +169,9 @@ function leadsFor(evidence: string[], flags: string[]): { text: string; done: bo
 /** Nome legível de cada prova. A função escondida delas não é dita aqui. */
 const EVIDENCE_NAME: Record<string,string> = {
   royal_seal: "Selo Real de Valdória — encontrado junto à carruagem atacada",
+  carta_do_escrivao: "Carta de Mestre Aled Vern — fechada com um laço embaixo da assinatura",
+  ordem_da_cancela: "Ordem de abrir a cancela do bosque — a letra não é a do intendente",
+  ordem_sem_registro: "Ordem da Coroa — levar o selo ao Castelo Real sem escolta e sem registro",
 };
 const EVIDENCE_ART: Record<string,string> = { royal_seal: royalSealArt };
 

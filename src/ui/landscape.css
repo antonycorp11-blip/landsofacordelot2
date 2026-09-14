@@ -285,7 +285,13 @@
   .adv-head .hs-kicker { font-size: 8px; }
   .adv-tabs { padding: 3px 11px 0; }
   .adv-tabs button { padding: 7px 8px; font-size: 10.5px; }
-  .adv-body { padding: 11px 13px 13px; }
+  .adv-body { padding: 9px 13px 9px; }
+  /* O quadro de investigação cresce a campanha inteira e a tela deitada não
+     cresce nada: as folgas encolhem para que ele caiba sem rolar. */
+  .adv-body .know-list { margin: 2px 0 5px; }
+  .adv-body .know-list li { line-height: 1.32; }
+  .adv-body .know-list.proof img { width: 26px; height: 26px; }
+  .adv-body .adv-eyebrow { margin-top: 2px; }
   .adv-body .adv-story { font-size: 13.5px; line-height: 1.5; }
   .adv-body h3 { font-size: 14.5px; margin: 3px 0 6px; }
   .adv-body p { font-size: 11px; line-height: 1.5; margin: 5px 0 8px; }

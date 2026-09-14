@@ -6,6 +6,7 @@ import { choiceChance, roadEventById, roadEvents } from './roadEvents';
 import { makeRaid, resolveRaid, type Raid } from './raid';
 import { beginQuest, closingFor, complicationFor, questOptionChance } from './quests';
 import { addTroopCounts, playRound, prisonerRansom, resolveParley, startBattle, type Order, type ParleyKind } from './battle';
+import { sceneFirstBeat } from './sceneRunner';
 import { tilt, TILT } from './balance';
 import { allSteps, chapterOfStep, currentStep, triggerMet } from './story';
 import { makeOffer, type Offer } from './offers';
@@ -613,12 +614,28 @@ export function checkStory() {
   if (!s.started) return;
   const story = s.adventure.story;
   if (story.done || story.pending) return;
+  // Uma cena de cada vez. Dois passos com cinemática em sequência — a
+  // guarnição e o cerco — abriam juntos, e o segundo apagava o primeiro antes
+  // de o jogador ler uma linha.
+  if (s.adventure.cinematic) return;
   const step = currentStep(story);
   if (!step || !triggerMet(s, step)) return;
 
   update(g => {
     const current = currentStep(g.adventure.story);
     if (!current || g.adventure.story.pending) return g;
+    // Passo com cena do sistema novo: ela abre sozinha e o passo já avança —
+    // quem segura o jogador é a cena, não o contador.
+    if (current.cinematic) {
+      const moved = advance(withReward(g, current.reward ?? {}));
+      return {
+        ...moved,
+        adventure: {
+          ...moved.adventure,
+          cinematic: { sceneId: current.cinematic, beatId: sceneFirstBeat(current.cinematic), eventId: null },
+        },
+      };
+    }
     // Passo sem cena avança sozinho; com cena, espera ser lido.
     if (!current.scene) {
       const next = withReward(g, current.reward ?? {});
