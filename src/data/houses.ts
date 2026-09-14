@@ -23,7 +23,7 @@ export const houses: House[] = [
     primaryClass: "POLITICS",
     seatRegionId: "heart_of_valdoria",
     capitalPoiId: "castelo_real",
-    description: "A família real e Casa soberana de Valdória.",
+    description: "A Casa mais forte dos sete reinos. Governa sem ser realeza, e sabe disso.",
     power: 92, wealth: 78, militaryPower: 74, politicalInfluence: 95, religiousInfluence: 52,
   },
   {

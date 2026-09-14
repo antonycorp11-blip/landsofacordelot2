@@ -365,7 +365,7 @@ com o selo e deixa gente arruinada atrás. É a primeira vez que ele vê o preç
 de perto — e a barra no alto da tela ganha outro lado.
 
 **Ensina:** comércio, avaliação, mercados, a rede de informação de Veyr. É
-aqui que **Cassel Veyr** aparece pela primeira vez, porque ele chega antes.
+aqui que **Ilyra Veyr** aparece pela primeira vez, porque ela chega antes.
 
 ---
 
@@ -561,14 +561,14 @@ todo.
 **Lorde Edran Silvarden** — perde a cor quando vê a joia. É o homem que conta
 a história, e o primeiro que o jogador trai ou poupa.
 
-**Cassel Veyr** — nunca responde o que foi perguntado. Chega antes.
+**Lady Ilyra Veyr** — nunca responde o que foi perguntado. Chega antes.
 
 **Protetor Aldren Valdória** — não é vilão. É um homem velho que herdou um
 plano de três gerações e não tem coragem de pará-lo nem de terminá-lo.
 
-**Príncipe Caelan** — terminaria. E acha que estaria salvando o reino.
+**Príncipe Caelan Valdória** — terminaria. E acha que estaria salvando o reino.
 
-**Princesa Elira** — a única da corte que leu o texto original da lei. Não
+**Princesa Elira Valdória** — a única da corte que leu o texto original da lei. Não
 contou a ninguém.
 
 **Garrick Karneth** — odeia o jogador desde o primeiro dia e é o único que diz
@@ -587,7 +587,7 @@ tratou de algum jeito vinte e cinco horas antes.)*
 **Irmã Venna, de Caelmont** — reza há quarenta anos diante de uma peça de ouro
 sem saber o que ela é.
 
-**Tomil Rosethorne** — vende selos falsos com certificado de autenticidade
+**Lorde Edric Rosethorne** — vende selos falsos com certificado de autenticidade
 carimbado por ele mesmo. Fica sinceramente ofendido quando desconfiam. Um dos
 falsos dele vai enganar alguém importante, e será a melhor coisa que já
 aconteceu à Casa Rosethorne.
