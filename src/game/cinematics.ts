@@ -65,6 +65,14 @@ export type SceneOutcome = {
    * você pagou o mês inteiro têm de estar na estrada quando eles chegam.
    */
   callGarrison?: boolean;
+  /**
+   * Funda a Casa do jogador, com o sobrenome dele.
+   *
+   * Passa por cima dos requisitos de `independenceBlocker` de propósito: ali
+   * são o caminho do sandbox, aqui é o momento da história em que ninguém faz
+   * aliança com um homem sem nome.
+   */
+  foundHouse?: boolean;
   /** Próximo momento desta cena. */
   next?: string;
   /** Encerra a cena e devolve o mapa. */

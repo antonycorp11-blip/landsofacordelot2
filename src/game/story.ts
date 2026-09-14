@@ -238,7 +238,84 @@ const CHAPTER_III: Chapter = {
   ],
 };
 
-export const chapters: Chapter[] = [CHAPTER_II, CHAPTER_III];
+/** CAPÍTULO IV — a melhor tropa do reino, e o nome que faltava a você. */
+const CHAPTER_IV: Chapter = {
+  number: 4,
+  title: "Karneth não esconde",
+  blurb:
+    "Garrick Karneth diz na cara que o selo é dele e manda vir buscar. Não vende e não troca — e tem um problema interno que não pode admitir.",
+  steps: [
+    {
+      id: "c4_karneth",
+      objective: "Ir às Marchas e pedir o selo a Garrick Karneth.",
+      detail: "Ele não esconde que tem. É o único no reino que não esconde.",
+      trigger: { kind: "visit", poiId: "castelo_karneth" },
+      cinematic: "arco4_garrick",
+    },
+  ],
+};
+
+/** CAPÍTULO V — o arco que vira o jogo do avesso. */
+const CHAPTER_V: Chapter = {
+  number: 5,
+  title: "Pedra Cinza",
+  blurb:
+    "Uma fortaleza fechada há três anos, nem para a Coroa nem para o irmão. O que está lá dentro não é o selo — e vale mais que ele.",
+  steps: [
+    {
+      id: "c5_pedra_cinza",
+      objective: "Entrar na Fortaleza de Pedra Cinza.",
+      detail: "Cerco leva meses que você não tem. Alguém saiu de lá; alguém sempre sai.",
+      trigger: { kind: "visit", poiId: "fortaleza_pedra_cinza" },
+      cinematic: "arco5_portao",
+    },
+  ],
+};
+
+/** CAPÍTULO VI — provar isso é destruir uma fé. */
+const CHAPTER_VI: Chapter = {
+  number: 6,
+  title: "O selo que virou relíquia",
+  blurb:
+    "O selo de Caelmont foi refundido dentro de outra peça, e há duzentos anos essa peça está sobre um altar com gente rezando de joelhos diante dela.",
+  steps: [
+    {
+      id: "c6_luminaria",
+      objective: "Ver de perto a Lâmpada do Vale, na Catedral de Luminária.",
+      detail: "Ouro grosso por cima. O que interessa está na solda do pé.",
+      trigger: { kind: "visit", poiId: "catedral_de_luminaria" },
+      cinematic: "arco6_reliquia",
+    },
+  ],
+};
+
+/** CAPÍTULO VII — a Coroa, e a mesa no fim. */
+const CHAPTER_VII: Chapter = {
+  number: 7,
+  title: "A Coroa",
+  blurb:
+    "Ela tem dois. Você tem cinco. Não há investigação que resolva isto — só as outras Casas decidindo que uma Coroa com dois é pior que um plebeu com cinco.",
+  steps: [
+    {
+      id: "c7_conselho",
+      objective: "Levar os cinco ao Conselho Real.",
+      detail: "Assunto se resolve em mesa antes de se resolver em campo.",
+      trigger: { kind: "visit", poiId: "conselho_real" },
+      cinematic: "arco7_conselho",
+    },
+    {
+      id: "c7_decisao",
+      objective: "Sentar diante dos sete.",
+      detail: "O reino está na sua mão. Falta decidir o que ele vai ser.",
+      trigger: { kind: "visit", poiId: "castelo_real" },
+      cinematic: "arco7_decisao",
+    },
+  ],
+};
+
+export const chapters: Chapter[] = [
+  CHAPTER_II, CHAPTER_III, CHAPTER_IV, CHAPTER_V, CHAPTER_VI, CHAPTER_VII,
+];
 
 export const allSteps: StoryStep[] = chapters.flatMap((c) => c.steps);
 export const chapterOfStep = new Map<string, Chapter>(

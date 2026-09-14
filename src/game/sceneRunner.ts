@@ -15,11 +15,16 @@ import { guardScene, merchantScene, priestScene, scribeScene } from "./scenes/le
 import { deserterScene, halkaScene, postScene, sawmillScene } from "./scenes/favours";
 import { breathScene, garrisonScene, incomeScene, siegeScene, widowScene } from "./scenes/arcoII";
 import { auctionScene, barrowScene, goldsmithWidowScene, tomasScene } from "./scenes/arcoIII";
+import { garrickScene } from "./scenes/arcoIV";
+import { gateScene } from "./scenes/arcoV";
+import { relicScene } from "./scenes/arcoVI";
+import { councilScene, endingScene } from "./scenes/arcoVII";
 import { edranScene } from "./scenes/edran";
 import type { Cinematic, SceneChoice, SceneOutcome } from "./cinematics";
 import { startBattle } from "./battle";
 import { withReward } from "./experience";
 import { getState, update, type GameState } from "./store";
+import { heroById } from "../data/heroes";
 import { REVEAL_FLAG } from "./balance";
 import { beginPlayerPursuit } from "./worldForces";
 import { loadStop } from "../world/roadStops";
@@ -45,6 +50,11 @@ const SCENES: Record<string, Cinematic> = {
   [auctionScene.id]: auctionScene,
   [goldsmithWidowScene.id]: goldsmithWidowScene,
   [barrowScene.id]: barrowScene,
+  [garrickScene.id]: garrickScene,
+  [gateScene.id]: gateScene,
+  [relicScene.id]: relicScene,
+  [councilScene.id]: councilScene,
+  [endingScene.id]: endingScene,
 };
 
 export function sceneById(id: string): Cinematic | undefined {
@@ -91,6 +101,14 @@ function huntFrom(g: GameState, ids: string[]): GameState["worldForces"] {
     if (force) next[id] = beginPlayerPursuit(force, { x: at.x, y: at.y }, hours);
   }
   return next;
+}
+
+/** O nome que ele passa a carregar é o dele. */
+function foundHouse(g: GameState): GameState {
+  if (g.allegiance.kind === "independente") return g;
+  const surname = heroById.get(g.heroId ?? "")?.name.split(" ").slice(-1)[0] ?? "Sem Nome";
+  const day = Math.floor((g.journey?.hours ?? 0) / 24) + 1;
+  return { ...g, allegiance: { kind: "independente", since: day, name: `Casa ${surname}` } };
 }
 
 /** Tira os homens das cercas e põe na linha. Eles voltam pelo painel da terra. */
@@ -167,6 +185,7 @@ export function chooseScene(choiceId: string): SceneResolution | null {
 
     // A guarnição desce da cerca antes de a linha ser formada.
     if (outcome.callGarrison) next = callGarrison(next);
+    if (outcome.foundHouse) next = foundHouse(next);
 
     // Briga interrompe a cena: ela volta quando o campo estiver resolvido.
     if (outcome.battle) {

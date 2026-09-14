@@ -173,9 +173,17 @@ const EVIDENCE_NAME: Record<string,string> = {
   ordem_da_cancela: "Ordem de abrir a cancela do bosque — a letra não é a do intendente",
   ordem_sem_registro: "Ordem da Coroa — levar o selo ao Castelo Real sem escolta e sem registro",
   selo_elmwood: "Selo Real da Casa Elmwood — penhorado há quatro gerações por trinta e quatro moedas",
+  selo_karneth: "Selo Real da Casa Karneth — trocado por uma fronteira paga em dia",
+  selo_dravenor: "Selo Real da Casa Dravenor — murado em Pedra Cinza por três anos",
+  selo_caelmont: "Selo Real da Casa Caelmont — refundido dentro da Lâmpada do Vale",
+  confissao_antonios: "Confissão do rei Antônios — de próprio punho, com um laço embaixo da assinatura",
+  linhagem_vern: "A linha da chancelaria — duas trocas de nome, e o sobrenome de hoje",
 };
 // Os selos são peças irmãs: a mesma arte serve às duas até haver outra.
-const EVIDENCE_ART: Record<string,string> = { royal_seal: royalSealArt, selo_elmwood: royalSealArt };
+const EVIDENCE_ART: Record<string,string> = {
+  royal_seal: royalSealArt, selo_elmwood: royalSealArt, selo_karneth: royalSealArt,
+  selo_dravenor: royalSealArt, selo_caelmont: royalSealArt,
+};
 
 function BeatScene({beat}:{beat:NonNullable<NonNullable<ReturnType<typeof useGame>['adventure']['quest']>['pending']>}) {
   const game=useGame();

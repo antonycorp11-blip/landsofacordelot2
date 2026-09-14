@@ -28,34 +28,26 @@
 - Eventos parados no mundo (`worldEvents`) e cenas em conversa com rosto
   gerado (`cinematics.ts` + `sceneRunner.ts`). A abertura é a carruagem.
 
-## O que está escrito e ainda não existe em código
+## A campanha inteira está jogável
 
-Isto é a fila, e está em ordem.
+Os sete arcos existem em código, do escuro da abertura até a forja do Castelo
+Real. `story.ts` tem os Capítulos II a VII; o Arco I acontece fora dele, em
+`worldEvents` e nas cenas de Elmwood.
 
-1. **Arco I** — os quatro que reconhecem o selo (mercador, escrivão, sacerdote,
-   guarda) hoje aparecem como pistas no quadro e não fazem nada. São a próxima
-   coisa a construir, e o escrivão é **Mestre Aled Vern**, que importa muito
-   mais do que parece.
-2. ~~Os quatro dando serviço~~ — **feito.** Cada um deixa um pedido em
-   `src/data/favours.ts`, com cena de entrega em `scenes/favours.ts`. Três
-   cumpridos abrem o Castelo Verde.
-   **A audiência com Edran Silvarden** — o fim do Arco I, onde o jogador ouve
-   "Antônios" e "quem tiver os sete deve reinar" pela primeira vez, e escolhe
-   devolver o selo ou ficar com ele.
-   *(Com a carta de Aled na mão: ela não abre porta de lorde, abre porta de
-   quem abre porta de lorde.)*
-3. ~~A audiência com Edran~~ e ~~a localidade como cena~~ — **feitos.** O Arco I
-   está jogável do começo ao fim: abertura, carruagem, os quatro de Elmwood,
-   quatro favores, audiência e as duas saídas.
-4. ~~O Arco II~~ e ~~capítulos em `story.ts`~~ — **feitos.** O Capítulo II está
-   em `story.ts` com gatilhos novos (`flag`, `unhunted`, `garrison`,
-   `prosperity`) e cenas do sistema novo via `StoryStep.cinematic`.
-5. ~~O Arco III~~ — **feito.** A Balança ganha o segundo polo no fim dele, e
-   o jogador sai com dois selos.
-6. **O ARCO IV — Karneth não esconde.** Garrick diz na cara que é dele e manda
-   vir buscar. Guerra de verdade ou o problema interno que ele não pode
-   admitir — e é aqui que o jogador funda a própria Casa. para o fio longo dos Arcos, já que o array está
-   vazio.
+O que falta agora não é enredo — é **densidade**. Cada arco é hoje a sua
+espinha: as cenas que decidem. O que cabe entre elas, e que a
+[`narrativa.md`](narrativa.md) §9 diz ser onde o jogador passa a maior parte do
+tempo, ainda é o sandbox genérico.
+
+A fila, em ordem de valor:
+
+1. **Encargo que nasce de pessoa com nome**, em vez de gerado. Os quatro de
+   Elmwood provaram a forma; o resto do reino ainda não tem.
+2. **Cerco ofensivo como o Arco IV promete.** A guerra contra Karneth hoje se
+   resolve em mesa; a alternativa armada está escrita e não construída.
+3. **A Balança lida de volta** (abaixo).
+4. **O segundo estágio** — o continente, os outros reinos
+   ([`narrativa.md`](narrativa.md) §8). Fora do escopo desta campanha.
 
 ## O que a Balança ainda não faz
 
