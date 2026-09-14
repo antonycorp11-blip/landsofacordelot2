@@ -1,6 +1,8 @@
 import { getState } from '../game/store';
 import { loadStop, nodeStop, pathBetween, stopAlong, type RoadStop } from '../world/roadStops';
 import { routeEdgeById } from '../world/navgraph';
+import { routeNodeById } from '../world/valdoria';
+import { regionAtPoint } from '../world/navigation/navigationGrid';
 import { samplePath } from './samplePath';
 import type { RegionId } from '../world/types';
 
@@ -42,5 +44,10 @@ export function restoreJourney(fallbackId: string) {
 
 function regionOfStop(stop: RoadStop): RegionId | undefined {
   if (stop.kind === 'road') return routeEdgeById.get(stop.edgeId)?.regionId;
-  return undefined;
+  // Parada fora da malha: a região vem do polígono. Sem isto, quem começa ou
+  // para no meio do mato aparecia no HUD como estando no Coração de Valdória,
+  // que é só o padrão da função — e a campanha começa no Bosque de Elmwood.
+  if (stop.kind === 'free') return regionAtPoint(stop) ?? undefined;
+  const node = routeNodeById.get(stop.id);
+  return node ? regionAtPoint(node) ?? undefined : undefined;
 }

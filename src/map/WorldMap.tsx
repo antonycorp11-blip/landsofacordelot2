@@ -199,6 +199,7 @@ export function WorldMap() {
       if (travel.currentNodeId === poi.id) { setPanelPoiId(poi.id); return; }
       // Nem toda localidade é nó de estrada — lago, bosque e posto não são. Sem
       // o recuo pelo terreno, tocar nelas não fazia absolutamente nada.
+      setHeadingTo(poi.name);
       const node = nodeStop(poi.id);
       if (node) { setQueuedDestination(node); return; }
       const target = nearestWalkable({ x: poi.x, y: poi.y });
@@ -230,6 +231,7 @@ export function WorldMap() {
       if (!target) return;
       if (game.adventure.notice) dismissNotice();
       setPanelPoiId(null);
+      setHeadingTo(null);
       setQueuedDestination({ kind: "free", x: target.x, y: target.y });
     },
     [adventureBlocked, camera, game.adventure.notice],
@@ -312,11 +314,21 @@ export function WorldMap() {
 
   const zoom = camera.zoom;
 
+  const [headingTo, setHeadingTo] = useState<string | null>(null);
+  useEffect(() => { if (travel.state !== "traveling") setHeadingTo(null); }, [travel.state]);
+
 
   const destinationId = travel.path?.nodeIds[travel.path.nodeIds.length - 1] ?? null;
-  const destinationName = destinationId
+  /**
+   * PARA ONDE VOCÊ ESTÁ INDO.
+   *
+   * Rota de terreno não passa por nó nenhum, então o nome do destino saía do
+   * HUD inteiro: o jogador tocava numa cidade, o jogo partia, e nada na tela
+   * dizia para onde. O nome pedido fica guardado até a chegada.
+   */
+  const destinationName = (destinationId
     ? poiById.get(destinationId)?.name ?? borderCrossingById.get(destinationId)?.name ?? null
-    : null;
+    : null) ?? (travel.state === "traveling" ? headingTo : null);
   const progress =
     travel.path && travel.path.totalDistance > 0
       ? travel.progressRef.current / travel.path.totalDistance
@@ -543,7 +555,19 @@ export function WorldMap() {
       <OfferCard onTravel={(id) => setQueuedDestination(nodeStop(id))} />
       {sheetOpen && <CharacterScreen onClose={() => setSheetOpen(false)} />}
       <AdventurePanel view={adventureView} onView={setAdventureView} onClose={() => setAdventureView(null)}
-        onNavigate={(id) => {setAdventureView(null);setPanelPoiId(null);setQueuedDestination(nodeStop(id));}}
+        // Mesmo recuo do toque numa localidade: nem todo destino é nó de
+        // estrada, e sem isto o botão "Partir" fechava o painel e não fazia
+        // mais nada.
+        onNavigate={(id) => {
+          setAdventureView(null);
+          setPanelPoiId(null);
+          const poi = poiById.get(id);
+          setHeadingTo(poi?.name ?? null);
+          const node = nodeStop(id);
+          if (node) { setQueuedDestination(node); return; }
+          const target = poi ? nearestWalkable({ x: poi.x, y: poi.y }) : null;
+          if (target) setQueuedDestination({ kind: "free", x: target.x, y: target.y });
+        }}
         onSheet={openSheet} />
     </div>
   );

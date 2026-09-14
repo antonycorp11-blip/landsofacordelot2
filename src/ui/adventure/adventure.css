@@ -146,3 +146,35 @@
    faz parte do quadro. */
 .know-list.where li.done { opacity: 0.55; }
 .know-list.where li.done::marker { color: #7d8a7d; }
+
+/* ------------------------- para onde ir ------------------------- */
+/* Uma linha por destino, e o botão de partir sempre no mesmo lugar: é uma
+   lista para escolher depressa, não um cartão para admirar. */
+.adv-work {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 10px;
+  border-left: 2px solid #b99c5f3d;
+  background: #ffffff05;
+}
+.adv-work + .adv-work { margin-top: 3px; }
+/* Uma linha por destino. Duas linhas viravam 54px de altura cada, e cinco
+   delas não cabiam na tela deitada — que é a única tela que importa aqui. */
+.adv-work b {
+  flex: 0 1 auto; min-width: 0;
+  font-size: 12.5px; color: #e8dcbd; font-weight: 400;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.adv-work span {
+  flex: 1; min-width: 0;
+  font: 10px var(--ui-small); color: #9aa295;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.adv-work span::before { content: "· "; }
+/* `.btn` traz altura mínima de botão de ação; aqui ele é um item de lista. */
+.adv-work .btn {
+  flex: none;
+  height: 26px; min-height: 0; padding: 0 12px;
+  font-size: 11px; line-height: 1;
+  display: inline-flex; align-items: center;
+}
+

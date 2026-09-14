@@ -41,8 +41,11 @@ Isto é a fila, e está em ordem.
    devolver o selo ou ficar com ele.
    *(Com a carta de Aled na mão: ela não abre porta de lorde, abre porta de
    quem abre porta de lorde.)*
-3. **A localidade como cena**, não como painel.
-4. **Capítulos em `story.ts`** para o fio longo dos Arcos, já que o array está
+3. **Encargo que nasce de pessoa com nome.** A aba *Trabalho* já diz para onde
+   ir, mas o que espera lá ainda é encargo gerado. Os quatro de Elmwood dão
+   informação e não dão serviço.
+4. **A localidade como cena**, não como painel.
+5. **Capítulos em `story.ts`** para o fio longo dos Arcos, já que o array está
    vazio.
 
 ## O que a Balança ainda não faz

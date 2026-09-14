@@ -115,7 +115,7 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
   const frame=useCallback((now:number)=>{
     rafRef.current=0;
     const p=pathRef.current;
-    if (pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.notice || getState().adventure.raid || getState().adventure.battle || getState().adventure.quest?.pending) return;
+    if (pausedRef.current || blockedRef.current || document.hidden || getState().adventure.event || getState().adventure.raid || getState().adventure.battle || getState().adventure.quest?.pending) return;
     const dt=Math.min(.05,(now-lastTimeRef.current)/1000);
     lastTimeRef.current=now;
 
@@ -196,7 +196,7 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     }
 
     writeMarker();
-    if (!getState().adventure.event && !getState().adventure.notice && !getState().adventure.raid && !getState().adventure.battle && !getState().adventure.quest?.pending) rafRef.current=requestAnimationFrame(frame);
+    if (!getState().adventure.event && !getState().adventure.raid && !getState().adventure.battle && !getState().adventure.quest?.pending) rafRef.current=requestAnimationFrame(frame);
   },[checkpoint,closeDay,setStop,writeMarker]);
 
   useEffect(()=>{
@@ -214,7 +214,9 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
    * voltar a nenhum nó. É assim que se foge de alguma coisa.
    */
   const travelTo=useCallback((destination:RoadStop|string|Point)=>{
-    if (blockedRef.current || getState().adventure.event || getState().adventure.notice || getState().adventure.raid || getState().adventure.battle || getState().adventure.quest?.pending) return null;
+    // `notice` NÃO entra aqui. É informação, não janela modal, e enquanto
+    // estava nesta lista um cartão aberto no canto impedia qualquer viagem.
+    if (blockedRef.current || getState().adventure.event || getState().adventure.raid || getState().adventure.battle || getState().adventure.quest?.pending) return null;
     const target=typeof destination==='string'?nodeStop(destination):destination;
     if (!target) return null;
 
@@ -252,7 +254,33 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     const p=pathRef.current;
     const here=p ? (stopAlong(p,progressRef.current) ?? stopRef.current) : stopRef.current;
     const found=pathBetween(here,target as RoadStop);
-    if (!found || found.totalDistance<=0) return null;
+    /**
+     * QUANDO O GRAFO NÃO DÁ CONTA, O TERRENO DÁ.
+     *
+     * `pathBetween` só sabe ligar pontos que estão na malha de estradas. Desde
+     * que a campanha passou a começar no meio do mato, tocar numa cidade a
+     * partir de fora da estrada não traçava rota nenhuma e o jogo parecia
+     * ignorar o clique — inclusive o botão "Partir" do quadro de trabalho.
+     */
+    if (!found || found.totalDistance<=0) {
+      const overland=terrainPath(posRef.current,target as Point,'prefer_roads');
+      if (!overland) return null;
+      stopLoop();
+      pathRef.current=overland as unknown as TravelPath;
+      boundariesRef.current=overland.legAt;
+      progressRef.current=0;
+      legCursorRef.current=0;
+      setPath(overland as unknown as TravelPath);
+      setState('traveling');
+      pausedRef.current=false;
+      setPaused(false);
+      checkpoint();
+      tutorialFlag('departed');
+      eventsRef.current?.onTravelStart?.(overland as unknown as TravelPath);
+      lastTimeRef.current=performance.now();
+      rafRef.current=requestAnimationFrame(frame);
+      return overland as unknown as TravelPath;
+    }
     stopLoop();
     setStop(here);
     pathRef.current=found;

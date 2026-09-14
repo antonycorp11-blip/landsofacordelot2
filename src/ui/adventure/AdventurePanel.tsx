@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { ATTRIBUTE_LABEL, heroById } from '../../data/heroes';
 import { heroPortraitUrl } from '../../data/heroAssets';
 import { skillById } from '../../data/skills';
-import { poiById } from '../../world/valdoria';
+import { poiById, regionById } from '../../world/valdoria';
+import { loadStop } from '../../world/roadStops';
+import { regionAtPoint } from '../../world/navigation/navigationGrid';
+import { issuesAt } from '../../game/issues';
 import { formatDuration } from '../../world/time';
 import { resetCampaign, useGame } from '../../game/store';
 import { storyPeople } from '../../data/storyPeople';
@@ -285,6 +288,78 @@ function RaidScene({raid}:{raid:import('../../game/raid').Raid}) {
   </>;
 }
 
+
+/**
+ * ONDE HÁ TRABALHO.
+ *
+ * NÃO é um mural de missões. O trabalho continua saindo da boca de alguém —
+ * mas o jogador precisava de um lugar que dissesse PARA ONDE IR, e não tinha.
+ * Ele fechava a carruagem e ficava olhando um mapa de vinte e quatro mil por
+ * dezesseis mil sem uma única indicação.
+ *
+ * Então isto lista dois tipos de destino, e os dois partem com um toque:
+ * quem tem a ver com o que ele carrega, e as localidades da região onde há
+ * gente com serviço. O que a pessoa quer, ele descobre chegando lá.
+ */
+function WorkBoard({game,onNavigate}:{game:ReturnType<typeof useGame>;onNavigate:(id:string)=>void}) {
+  const traveling=!!game.journey?.destinationId;
+  const allLeads=game.knowledge.evidence.includes('royal_seal')
+    ? storyPeople.filter(p=>!game.storyFlags.includes(p.doneFlag))
+    : [];
+
+  // Só a região onde ele está: mandar um recém-chegado atravessar o reino
+  // atrás de um encargo de aldeia é o contrário de dar direção.
+  //
+  // A região vem da POSIÇÃO, não de `locationId`: com movimento livre o
+  // jogador passa a maior parte do tempo fora de qualquer localidade, e
+  // perguntar "em que cidade você está" devolvia nada — a lista ficava vazia
+  // exatamente quando ele mais precisava dela.
+  const at=loadStop(game.journey?.at);
+  const regionId=at?regionAtPoint(at):undefined;
+  const far=(p:{x:number;y:number})=>at?Math.hypot(p.x-at.x,p.y-at.y):0;
+  const allAround=(regionId?regionById.get(regionId)?.pointsOfInterest??[]:[])
+    .map(poi=>({poi,count:issuesAt(poi.id,game).length}))
+    .filter(entry=>entry.count>0&&!isPresent(entry.poi.id,game))
+    .sort((a,b)=>far(a.poi)-far(b.poi));
+
+  /*
+   * CINCO LINHAS DE UMA LINHA CADA.
+   *
+   * Sem teto a lista rolava, e rolagem é a única coisa que este jogo não
+   * pode ter. Pista vem antes de encargo, e encargo vem por distância: o que
+   * está mais perto é o que ele consegue fazer hoje.
+   */
+  const SLOTS=5;
+  const leads=allLeads.slice(0,3);
+  const around=allAround.slice(0,SLOTS-leads.length);
+  const rest=allLeads.length-leads.length+allAround.length-around.length;
+
+  if(!allLeads.length&&!allAround.length) return (
+    <div className="adv-location"><h3>Nada chamando você</h3>
+      <p>Nenhuma pista aberta e nenhuma localidade desta região com serviço agora. Ande até outra região e pergunte por lá.</p></div>
+  );
+
+  return <>
+    {leads.length>0 && <>
+      <span className="adv-eyebrow">Por causa do que você carrega</span>
+      {leads.map(p=><article className="adv-work" key={p.id}>
+        <b>{p.name}</b><span>{poiById.get(p.poiId)?.name}</span>
+        <button className="btn" disabled={traveling} onClick={()=>onNavigate(p.poiId)}>{traveling?'A caminho':'Partir'}</button>
+      </article>)}
+    </>}
+
+    {around.length>0 && <>
+      <span className="adv-eyebrow">Há gente com serviço</span>
+      {around.map(({poi,count})=><article className="adv-work" key={poi.id}>
+        <b>{poi.name}</b><span>{count===1?'um serviço':`${count} serviços`}</span>
+        <button className="btn" disabled={traveling} onClick={()=>onNavigate(poi.id)}>{traveling?'A caminho':'Partir'}</button>
+      </article>)}
+    </>}
+
+    {rest>0 && <p className="adv-caption">E mais {rest} {rest===1?'lugar':'lugares'} nesta região. Ande até lá e pergunte.</p>}
+  </>;
+}
+
 export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:AdventureView|null;onClose:()=>void;onView:(view:AdventureView)=>void;onNavigate:(id:string)=>void;onSheet:()=>void}) {
   const game=useGame(), a=game.adventure;
   const pending=a.event;
@@ -319,13 +394,13 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
   const here=!!placeId&&isPresent(placeId,game);
   const contract=a.contract;
   const tab=view?.tab==='guide'?'story':view?.tab??'story';
-  const title=battle?.enemyName??beat?.title??raid?.name??event?.title??notice?.title??(tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':tab==='story'?'A campanha':'Encargo em curso');
+  const title=battle?.enemyName??beat?.title??raid?.name??event?.title??notice?.title??(tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':tab==='story'?'A campanha':contract?'Encargo em curso':'Para onde ir');
   return <div className="adv-backdrop"><div className="adv-dialog" role="dialog" aria-modal="true" aria-labelledby="adv-title" ref={dialog} tabIndex={-1}>
     <header className="adv-head"><div><span className="hs-kicker">{battle?`Rodada ${battle.round}`:beat?(a.quest?.phase==='entrega'?'Na chegada':'No meio do caminho'):raid?'A estrada está tomada':event?'Encontro na estrada':notice?'Crônica de Valdória':'Lands of Acordelot'}</span><h2 id="adv-title">{title}</h2></div>
       {!event && !raid && !battle && !beat && <button className="sheet-close" onClick={()=>closeRef.current()} aria-label="Fechar">×</button>}
     </header>
     {!event && !notice && !raid && !battle && !beat && <nav className="adv-tabs" aria-label="Jornada">
-      {([['story','Campanha'],['contracts','Encargo'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
+      {([['story','Campanha'],['contracts','Trabalho'],['companions','Companheiros'],['history','Crônica']] as const).map(([key,label])=><button key={key} aria-pressed={tab===key} onClick={()=>onView({...view,tab:key})}>{label}</button>)}
     </nav>}
     <div className={`adv-body${battle?" is-battle":""}`}>
       {battle ? <BattleScene battle={battle}/> : beat ? <BeatScene beat={beat}/> : raid ? <RaidScene raid={raid}/> : event && pending ? <>
@@ -349,11 +424,11 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
           {isPresent(contract.destinationId,game)?<button className="btn primary" onClick={completeContract}>Entregar e receber</button>:<button className="btn primary" disabled={!!game.journey?.destinationId} onClick={()=>onNavigate(contract.destinationId)}>{game.journey?.destinationId?'Viagem em andamento':'Viajar ao destino'}</button>}
           <button className="btn" onClick={abandonContract}>Encerrar sem recompensa</button>
         </div></article> : <>
-          <div className="adv-location"><h3>Nenhum encargo em curso</h3><p>Trabalho não se acha numa lista: procure a pessoa que manda numa localidade. Toque no lugar, escolha <b>Falar</b> e pergunte por serviço.{here&&place?` Você está em ${place.name}.`:''}</p></div>
-          <div className="adv-actions"><button className="btn primary" onClick={onClose}>Voltar ao mapa</button></div>
+          <p className="adv-caption">Trabalho continua saindo da boca de alguém: chegue ao lugar e pergunte. Isto aqui só diz para onde ir.{here&&place?` Você está em ${place.name}.`:''}</p>
+          <WorkBoard game={game} onNavigate={onNavigate}/>
         </>}
       </> : tab==='companions' ? <>
-        <p className="adv-caption">Visite estes viajantes e cumpra um contrato pedido por eles. Um favor concluído rende +12 de relação. O convite exige relação 10 e sua presença no local.</p>
+        <p className="adv-caption">Um favor cumprido rende +12 de relação. O convite exige relação 10 e você no local.</p>
         {Object.values(game.companions).map(c=>{const hero=heroById.get(c.id);return <article className="adv-companion" key={c.id}>
           <img src={heroPortraitUrl(hero?.portraitAssetKey)} alt={hero?.name}/><div><h3>{hero?.name}</h3><p>{c.status==='IN_PARTY'?'Viajando com você':poiById.get(c.locationPoiId)?.name} · relação {c.relation}</p><p>{hero?.tagline}</p>
           {c.status!=='IN_PARTY' && <div className="adv-actions">{isPresent(c.locationPoiId,game)?<><button className="btn" onClick={()=>onView({tab:'contracts',poiId:c.locationPoiId})}>Ouvir seus pedidos</button><button className="btn primary" disabled={!canRecruitCompanion(c.id,game)} onClick={()=>recruitCompanion(c.id)}>Convidar para o grupo</button></>:<button className="btn" disabled={!!game.journey?.destinationId} onClick={()=>onNavigate(c.locationPoiId)}>Visitar</button>}</div>}</div>
