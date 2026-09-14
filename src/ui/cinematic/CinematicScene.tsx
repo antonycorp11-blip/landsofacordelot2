@@ -177,8 +177,11 @@ export function CinematicScene() {
           </div>
         </div>
       </div>
-      {/* Saída de emergência: cena travada é pior que cena pulada. */}
-      <button className="cine-escape" onClick={(e) => { e.stopPropagation(); closeScene(); }} aria-label="Afastar-se">×</button>
+      {/* Saída de emergência: cena travada é pior que cena pulada — exceto
+          onde sair custaria a história inteira. */}
+      {!scene?.noEscape && (
+        <button className="cine-escape" onClick={(e) => { e.stopPropagation(); closeScene(); }} aria-label="Afastar-se">×</button>
+      )}
     </div>
   );
 }

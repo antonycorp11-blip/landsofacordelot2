@@ -20,6 +20,7 @@ import type { Cinematic } from "../cinematics";
  */
 export const carriageScene: Cinematic = {
   id: "wrecked_carriage",
+  noEscape: true,
   first: "abertura",
   beats: {
     /**
@@ -119,7 +120,7 @@ export const carriageScene: Cinematic = {
           outcome: {
             text: "Você esporeia antes que o primeiro grite.",
             flags: ["atacou_primeiro"],
-            battle: { name: "Homens da carruagem", band: { milicianos: 2, infantaria: 2 } },
+            battle: { name: "Homens da carruagem", band: { milicianos: 2, infantaria: 2 }, resume: "depois_da_briga" },
           },
         },
         {
@@ -128,13 +129,12 @@ export const carriageScene: Cinematic = {
           hint: "Não é briga sua",
           outcome: {
             text:
-              "Você abre um arco largo entre as árvores e deixa a carroça para trás. Às suas costas, alguém ainda se mexe debaixo dela por algum tempo.",
-            facts: ["Houve uma emboscada a uma carruagem no Bosque de Elmwood."],
+              "Você abre um arco largo entre as árvores e deixa a carroça para trás.\n\nCinquenta passos adiante você para. Não por coragem: porque o som não para com você.\n\nQuando volta, os três já foram embora — e o que se mexe debaixo da carroça ainda se mexe.",
+            facts: ["Houve uma emboscada a uma carruagem no Bosque de Elmwood.", "Os três homens foram embora antes de terminar."],
             questions: ["Quem foi atacado naquela estrada?"],
-            flags: ["ignorou_carruagem"],
+            flags: ["quase_foi_embora"],
             reward: { xp: 30 },
-            eventState: "looted",
-            end: true,
+            next: "sobrevivente",
           },
         },
       ],
@@ -161,14 +161,17 @@ export const carriageScene: Cinematic = {
           hint: "Deixar o ferido e ver aonde eles vão",
           outcome: {
             text:
-              "Você os acompanha por meia hora até a estrada se abrir. Eles não seguem para vila nenhuma: entram por um caminho de serviço, do tipo que só usa quem já esteve ali antes. " +
-              "Quando você volta, o homem debaixo da carroça já não respira. A mão dele está fechada sobre nada.",
-            facts: ["Os atacantes conheciam um caminho de serviço fora da estrada real."],
-            questions: ["Alguém os estava esperando?"],
-            flags: ["seguiu_atacantes", "perdeu_o_selo"],
+              "Você os acompanha por meia hora até a estrada se abrir. Eles não seguem para vila nenhuma: entram por um caminho de serviço, do tipo que só usa quem já esteve ali antes.\n\n" +
+              "No vau você perde os três e ganha a única coisa que interessa: eles não estavam voltando para casa. Estavam indo entregar.\n\n" +
+              "Quando você volta à carroça, o homem debaixo dela ainda está lá. Por pouco.",
+            facts: [
+              "Os atacantes conheciam um caminho de serviço fora da estrada real.",
+              "Eles não foram para casa depois do ataque: foram entregar alguma coisa a alguém.",
+            ],
+            questions: ["Alguém os estava esperando?", "A quem eles foram entregar?"],
+            flags: ["seguiu_atacantes"],
             reward: { xp: 110, skillXp: { intriga: 3 } },
-            eventState: "looted",
-            end: true,
+            next: "sobrevivente",
           },
         },
       ],
@@ -202,7 +205,7 @@ export const carriageScene: Cinematic = {
           failure: {
             text: "«Não tem, não.» Harn diz isso sem olhar. A mão dele já desceu para o cinto.",
             flags: ["desconfiaram"],
-            battle: { name: "Homens de Harn", band: { milicianos: 2, infantaria: 2 } },
+            battle: { name: "Homens de Harn", band: { milicianos: 2, infantaria: 2 }, resume: "depois_da_briga" },
           },
         },
         {
@@ -210,11 +213,13 @@ export const carriageScene: Cinematic = {
           label: "Recuar e ir embora.",
           outcome: {
             text:
-              "Você vira o cavalo devagar, do jeito que se vira diante de cão estranho. Eles ficam olhando até as árvores fecharem atrás de você.",
-            flags: ["ignorou_carruagem"],
-            reward: { xp: 40 },
-            eventState: "looted",
-            end: true,
+              "Você vira o cavalo devagar, do jeito que se vira diante de cão estranho. Eles ficam olhando até as árvores fecharem atrás de você.\n\n" +
+              "Você não vai longe. Amarra o cavalo, senta no mato e espera, e espera o bastante para contar: são três que saem, e os três sobem para o norte.\n\n" +
+              "Aí você volta. E debaixo da carroça alguma coisa ainda respira.",
+            facts: ["Os três homens da carruagem seguiram para o norte."],
+            flags: ["esperou_eles_sairem"],
+            reward: { xp: 60, skillXp: { intriga: 2 } },
+            next: "sobrevivente",
           },
         },
       ],
@@ -231,7 +236,7 @@ export const carriageScene: Cinematic = {
         {
           id: "enfrentar",
           label: "Enfrentar.",
-          outcome: { text: "", battle: { name: "Homens da carruagem", band: { milicianos: 3, infantaria: 2 } } },
+          outcome: { text: "", battle: { name: "Homens da carruagem", band: { milicianos: 3, infantaria: 2 }, resume: "depois_da_briga" } },
         },
         {
           id: "correr",
@@ -239,13 +244,39 @@ export const carriageScene: Cinematic = {
           hint: "Eles conhecem o seu rosto a partir de agora",
           outcome: {
             text:
-              "Você cruza o bosque sem olhar para trás. Ninguém o alcança — hoje. Mas três homens viram a sua cara com clareza.",
+              "Você cruza o bosque sem olhar para trás. Ninguém o alcança — hoje. Mas três homens viram a sua cara com clareza.\n\n" +
+              "Você roda por fora até o sol baixar, e volta pela outra margem quando já não dá para ver mão diante do rosto.\n\n" +
+              "A carroça está fria e sozinha. Debaixo dela, um som que você quase confunde com vento.",
             facts: ["Três homens armados viram o seu rosto no Bosque de Elmwood."],
             flags: ["fugiu_da_carruagem", "conhecem_seu_rosto"],
             reward: { xp: 45 },
-            eventState: "looted",
-            end: true,
+            next: "sobrevivente",
           },
+        },
+      ],
+    },
+
+    /**
+     * DEPOIS DA BRIGA.
+     *
+     * Serve para vitória e para derrota, porque as duas terminam do mesmo
+     * jeito: o campo esvazia e a carroça continua ali. Ganhar a luta não pode
+     * encerrar a história — era o que acontecia, em silêncio.
+     */
+    depois_da_briga: {
+      id: "depois_da_briga",
+      place: "Bosque de Elmwood",
+      art: "carriage_wrecked",
+      text: [
+        "O barulho acaba de uma vez, do jeito que barulho de briga acaba: sem aviso e cedo demais.",
+        "Fica o cheiro, o vento nas folhas, e dois cavalos mortos ainda arreados.",
+        "E fica um som miúdo, embaixo da carroça, que você levou um tempo para entender que é respiração.",
+      ],
+      choices: [
+        {
+          id: "olhar",
+          label: "Levantar a lona.",
+          outcome: { text: "", next: "sobrevivente" },
         },
       ],
     },

@@ -64,7 +64,12 @@ export type SceneOutcome = {
   /** Deixa o evento do mundo neste estado. */
   eventState?: string;
   /** Abre combate com este bando. */
-  battle?: { name: string; band: Record<string, number> };
+  battle?: {
+    name: string;
+    band: Record<string, number>;
+    /** Momento em que a cena recomeça quando o campo estiver resolvido. */
+    resume?: string;
+  };
 };
 
 export type SceneChoice = {
@@ -104,6 +109,13 @@ export type SceneBeat = {
 
 export type Cinematic = {
   id: string;
+  /**
+   * Cena que não pode ser abandonada pelo canto da tela.
+   *
+   * A abertura é assim: sair dela deixaria o jogador no mapa sem o selo e sem
+   * história nenhuma, e o evento da carruagem não reabre.
+   */
+  noEscape?: boolean;
   beats: Record<string, SceneBeat>;
   first: string;
 };

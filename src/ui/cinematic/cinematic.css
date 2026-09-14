@@ -29,8 +29,30 @@
   backdrop-filter: blur(8px) saturate(0.2);
   -webkit-backdrop-filter: blur(8px) saturate(0.2);
 }
-.cine.solo .cine-side { align-items: flex-start; }
+/*
+ * NARRAÇÃO PURA fica no meio da tela, não espremida na borda de baixo.
+ *
+ * Com o palco vazio, `justify-content:flex-end` empurrava texto e escolha para
+ * o rodapé e a abertura do jogo — que é a primeira coisa que alguém vê —
+ * ficava amassada contra a borda. Aqui o bloco inteiro é centrado e a escolha
+ * ganha ar entre ela e a última linha.
+ */
+.cine.solo .cine-frame { align-items: center; justify-content: center; }
+.cine.solo .cine-side {
+  justify-content: center;
+  align-items: flex-start;
+  flex: 0 1 auto;
+  width: min(70ch, 100%);
+  gap: 20px;
+  padding: 0;
+}
+.cine.solo .cine-thread {
+  flex: 0 1 auto;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
 .cine.solo .cine-thread p.seen { max-width: 70ch; }
+.cine.solo .cine-choices { align-self: stretch; }
 
 @keyframes cine-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .cine { animation: none; } }

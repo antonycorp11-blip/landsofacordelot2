@@ -137,6 +137,9 @@ export function chooseScene(choiceId: string): SceneResolution | null {
         adventure: {
           ...next.adventure,
           cinematic: null,
+          sceneResume: outcome.battle.resume
+            ? { sceneId: active.sceneId, beatId: outcome.battle.resume, eventId: active.eventId }
+            : null,
           battle: startBattle(next, outcome.battle.band as TroopCount, outcome.battle.name),
         },
       };

@@ -515,7 +515,11 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
       text+=` Levaram ${robbed} moedas.`;
     }
 
+    // A cena que a briga interrompeu volta agora, no momento que ela marcou.
+    const resume=next.adventure.sceneResume;
     next={...next,adventure:{...next.adventure,battle:null,raid:null,
+      sceneResume:null,
+      cinematic:resume??next.adventure.cinematic,
       notice:{title:won?'O campo é seu':battle.result==='retirada'?'Vocês saíram da linha':'A linha quebrou',
         text:text+(levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''),levelUp},
     }};

@@ -83,6 +83,14 @@ export type AdventureState = {
   offer: Offer | null;
   /** Cena em curso: qual, em que momento, e sobre qual evento do mundo. */
   cinematic: { sceneId: string; beatId: string; eventId: string | null } | null;
+  /**
+   * A cena que uma briga interrompeu, e o momento em que ela volta.
+   *
+   * Sem isto, ganhar a luta da carruagem ENCERRAVA a história em silêncio: o
+   * campo era seu, o painel fechava, e o moribundo com o selo na mão nunca
+   * mais existia.
+   */
+  sceneResume: { sceneId: string; beatId: string; eventId: string | null } | null;
   /** Hora do mundo em que o próximo chamado pode aparecer. */
   nextOfferHour: number;
   /** A linha que atravessa a partida inteira. */
@@ -96,7 +104,7 @@ export type AdventureState = {
 export function freshAdventure(): AdventureState {
   return {
     tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, agentInspected:false, pursuitStarted:false, forceAttacked:false, forceDefeated:false, escortAccepted:false, escortCompleted:false, interventionStarted:false, armyInspected:false, politicsSeen:false },
-    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, escort:null, eventCount:0, battlesWon:0, offer:null, cinematic:null, nextOfferHour:20, story:freshStory(),
+    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, sceneResume:null, escort:null, eventCount:0, battlesWon:0, offer:null, cinematic:null, nextOfferHour:20, story:freshStory(),
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
 }
