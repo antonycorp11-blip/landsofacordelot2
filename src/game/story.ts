@@ -254,6 +254,15 @@ const CHAPTER_IV: Chapter = {
       trigger: { kind: "visit", poiId: "castelo_karneth" },
       cinematic: "arco4_garrick",
     },
+    {
+      // Silencioso de propósito: pelo caminho da mesa o selo já está na mão
+      // quando a cena acaba, e o passo passa sem dizer nada. Pelo caminho
+      // armado ele espera o cerco, que pode levar vinte e um dias.
+      id: "c4_selo",
+      objective: "Tirar o selo das mãos de Garrick Karneth.",
+      detail: "Pela mesa ou pela muralha. Ele avisou que as duas servem.",
+      trigger: { kind: "flag", flag: "tem_selo_karneth" },
+    },
   ],
 };
 

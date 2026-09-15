@@ -80,6 +80,14 @@ export type SceneOutcome = {
    * aliança com um homem sem nome.
    */
   foundHouse?: boolean;
+  /**
+   * Declara guerra a uma Casa a partir da cena.
+   *
+   * É o que liga a história ao cerco de verdade: depois disto o painel do
+   * senhorio oferece "Cercar" na sede inimiga, e o jogador joga a tomada com
+   * os sistemas que existem, em vez de a cena resolver a guerra num parágrafo.
+   */
+  declareWarOn?: string;
   /** Próximo momento desta cena. */
   next?: string;
   /** Encerra a cena e devolve o mapa. */

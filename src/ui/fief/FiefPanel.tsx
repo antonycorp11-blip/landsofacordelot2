@@ -16,6 +16,7 @@ import { beginSiege, declareSiegeWar, siegeBlocker, siegeDistance, SIEGE_RANGE }
 import { belligerentOf } from "../../game/allegiance";
 import { atWar } from "../../game/worldSim";
 import { pactActive } from "../../game/diplomacy";
+import { armyOrderBlocker, orderArmyToFief, orderedArmyAt } from "../../game/armyOrders";
 import "../agent/agent.css";
 
 /**
@@ -53,6 +54,8 @@ export function FiefPanel({ fief, onClose, onTravelToSeat }: { fief: Fief; onClo
   const war=owner!=='player'&&!!me&&atWar(game,me,owner);
   const canDeclare=owner!=='player'&&game.allegiance.kind==='independente'&&!war&&game.influence>=8&&!pactActive(game,owner);
   const far=owner!=='player'&&siegeDistance(game,fief)>SIEGE_RANGE;
+  const armyBlock=owner!=="player"&&game.allegiance.kind==='jurado'&&war?armyOrderBlocker(game,fief):null;
+  const orderedArmy=owner!=="player"?orderedArmyAt(game,fief.id):null;
 
   if (managing && owner === "player") {
     return (
@@ -167,11 +170,15 @@ export function FiefPanel({ fief, onClose, onTravelToSeat }: { fief: Fief; onClo
         {owner!=="player"&&<button className="btn" disabled={!!siegeBlock} title={siegeBlock??undefined} onClick={()=>{if(beginSiege(fief.id))onClose();}}>
           Cercar sede
         </button>}
+        {owner!=="player"&&game.allegiance.kind==='jurado'&&war&&<button className="btn" disabled={!!armyBlock} title={armyBlock??undefined} onClick={()=>{if(orderArmyToFief(fief.id))setNote('Hoste convocada. Ela precisa marchar até a sede para apoiar seu assalto.');}}>
+          {orderedArmy?'Hoste a caminho':'Convocar hoste · −6 influência'}
+        </button>}
         {far&&<button className="btn" onClick={onTravelToSeat}>Ir à sede</button>}
         {owner!=="player"&&game.allegiance.kind==='independente'&&!war&&<button className="btn danger" disabled={!canDeclare} title={pactActive(game,owner)?'Um tratado de não agressão ainda protege esta Casa.':game.influence<8?'Precisa de 8 influência.':undefined} onClick={()=>{if(declareSiegeWar(fief.id))setNote('Guerra declarada. Agora sua hoste pode cercar esta sede.');}}>
           Declarar guerra · −8 influência
         </button>}
         {owner!=="player"&&siegeBlock&&<span className="fief-siege-hint">{siegeBlock}</span>}
+        {armyBlock&&<span className="fief-siege-hint">Hoste: {armyBlock}</span>}
         <button className="btn" onClick={onClose}>
           Fechar
         </button>

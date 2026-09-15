@@ -45,6 +45,7 @@ function drawTerrain(ctx:CanvasRenderingContext2D,battle:Battle){
     pixel(ctx,"#352923",204,89,24,26);pixel(ctx,"#9d8657",202,88,2,28);pixel(ctx,"#9d8657",228,88,2,28);
     pixel(ctx,"#564c3f",146,92,38,11);pixel(ctx,"#302d29",153,104,18,3);
     if(battle.siege.ramBuilt){pixel(ctx,"#7d6039",118,94,34,10);pixel(ctx,"#c7a46a",131,87,8,7);pixel(ctx,"#2b2a27",124,104,5,5);pixel(ctx,"#2b2a27",141,104,5,5);}
+    if(battle.siege.supportForceId){pixel(ctx,"#bb9d5e",27,49,2,38);pixel(ctx,"#376b55",29,49,15,9);pixel(ctx,"#26513e",33,58,11,2);}
   }else{
     // A estrada une as duas formações e continua visível sob os soldados.
     pixel(ctx,"#897452",0,91,W,20);pixel(ctx,"#aa9365",0,96,W,2);
@@ -82,6 +83,6 @@ export function BattleArena({battle}:{battle:Battle}){
   const terrain=BATTLE_TERRAINS[battle.terrain]??BATTLE_TERRAINS.plain;
   return <figure className="battle-arena">
     <canvas ref={ref} width={W} height={H} role="img" aria-label={battle.siege?`Assalto às muralhas, proteção ${Math.round(battle.siege.wallProtection*100)}%`:`Formações em ${terrain.name.toLowerCase()}`}/>
-    <figcaption><b>{battle.siege?'Assalto às muralhas':terrain.name}</b><span>{battle.siege?`Guarnição protegida ×${battle.siege.wallProtection.toFixed(2)}${battle.siege.ramBuilt?' · aríete em ação':''}. Avançar expõe a linha; segurar poupa homens.`:terrain.blurb}</span></figcaption>
+    <figcaption><b>{battle.siege?'Assalto às muralhas':terrain.name}</b><span>{battle.siege?`Guarnição protegida ×${battle.siege.wallProtection.toFixed(2)}${battle.siege.ramBuilt?' · aríete em ação':''}${battle.siege.supportForceId?` · ${battle.siege.supportName} atraiu ${battle.siege.displaced} defensores`:''}. Avançar expõe a linha; segurar poupa homens.`:terrain.blurb}</span></figcaption>
   </figure>;
 }

@@ -1,7 +1,7 @@
 /** A hoste do jogador cerca uma sede real do mapa; a decisão é feita antes da arena. */
 import { ownerOf, setOwner } from '../data/fiefOwners';
 import { houseById } from '../data/houses';
-import { troopStrength, troopTotal, type TroopCount } from '../data/troops';
+import { troopStrength, troopTotal, troops as troopTypes, type TroopCount } from '../data/troops';
 import { fiefById, type Fief } from '../world/fiefs';
 import { loadStop } from '../world/roadStops';
 import type { HouseId } from '../world/types';
@@ -11,6 +11,8 @@ import { pactActive } from './diplomacy';
 import { withReward } from './experience';
 import { getState, update, type GameState } from './store';
 import { atWar } from './worldSim';
+import { orderedArmyAt } from './armyOrders';
+import { wandererById } from './worldForces';
 
 export type SiegeState = {
   fiefId: string;
@@ -42,6 +44,11 @@ export function garrisonOf(fief:Fief,owner=ownerOf(fief.id)):TroopCount {
 }
 export function wallProtection(fief:Fief,ramBuilt:boolean):number {
   return Math.max(1.08,1+fief.defense/105-(ramBuilt?.38:0));
+}
+function thinTroops(count:TroopCount,fraction:number):TroopCount {
+  const left:TroopCount={};
+  for(const type of troopTypes){const have=count[type.id]??0,keep=have-Math.round(have*fraction);if(keep>0)left[type.id]=keep;}
+  return left;
 }
 export function siegeBlocker(s:GameState,fief:Fief):string|null {
   const defender=ownerOf(fief.id),me=belligerentOf(s);
@@ -106,9 +113,17 @@ export function assaultSiege():boolean {
   const s=getState(),siege=s.adventure.siege,fief=siege&&fiefById.get(siege.fiefId);
   const me=belligerentOf(s);
   if(!siege||!fief||s.food<2||troopTotal(s.troops)<1||ownerOf(fief.id)!==siege.defender||!me||!atWar(s,me,siege.defender))return false;
-  update(g=>{const battle=startBattle(g,garrisonOf(fief,siege.defender),`Guarnição de ${fief.seatName}`,'hill');
-    battle.siege={fiefId:fief.id,defender:siege.defender,wallProtection:wallProtection(fief,siege.ramBuilt),ramBuilt:siege.ramBuilt};
-    return {...g,food:g.food-2,adventure:{...g.adventure,battle}};});
+  const ordered=orderedArmyAt(s,fief.id),ally=ordered?.ready?ordered:null;
+  const original=garrisonOf(fief,siege.defender);
+  const pressure=ally?Math.min(.38,.12+troopStrength(ally.force.troops)/Math.max(1,troopStrength(original))*.1):0;
+  const defenders=pressure?thinTroops(original,pressure):original;
+  const displaced=troopTotal(original)-troopTotal(defenders);
+  update(g=>{const battle=startBattle(g,defenders,`Guarnição de ${fief.seatName}`,'hill');
+    battle.siege={fiefId:fief.id,defender:siege.defender,wallProtection:wallProtection(fief,siege.ramBuilt),ramBuilt:siege.ramBuilt,
+      ...(ally?{supportForceId:ally.id,supportName:wandererById.get(ally.id)?.name??'Hoste aliada',displaced}:{})};
+    if(ally)battle.log=[`${battle.siege.supportName} cortou as saídas e chamou ${displaced} defensores para fora da muralha. A hoste sofreu perdas nessa manobra.`];
+    const worldForces=ally?{...g.worldForces,[ally.id]:{...g.worldForces[ally.id],troops:thinTroops(ally.force.troops,.1),food:Math.max(0,ally.force.food-2)}}:g.worldForces;
+    return {...g,food:g.food-2,worldForces,adventure:{...g.adventure,battle}};});
   return true;
 }
 export function liftSiege():boolean {

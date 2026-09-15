@@ -7,6 +7,7 @@ import { belligerentOf } from '../../game/allegiance';
 import { atWar } from '../../game/worldSim';
 import castleArt from '../../assets/map/castle_medium.png?url';
 import { houseById } from '../../data/houses';
+import { orderedArmyAt } from '../../game/armyOrders';
 import './siege.css';
 
 /** O ataque começa como uma decisão de comandante, diante da sede no mapa. */
@@ -24,12 +25,13 @@ export function SiegeCouncil(){
   const ramCost=siege.ramBuilt?`Muralha reduzida a ${wall}%`:canRam?'−2 madeira · −1 ferramentas · −1 comida':`Precisa 2 madeira, 1 caixa de ferramentas e 1 comida (tem ${wood}/${tools}/${game.food})`;
   const me=belligerentOf(game);
   const activeWar=!!me&&atWar(game,me,siege.defender)&&ownerOf(fief.id)===siege.defender;
+  const army=orderedArmyAt(game,fief.id);
   return <div className="siege-backdrop"><section className="siege-council" role="dialog" aria-modal="true" aria-label={`Cerco de ${fief.seatName}`}>
     <header className="siege-head"><div><small>Conselho de guerra · {fief.name}</small><h2>{fief.seatName}</h2></div><button onClick={liftSiege} aria-label="Levantar cerco">×</button></header>
     <div className="siege-scene">
       <div className="siege-wall" aria-hidden="true"><img src={castleArt} alt=""/><em/></div>
-      <div><p>{activeWar?<>A guarnição fechou os portões. Seus homens montaram o acampamento e gastaram <b>3 comida</b> para cercar a sede.</>:<>A guerra terminou ou a sede mudou de dono. Levante o cerco e reorganize a hoste.</>}</p>
-        <div className="siege-figures"><span><b>{troopTotal(game.troops)}</b> seus soldados</span><span><b>{garrison}</b> defensores{elite?' de elite':''}</span><span><b>{wall}%</b> proteção</span><span><b>{game.food}</b> comida</span></div>
+      <div><p>{activeWar?<>A guarnição fechou os portões. Seus homens gastaram <b>3 comida</b> para cercar a sede.{army?army.ready?' A hoste convocada chegou e pode atrair defensores para fora das muralhas.':' A hoste convocada ainda marcha; atacar agora dispensa seu apoio.':''}</>:<>A guerra terminou ou a sede mudou de dono. Levante o cerco e reorganize a hoste.</>}</p>
+        <div className="siege-figures"><span><b>{troopTotal(game.troops)}</b> seus soldados</span><span><b>{garrison}</b> defensores{elite?' de elite':''}</span><span><b>{wall}%</b> proteção</span><span><b>{game.food}</b> comida</span>{army&&<span><b>{army.ready?'Pronta':'Marchando'}</b> hoste aliada</span>}</div>
       </div>
     </div>
     <div className="siege-decisions">

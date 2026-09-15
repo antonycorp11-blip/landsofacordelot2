@@ -374,6 +374,20 @@ export function advanceWorldForces(input:GameState,day:number):{state:GameState;
     if(def?.routine!=="exército"||!def.houseId)continue;
     const war=state.wars.find((entry)=>entry.a===def.houseId||entry.b===def.houseId);
     const home=homePoi(id);
+    const order=force.campaignOrder;
+    const orderedFief=order?fiefs.find((f)=>f.id===order.fiefId):undefined;
+    const enemyOwner=orderedFief?(state.fiefOwners[orderedFief.id]??orderedFief.ownerHouseId):null;
+    const orderedWar=!!enemyOwner&&enemyOwner!=='player'&&state.wars.some((entry)=>(entry.a===def.houseId&&entry.b===enemyOwner)||(entry.b===def.houseId&&entry.a===enemyOwner));
+    if(order&&orderedFief&&orderedWar&&day*24<=order.untilHour){
+      const consumption=Math.max(1,Math.ceil(troopTotal(force.troops)/35));
+      if(force.at===home){const supplied=provisionArmy(force,home,{...state,worldForces:forces},day,12);state=supplied.state;force=supplied.force;}
+      force={...force,food:Math.max(0,force.food-consumption),objective:'siege',targetPoiId:order.targetPoiId,targetHouseId:enemyOwner,
+        objectiveLabel:force.at===order.targetPoiId?`Pronta para apoiar seu cerco de ${orderedFief.name}`:`Marchando para apoiar seu cerco de ${orderedFief.name}`};
+      if(force.food<=0){force={...force,campaignOrder:null,objective:'return',targetPoiId:home,targetHouseId:undefined,
+        troops:removeShare(force.troops,.08),objectiveLabel:'Sem suprimentos; retornando sem apoiar o cerco'};}
+      forces[id]=force;continue;
+    }
+    if(order)force={...force,campaignOrder:null};
     if(!war){
       const original=partyOf(def),missing=Math.max(0,troopTotal(original)-troopTotal(force.troops));
       force={...force,objective:"defend",targetPoiId:home,targetForceId:null,targetHouseId:undefined,siegeProgress:0,

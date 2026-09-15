@@ -194,6 +194,14 @@ export function useWanderers({
             if(!flags[i]){flags[i]=true;changed=true;}}
           else {state.to=null;state.path=null;state.resting=.5;}
         }
+        const commandedTarget=forceNow?.campaignOrder?.targetPoiId;
+        if(commandedTarget&&!pursuitTarget&&((state.path&&state.to!==commandedTarget)||(!state.path&&state.at!==commandedTarget))){
+          // A ordem vira a marcha no ponto físico atual, inclusive no meio de
+          // uma estrada. O planner monta a nova rota no mesmo pulso.
+          if(state.path&&state.to!==commandedTarget){state.path=null;state.to=null;state.progress=0;
+            if(flags[i]){flags[i]=false;changed=true;}}
+          state.resting=0;
+        }
         if (state.path) {
           const terrainModifier=state.path.terrainModifier??1;
           state.progress = Math.min(state.path.totalDistance, state.progress + hours * UNITS_PER_HOUR * state.wanderer.pace/terrainModifier);

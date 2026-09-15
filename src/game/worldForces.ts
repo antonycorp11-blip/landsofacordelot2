@@ -22,6 +22,8 @@ export type WorldForceState = {
   targetHouseId?: HouseId;
   siegeProgress: number;
   lastActionDay: number;
+  /** Convocação do jogador: a hoste precisa marchar até o feudo, sem teleporte. */
+  campaignOrder?: { fiefId:string; targetPoiId:string; issuedAt:number; untilHour:number } | null;
   /** Posição física mais recente; evita voltar ao último nó ao redirecionar. */
   position: Point | null;
   /** Só muda por visão direta ou por um relato que a força realmente recebeu. */
@@ -63,6 +65,7 @@ export function freshForceState(id: string, at: string, resting = 0): WorldForce
     targetPoiId:null,
     siegeProgress:0,
     lastActionDay:0,
+    campaignOrder:null,
     position:null,
     knownPlayerPosition:null,
     lastSeenAt:-1,

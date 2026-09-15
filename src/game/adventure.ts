@@ -19,6 +19,7 @@ import { skillById } from '../data/skills';
 import { CAREER_LABEL } from './careers';
 import { fiefById } from '../world/fiefs';
 import { ownerOf, setOwner } from '../data/fiefOwners';
+import { orderArmyHome } from './armyOrders';
 import { claimGrant, fiefName } from './allegiance';
 import { poiById } from '../world/valdoria';
 import { goodById, type GoodId } from '../data/goods';
@@ -497,12 +498,15 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
       }
     } else if (battle.siege) {
       const fief=fiefById.get(battle.siege.fiefId);
+      const ordered=Object.entries(next.worldForces).find(([,force])=>force.campaignOrder?.fiefId===battle.siege!.fiefId);
+      if(ordered)next={...next,worldForces:{...next.worldForces,[ordered[0]]:orderArmyHome(ordered[1])}};
       if(siegeCaptured){
         next=withReward(next,{influence:7,careerXp:{MILITARY:75},skillXp:{tatica:3}});
         if(next.allegiance.kind==='jurado')next={...next,allegiance:{...next.allegiance,service:next.allegiance.service+35}};
         text+=` Os portões de ${fief?.seatName??'sede'} cedem: ${fief?.name??'o senhorio'} passa para você. +7 influência${next.allegiance.kind==='jurado'?' · +35 serviço':''}.`;
       }else if(won) text+=` A guarnição cedeu, mas outro senhor tomou ${fief?.seatName??'a sede'} durante o confronto; nenhuma posse foi transferida.`;
       else text+=` ${fief?.seatName??'A sede'} permanece com seus defensores. O cerco termina; será preciso recompor sua hoste.`;
+      if(battle.siege.supportForceId)text+=` ${battle.siege.supportName} ajudou a afastar ${battle.siege.displaced} defensores e agora retorna para se recompor.`;
     } else if (fromQuest && beat?.kind==='batalha') {
       text+=` ${won?beat.onWin:beat.onLose}`;
       if (!won && beat.loseReward) next=withReward(next,beat.loseReward);
@@ -536,7 +540,21 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
     }};
     return logged(next,'evento',`${battle.enemyName}: ${text}`);
   });
-  if(battle.siege&&battle.result==='vitoria'&&ownerOf(battle.siege.fiefId)===battle.siege.defender)setOwner(battle.siege.fiefId,'player');
+  if(battle.siege&&battle.result==='vitoria'&&ownerOf(battle.siege.fiefId)===battle.siege.defender){
+    setOwner(battle.siege.fiefId,'player');
+    /**
+     * A HISTÓRIA ESPERA O CERCO ACABAR.
+     *
+     * O caminho armado do Arco IV não é resolvido por uma cena: a cena declara
+     * a guerra e some, o jogador toma Marcha Alta com acampamento, aríete e
+     * assalto, e só então Garrick aparece na muralha. Se a tomada nunca
+     * acontecer, a cena nunca acontece — e é para ser assim.
+     */
+    const after=getState();
+    if(battle.siege.fiefId==='f_karneth'&&after.storyFlags.includes('arco4_guerra')&&!after.storyFlags.includes('tem_selo_karneth')){
+      update(g=>({...g,adventure:{...g.adventure,cinematic:{sceneId:'arco4_tomada',beatId:'muralha',eventId:null}}}));
+    }
+  }
 }
 
 /** Mercadores de resgate pagam por todos os cativos de uma vez. */

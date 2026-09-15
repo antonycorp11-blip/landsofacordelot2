@@ -15,7 +15,7 @@ import { guardScene, merchantScene, priestScene, scribeScene } from "./scenes/le
 import { deserterScene, halkaScene, postScene, sawmillScene } from "./scenes/favours";
 import { breathScene, garrisonScene, incomeScene, siegeScene, widowScene } from "./scenes/arcoII";
 import { auctionScene, barrowScene, goldsmithWidowScene, tomasScene } from "./scenes/arcoIII";
-import { garrickScene } from "./scenes/arcoIV";
+import { garrickScene, karnethTakenScene } from "./scenes/arcoIV";
 import { gateScene } from "./scenes/arcoV";
 import { relicScene } from "./scenes/arcoVI";
 import { councilScene, endingScene, warScene } from "./scenes/arcoVII";
@@ -51,6 +51,7 @@ const SCENES: Record<string, Cinematic> = {
   [goldsmithWidowScene.id]: goldsmithWidowScene,
   [barrowScene.id]: barrowScene,
   [garrickScene.id]: garrickScene,
+  [karnethTakenScene.id]: karnethTakenScene,
   [gateScene.id]: gateScene,
   [relicScene.id]: relicScene,
   [councilScene.id]: councilScene,
@@ -102,6 +103,21 @@ function huntFrom(g: GameState, ids: string[]): GameState["worldForces"] {
     if (force) next[id] = beginPlayerPursuit(force, { x: at.x, y: at.y }, hours);
   }
   return next;
+}
+
+/** Guerra aberta com uma Casa, a partir de uma cena. */
+function declareWar(g: GameState, houseId: string): GameState {
+  const me = g.allegiance.kind === "independente" ? "player" : "player";
+  const already = (g.wars ?? []).some(
+    (w) => (w.a === me && w.b === houseId) || (w.b === me && w.a === houseId),
+  );
+  if (already) return g;
+  const day = Math.floor((g.journey?.hours ?? 0) / 24) + 1;
+  return {
+    ...g,
+    wars: [...(g.wars ?? []), { a: me as "player", b: houseId as never, since: day }],
+    houseRelations: { ...g.houseRelations, [houseId as never]: -100 },
+  };
 }
 
 /** O nome que ele passa a carregar é o dele. */
@@ -189,6 +205,7 @@ export function chooseScene(choiceId: string): SceneResolution | null {
     // A guarnição desce da cerca antes de a linha ser formada.
     if (outcome.callGarrison) next = callGarrison(next);
     if (outcome.foundHouse) next = foundHouse(next);
+    if (outcome.declareWarOn) next = declareWar(next, outcome.declareWarOn);
 
     // Briga interrompe a cena: ela volta quando o campo estiver resolvido.
     if (outcome.battle) {

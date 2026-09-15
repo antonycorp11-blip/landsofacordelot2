@@ -128,7 +128,7 @@ export const garrickScene: Cinematic = {
       choices: [
         {
           id: "fundar",
-          label: "Fundar a sua Casa.",
+          label: "Fundar a sua Casa, e ir à mesa.",
           hint: "Nome próprio, bandeira própria. É o que faltava para ser gente de mesa.",
           outcome: {
             text:
@@ -140,6 +140,27 @@ export const garrickScene: Cinematic = {
             balance: 5,
             balanceReason: "Fundou a própria Casa",
             next: "acordo",
+          },
+        },
+        {
+          id: "guerra",
+          label: "Fundar a sua Casa, e ir buscar.",
+          hint: "Ele disse para vir com exército. Ele vai respeitar, e vai matar você por isso.",
+          outcome: {
+            text:
+              "O nome é lavrado em Pedra Alta no mesmo dia, porque bandeira é o que falta para juntar homem pago.\n\nA carta de guerra sai na manhã seguinte e não é respondida, o que nas Marchas quer dizer que foi lida.\n\nMarcha Alta tem muralha de pedra viva e uma guarnição que treina todo dia à vista de quem chega. Não se toma aquilo com pressa nem com fome: toma-se com acampamento, com aríete e com paciência — e com gente disposta a subir.",
+            facts: [
+              "Você fundou a sua própria Casa. Ela não deve juramento a ninguém.",
+              "Você está em guerra com a Casa Karneth. O selo está atrás da muralha de Marcha Alta.",
+            ],
+            questions: ["Como tomar o Castelo Karneth?"],
+            flags: ["fundou_a_casa", "arco4_guerra"],
+            foundHouse: true,
+            declareWarOn: "house_karneth",
+            reward: { xp: 320, influence: 25 },
+            balance: 9,
+            balanceReason: "Foi buscar com exército",
+            end: true,
           },
         },
       ],
@@ -196,6 +217,79 @@ export const garrickScene: Cinematic = {
             reward: { xp: 400, influence: 18 },
             balance: 8,
             balanceReason: "Escreveu a si mesmo no acordo",
+            end: true,
+          },
+        },
+      ],
+    },
+  },
+};
+
+/**
+ * DEPOIS DA MURALHA.
+ *
+ * Só acontece por este caminho: o jogador tomou Marcha Alta com cerco de
+ * verdade, com acampamento, aríete e assalto. A cena não resolve a guerra —
+ * ela chega quando a guerra já foi resolvida pelo jogador.
+ */
+export const karnethTakenScene: Cinematic = {
+  id: "arco4_tomada",
+  noEscape: true,
+  first: "muralha",
+  beats: {
+    muralha: {
+      id: "muralha",
+      place: "Castelo Karneth",
+      time: "Com o portão aberto",
+      speaker: {
+        name: "Lorde Garrick Karneth", role: "Senhor das Marchas",
+        portraitKey: "portrait_garrick_karneth", expressionSequence: ["exhausted", "amused"],
+      },
+      text: [
+        "Ele não está no salão. Está na muralha, sentado no parapeito, olhando o próprio pátio de treino cheio dos seus homens.",
+        "Não foi desarmado. Ninguém teve coragem de pedir.",
+        "«Quanto tempo?» Ele mesmo responde. «Vinte e um dias. Meu pai segurou trinta contra o dobro disso. Mas meu pai tinha a tesouraria.»",
+      ],
+      choices: [
+        {
+          id: "cobrar",
+          label: "«O selo.»",
+          outcome: {
+            text:
+              "Ele tira o cordão do pescoço e joga por cima do ombro, sem olhar, e você tem de pegar no ar.\n\n«Está aí. Eu disse para vir buscar e o senhor veio buscar. Não me arrependo de ter dito.»\n\nEle olha o pátio de novo.\n\n«O que eu queria mesmo era ter perdido para alguém que não precisasse de vinte e um dias.»",
+            facts: ["O selo de Karneth é seu, tomado com cerco."],
+            evidence: ["selo_karneth"],
+            flags: ["tem_selo_karneth", "karneth_tomado", "karneth_ressentido"],
+            reward: { xp: 420, influence: 16 },
+            end: true,
+          },
+        },
+        {
+          id: "oferecer",
+          label: "«Fique com as Marchas. Eu quero só a peça.»",
+          hint: "Ele perdeu a muralha. Não precisa perder a fronteira.",
+          check: { attribute: "diplomacy", skills: ["lideranca", "diplomacia"], label: "Diplomacia / Liderança" },
+          outcome: {
+            text:
+              "Ele demora tanto para responder que você começa a achar que não vai responder.\n\n«O senhor tomou a minha casa em vinte e um dias e agora está me devolvendo a fronteira.» Ele tira o cordão e entrega na mão, não pelo ar. «Isso ou é burrice ou é a coisa mais esperta que alguém já fez comigo.»\n\nEle levanta do parapeito.\n\n«Os tarasques do norte não sabem que eu perdi. Vão continuar não sabendo. E quando vierem tomar isso de você, eu venho.»",
+            facts: [
+              "O selo de Karneth é seu, e Garrick ficou com as Marchas.",
+              "Garrick Karneth prometeu vir se vierem tomar o que é seu.",
+            ],
+            evidence: ["selo_karneth"],
+            flags: ["tem_selo_karneth", "karneth_tomado", "karneth_aliado"],
+            reward: { xp: 480, influence: 26 },
+            balance: -6,
+            balanceReason: "Devolveu o que tinha tomado",
+            end: true,
+          },
+          failure: {
+            text:
+              "«Não.» Ele nem deixa terminar. «O senhor entrou pela minha muralha. Não venha agora querer também que eu goste.»\n\nJoga o cordão por cima do ombro e desce da muralha sem olhar para trás.",
+            facts: ["O selo de Karneth é seu, tomado com cerco."],
+            evidence: ["selo_karneth"],
+            flags: ["tem_selo_karneth", "karneth_tomado", "karneth_ressentido"],
+            reward: { xp: 400, influence: 12 },
             end: true,
           },
         },

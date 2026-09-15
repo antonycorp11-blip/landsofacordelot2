@@ -54,9 +54,10 @@ A fila, em ordem de valor:
 
 1. **Encargo que nasce de pessoa com nome**, em vez de gerado. Os quatro de
    Elmwood provaram a forma; o resto do reino ainda não tem.
-2. **Arco IV com escolha armada ligada à cena.** O cerco ofensivo já pode tomar
-   terras no sandbox; a cena de Karneth ainda precisa chamar esse caminho e
-   reagir à conquista ou à derrota.
+2. ~~Arco IV com escolha armada ligada à cena~~ — **feito.** «Fundar a sua
+   Casa, e ir buscar» declara guerra a Karneth e devolve o jogador ao mapa; a
+   tomada de Marcha Alta é jogada com os sistemas de cerco, e Garrick só
+   aparece na muralha quando o portão cede.
 3. **Política com gente em cena.** Os tratados e casamentos agora têm regras e
    efeitos, mas precisam de negociação presencial com rosto, interesses,
    contrapropostas e memória das Casas depois do acordo.

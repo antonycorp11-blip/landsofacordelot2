@@ -40,7 +40,7 @@ export type Battle = {
   /** Preenchido quando o confronto nasceu de uma força visível no mapa. */
   worldForce?: WorldForceBattleSource;
   /** A guarnição combate atrás da muralha até a linha se romper. */
-  siege?: { fiefId:string; defender:string; wallProtection:number; ramBuilt:boolean };
+  siege?: { fiefId:string; defender:string; wallProtection:number; ramBuilt:boolean; supportForceId?:string; supportName?:string; displaced?:number };
 };
 
 export const ORDERS: { id: Order; name: string; blurb: string }[] = [
