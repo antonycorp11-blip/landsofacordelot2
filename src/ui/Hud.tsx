@@ -21,7 +21,7 @@ const SPEEDS = [1, 2, 4];
  * tortos, e no iOS nem sempre existem. Estes são sempre iguais em toda parte e
  * acompanham a cor do texto.
  */
-function Icon({ name }: { name: "pause" | "play" | "follow" | "fit" | "journal" | "debug" | "banner" | "party" }) {
+function Icon({ name }: { name: "pause" | "play" | "follow" | "fit" | "journal" | "debug" | "banner" | "party" | "camp" }) {
   const p = { fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
     <svg className="glyph" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" focusable="false">
@@ -33,6 +33,7 @@ function Icon({ name }: { name: "pause" | "play" | "follow" | "fit" | "journal" 
       {name === "debug" && <g {...p}><path d="M6.2 2.6 8 4.4 6.4 6 4.6 4.2a3.4 3.4 0 0 0 4.6 4.6l3.4 3.4a1.3 1.3 0 0 1-1.8 1.8L7.4 10.6a3.4 3.4 0 0 1-4.6-4.6Z" /></g>}
       {name === "banner" && <g {...p}><path d="M4 2.6h8v7.2l-4 3.6-4-3.6Z" /><path d="M8 2.6v10.8" /></g>}
       {name === "party" && <g {...p}><circle cx="6" cy="5.6" r="2.2" /><path d="M2.2 13.4c0-2.2 1.7-3.6 3.8-3.6s3.8 1.4 3.8 3.6" /><path d="M11 4.2a2 2 0 0 1 0 3.9M12.2 13.4c0-1.6-.7-2.7-1.8-3.3" /></g>}
+      {name === "camp" && <g {...p}><path d="M8 2.6 13.4 13.4H2.6Z" /><path d="M8 7.4v6" /><path d="M5 13.4h6" /></g>}
     </svg>
   );
 }
@@ -69,6 +70,9 @@ type Props = {
   onOpenSheet: () => void;
   /** Para que lado ele vem andando: usar os selos ou quebrá-los. */
   balance: BalanceState;
+  /** Parar e montar acampamento. */
+  onCamp: () => void;
+  campBlocked: string | null;
   /** Vista política — o mapa pintado por Casa, para planejar conquista. */
   political: boolean;
   onTogglePolitical: () => void;
@@ -90,7 +94,7 @@ export function Hud({
   paused, onTogglePause, speed, onSpeed,
   follow, onToggleFollow, onFit,
   debug, onToggleDebug, journal, coins, influence, food = null, level, onOpenSheet,
-  political, onTogglePolitical, heroId, xp, onOpenJourney, balance,
+  political, onTogglePolitical, heroId, xp, onOpenJourney, balance, onCamp, campBlocked,
 }: Props) {
   const [journalOpen, setJournalOpen] = useState(false);
   const game = useGame();
@@ -220,6 +224,14 @@ export function Hud({
 
         <span className="sep" />
 
+        <button
+          className="hud-btn icon"
+          onClick={onCamp}
+          disabled={!!campBlocked}
+          title={campBlocked ?? "Parar e montar acampamento"}
+        >
+          <Icon name="camp" />
+        </button>
         <button className="hud-btn hud-btn-journey" onClick={onOpenJourney} title="Registro da jornada: contrato em curso e crônica">
           <Icon name="party" /> <span>Jornada</span>
         </button>

@@ -36,6 +36,8 @@ import { Coach } from "../ui/coach/Coach";
 import { StoryScene } from "../ui/story/StoryScene";
 import { OfferCard } from "../ui/offer/OfferCard";
 import { CinematicScene } from "../ui/cinematic/CinematicScene";
+import { CampScene } from "../ui/camp/CampScene";
+import { campBlocker } from "../game/camp";
 import { WorldEventLayer } from "../render/layers/WorldEventLayer";
 import { NOTICE_RADIUS } from "../game/worldEvents";
 import { discoverNearbyEvent } from "../game/worldEventRunner";
@@ -340,6 +342,7 @@ export function WorldMap() {
     if (game.adventure.cinematic) { setPanelPoiId(null); setAdventureView(null); }
   }, [game.adventure.cinematic]);
 
+  const [camping, setCamping] = useState(false);
   const [headingTo, setHeadingTo] = useState<string | null>(null);
   useEffect(() => { if (travel.state !== "traveling") setHeadingTo(null); }, [travel.state]);
 
@@ -516,6 +519,8 @@ export function WorldMap() {
         coins={game.gold}
         influence={game.influence}
         balance={game.balance}
+        onCamp={() => { travel.halt(); setCamping(true); }}
+        campBlocked={campBlocker(game)}
         food={game.food}
         heroId={game.heroId}
         xp={game.xp}
@@ -576,6 +581,7 @@ export function WorldMap() {
       />}
       {/* Uma cena para o jogo por um momento: fala mais alto que tudo. */}
       <CinematicScene />
+      {camping && <CampScene onClose={() => setCamping(false)} onSkipHours={travel.skipHours} />}
 
       {/* A campanha principal fala por cima de tudo: é a linha da partida. */}
       <StoryScene />

@@ -1,0 +1,26 @@
+/* O acampamento herda a cena inteira e troca só a luz: quente, de baixo. */
+.cine.camp {
+  background: radial-gradient(ellipse at 30% 78%, #2a1608e6 0%, #0d0906f0 48%, #030201fb 100%);
+}
+.camp .cine-bust-art { filter: drop-shadow(0 -6px 26px #d9821f4d) drop-shadow(0 14px 22px #000a); }
+.camp .cine-where { color: #c2894a; }
+.camp .cine-thread p.seen { border-left-color: #8a5a2c; }
+
+/* A fogueira: um brilho que respira atrás do busto, não um desenho. */
+.camp-fire {
+  position: absolute;
+  left: 50%; bottom: -6%;
+  width: 62%; height: 38%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 60%, #ffb04a66 0%, #d9621233 45%, transparent 72%);
+  animation: camp-breathe 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes camp-breathe {
+  50% { opacity: 0.62; transform: translateX(-50%) scale(1.07); }
+}
+@media (prefers-reduced-motion: reduce) { .camp-fire { animation: none; } }
+
+.camp .cine-check { color: #b9925e; gap: 9px; }
+.camp .cine-check b { color: #8fce8f; }

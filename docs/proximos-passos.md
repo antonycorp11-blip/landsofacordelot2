@@ -50,6 +50,25 @@ espinha: as cenas que decidem. O que cabe entre elas, e que a
 [`narrativa.md`](narrativa.md) §9 diz ser onde o jogador passa a maior parte do
 tempo, ainda é o sandbox genérico.
 
+### O problema que sobra: ainda parece simulador de mapa
+
+A história tem cena com rosto e a simulação tem profundidade, mas as HORAS
+entre uma coisa e outra — que são a maior parte do jogo — eram uma barra de
+progresso. O jogador escolhia um destino e olhava um marcador andar, enquanto
+comida, feridos e perseguição eram somados em silêncio uma vez por dia.
+
+O acampamento é o primeiro passo para consertar isso: parar vira decisão, e
+comida, ferido e caçador passam a existir na frente do jogador. Falta o resto:
+
+- **Encontro espacial em vez de sorteio.** Hoje um bando aparece porque um
+  número caiu abaixo de um limite. Devia aparecer porque um marcador vermelho
+  chegou até você, visível, com distância e tempo — e fugir, esconder-se ou
+  virar e lutar devia ser escolha sua antes do contato.
+- **Estar num lugar, não abrir o menu dele.** A chegada já é cena; o que vem
+  depois volta a ser lista de abas.
+- **O grupo visível.** Você é um marcador com um número ao lado. Os
+  companheiros que andam com você não aparecem em lugar nenhum do mapa.
+
 A fila, em ordem de valor:
 
 1. **Encargo que nasce de pessoa com nome**, em vez de gerado. Os quatro de

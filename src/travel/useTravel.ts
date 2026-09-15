@@ -115,6 +115,21 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     settleDays(day);
   },[]);
 
+  /**
+   * PULA HORAS DE RELÓGIO.
+   *
+   * Acampar não é uma tela que dá números: é tempo que passa. Quem dorme até
+   * o amanhecer gasta seis horas de mundo — os feridos melhoram, a comida
+   * some, e quem está procurando você teve seis horas para procurar.
+   */
+  const skipHours=useCallback((amount:number)=>{
+    if (amount<=0) return;
+    hoursRef.current+=amount;
+    setWorldHours(hoursRef.current);
+    closeDay();
+    checkpoint();
+  },[checkpoint,closeDay]);
+
   const frame=useCallback((now:number)=>{
     rafRef.current=0;
     const p=pathRef.current;
@@ -396,7 +411,7 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
 
   return {markerRef,posRef,headingRef,state,path,stop,
     currentNodeId:stop.kind==='node'?stop.id:null,
-    regionId,worldHours,speed,setSpeed,
+    regionId,worldHours,speed,setSpeed,skipHours,
     paused:paused||blocked,togglePause,progressRef,travelTo,halt};
 }
 
