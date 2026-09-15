@@ -48,6 +48,7 @@ import { PoliticalLegend } from "../ui/PoliticalLegend";
 import type { ForeignRealm } from "../world/foreignRealms";
 import { FiefLayer } from "../render/layers/FiefLayer";
 import { FiefPanel } from "../ui/fief/FiefPanel";
+import { SiegeCouncil } from "../ui/siege/SiegeCouncil";
 import type { Fief } from "../world/fiefs";
 import { nodeStop, type RoadStop } from "../world/roadStops";
 import { nearestWalkable } from "../world/navigation/navigationGrid";
@@ -118,7 +119,7 @@ export function WorldMap() {
    * aberto no canto e NENHUM clique no mapa funcionava: nem castelo, nem
    * estrada, nem nada. O jogador só via o jogo parar de responder.
    */
-  const adventureBlocked = !!adventureView || !!routeChoice || sheetOpen || !!game.adventure.event || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending || !!game.adventure.story.pending || !!game.adventure.cinematic;
+  const adventureBlocked = !!adventureView || !!routeChoice || sheetOpen || !!game.adventure.event || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.siege || !!game.adventure.quest?.pending || !!game.adventure.story.pending || !!game.adventure.cinematic;
 
   const followRef = useRef(follow);
   followRef.current = follow;
@@ -547,7 +548,12 @@ export function WorldMap() {
         />
       )}
       {realm && <FrontierPanel realm={realm} onClose={() => setRealm(null)} />}
-      {fief && !realm && politicalView === "fiefs" && <FiefPanel fief={fief} onClose={() => setFief(null)} />}
+      {fief && !realm && politicalView === "fiefs" && <FiefPanel fief={fief} onClose={() => setFief(null)} onTravelToSeat={()=>{
+        const destination=nearestWalkable(fief.seat);
+        if(!destination)return;
+        setRouteChoice({destination:{kind:"free",x:destination.x,y:destination.y},name:fief.seatName,from:{...travel.posRef.current},roadStop:travel.stop});
+        setFief(null);setPoliticalView("off");
+      }} />}
       {readAgent && !realm && !fief && <AgentPanel
         agent={readAgent}
         playerPositionRef={travel.posRef}
@@ -594,6 +600,7 @@ export function WorldMap() {
           if (target) setRouteChoice({destination:{ kind: "free", x: target.x, y: target.y },name:poi?.name??id,from:{...travel.posRef.current},roadStop:travel.stop});
         }}
         onSheet={openSheet} />
+      <SiegeCouncil />
       {routeChoice && <RouteChoice
         destination={routeChoice.destination}
         name={routeChoice.name}

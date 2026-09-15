@@ -5,6 +5,7 @@ import type { RoadStopSave } from '../world/roadStops';
 import type { Raid } from './raid';
 import type { QuestState } from './quests';
 import type { Battle } from './battle';
+import type { SiegeState } from './siege';
 import { freshStory, type StoryState } from './story';
 import type { Offer } from './offers';
 import type { GoodId } from '../data/goods';
@@ -77,6 +78,8 @@ export type AdventureState = {
   quest: QuestState | null;
   /** Batalha em andamento, rodada a rodada. */
   battle: Battle | null;
+  /** Cerco ofensivo em curso na sede de um senhorio. */
+  siege?: SiegeState | null;
   escort: {forceId:string;destinationId:string;acceptedAt:number;reward:Reward} | null;
   eventCount: number;
   /** Batalhas vencidas, para a campanha principal poder pedir uma. */
@@ -106,7 +109,7 @@ export type AdventureState = {
 export function freshAdventure(): AdventureState {
   return {
     tutorial: { introSeen:false, hidden:false, accepted:false, departed:false, eventResolved:false, completed:false, sheetViewed:false, recruited:false, agentInspected:false, pursuitStarted:false, forceAttacked:false, forceDefeated:false, escortAccepted:false, escortCompleted:false, interventionStarted:false, armyInspected:false, politicsSeen:false },
-    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, sceneResume:null, escort:null, eventCount:0, battlesWon:0, offer:null, cinematic:null, nextOfferHour:20, story:freshStory(),
+    contract:null, history:[], finishedOffers:{}, event:null, raid:null, quest:null, battle:null, siege:null, sceneResume:null, escort:null, eventCount:0, battlesWon:0, offer:null, cinematic:null, nextOfferHour:20, story:freshStory(),
     nextEventHour:0, lastEventId:null, sequence:0, notice:null, chronicle:[],
   };
 }

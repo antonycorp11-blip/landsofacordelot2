@@ -39,6 +39,8 @@ export type Battle = {
   loot: number;
   /** Preenchido quando o confronto nasceu de uma força visível no mapa. */
   worldForce?: WorldForceBattleSource;
+  /** A guarnição combate atrás da muralha até a linha se romper. */
+  siege?: { fiefId:string; defender:string; wallProtection:number; ramBuilt:boolean };
 };
 
 export const ORDERS: { id: Order; name: string; blurb: string }[] = [
@@ -108,8 +110,9 @@ export function retreatChance(s:GameState,battle?:Battle):number {
 export function orderEffects(s:GameState,battle:Battle,order:Order) {
   const terrain=BATTLE_TERRAINS[battle.terrain]??BATTLE_TERRAINS.plain;
   const available=orderAvailable(order,battle.mine);
-  const attack=ATTACK[order]*orderUnitFactor(battle.mine,order,terrain)*(available?1:.45);
-  const exposure=1/(DEFEND[order]*terrain.defense);
+  const wall=battle.siege?.wallProtection??1;
+  const attack=ATTACK[order]*orderUnitFactor(battle.mine,order,terrain)*(available?1:.45)/wall;
+  const exposure=(1+(wall-1)*.32)/(DEFEND[order]*terrain.defense);
   return {
     attackPercent:Math.round((attack-1)*100),exposurePercent:Math.round((exposure-1)*100),
     retreatPercent:order==="recuar"?Math.round(retreatChance(s,battle)*100):null,
@@ -187,8 +190,9 @@ export function playRound(s:GameState,battle:Battle,order:Order,roll:number):Bat
   const theirFactor=orderUnitFactor(b.theirs,theirOrder,terrain);
   const myAtk=partyStrength({...input,troops:b.mine})*ATTACK[order]*myFactor*skill*(.6+b.myMorale/250);
   const theirAtk=troopStrength(b.theirs)*ATTACK[theirOrder]*theirFactor*(.6+b.theirMorale/250);
-  const theirTaken=(myAtk/Math.max(.4,DEFEND[theirOrder]))*.09*(.8+roll*.4);
-  const myTaken=(theirAtk/Math.max(.4,DEFEND[order]*terrain.defense))*.09*(.8+(1-roll)*.4);
+  const wall=b.siege?.wallProtection??1;
+  const theirTaken=(myAtk/Math.max(.4,DEFEND[theirOrder]))*.09*(.8+roll*.4)/wall;
+  const myTaken=(theirAtk/Math.max(.4,DEFEND[order]*terrain.defense))*.09*(.8+(1-roll)*.4)*(1+(wall-1)*.32);
   const woundRate=Math.min(.72,.34+s.attributes.stewardship*.025+(s.skills.logistica_militar??0)/500);
   const them=takeCasualties(b.theirs,casualtyCount(theirTaken,roll,b.round),.28,(1-roll+b.round*.19)%1);
   const me=takeCasualties(b.mine,casualtyCount(myTaken,1-roll,b.round),woundRate,(roll+b.round*.27)%1);

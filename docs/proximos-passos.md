@@ -29,6 +29,10 @@
   celeiro, feira e muralha que altera a defesa de um cerco. Casamento político
   e tratados com exigências, chance, recusa e prazo; oferta negociada por
   senhorio menor com perda real em caso de fracasso.
+- Cerco ofensivo iniciado junto à sede real no mapa: guerra declarada ou
+  juramento a uma Casa em guerra, acampamento que consome comida, aríete com
+  madeira e ferramentas, rendição com chance persistida, assalto na arena e
+  posse transferida somente após vitória. Derrota e retirada levantam o cerco.
 - Rota escolhida antes de viajar: estrada rápida e visível, ou terreno mais
   lento que evita estradas e reduz contato com perseguidores. A Crônica mostra
   sempre a próxima pergunta da campanha, e o grupo mostra suprimento e custo.
@@ -50,8 +54,9 @@ A fila, em ordem de valor:
 
 1. **Encargo que nasce de pessoa com nome**, em vez de gerado. Os quatro de
    Elmwood provaram a forma; o resto do reino ainda não tem.
-2. **Cerco ofensivo como o Arco IV promete.** A guerra contra Karneth hoje se
-   resolve em mesa; a alternativa armada está escrita e não construída.
+2. **Arco IV com escolha armada ligada à cena.** O cerco ofensivo já pode tomar
+   terras no sandbox; a cena de Karneth ainda precisa chamar esse caminho e
+   reagir à conquista ou à derrota.
 3. **Política com gente em cena.** Os tratados e casamentos agora têm regras e
    efeitos, mas precisam de negociação presencial com rosto, interesses,
    contrapropostas e memória das Casas depois do acordo.

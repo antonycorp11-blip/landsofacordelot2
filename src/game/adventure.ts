@@ -18,6 +18,7 @@ import { heroById } from '../data/heroes';
 import { skillById } from '../data/skills';
 import { CAREER_LABEL } from './careers';
 import { fiefById } from '../world/fiefs';
+import { ownerOf, setOwner } from '../data/fiefOwners';
 import { claimGrant, fiefName } from './allegiance';
 import { poiById } from '../world/valdoria';
 import { goodById, type GoodId } from '../data/goods';
@@ -435,6 +436,7 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
     const beat=g.adventure.quest?.pending;
     const fromQuest=beat?.kind==='batalha';
     const won=battle.result==='vitoria';
+    const siegeCaptured=!!battle.siege&&won&&ownerOf(battle.siege.fiefId)===battle.siege.defender;
 
     const wounded=addTroopCounts(g.wounded,battle.myWoundedTroops??{});
     const captured=battle.result==='vitoria'?battle.prisoners??{}:{};
@@ -493,6 +495,14 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
         next={...next,gold:next.gold-robbed};
         text+=` Levaram ${robbed} moedas.`;
       }
+    } else if (battle.siege) {
+      const fief=fiefById.get(battle.siege.fiefId);
+      if(siegeCaptured){
+        next=withReward(next,{influence:7,careerXp:{MILITARY:75},skillXp:{tatica:3}});
+        if(next.allegiance.kind==='jurado')next={...next,allegiance:{...next.allegiance,service:next.allegiance.service+35}};
+        text+=` Os portões de ${fief?.seatName??'sede'} cedem: ${fief?.name??'o senhorio'} passa para você. +7 influência${next.allegiance.kind==='jurado'?' · +35 serviço':''}.`;
+      }else if(won) text+=` A guarnição cedeu, mas outro senhor tomou ${fief?.seatName??'a sede'} durante o confronto; nenhuma posse foi transferida.`;
+      else text+=` ${fief?.seatName??'A sede'} permanece com seus defensores. O cerco termina; será preciso recompor sua hoste.`;
     } else if (fromQuest && beat?.kind==='batalha') {
       text+=` ${won?beat.onWin:beat.onLose}`;
       if (!won && beat.loseReward) next=withReward(next,beat.loseReward);
@@ -518,14 +528,15 @@ function finishBattle(battle: ReturnType<typeof playRound>) {
 
     // A cena que a briga interrompeu volta agora, no momento que ela marcou.
     const resume=next.adventure.sceneResume;
-    next={...next,adventure:{...next.adventure,battle:null,raid:null,
+    next={...next,adventure:{...next.adventure,battle:null,raid:null,siege: battle.siege?null:next.adventure.siege,
       sceneResume:null,
       cinematic:resume??next.adventure.cinematic,
-      notice:{title:won?'O campo é seu':battle.result==='retirada'?'Vocês saíram da linha':'A linha quebrou',
+      notice:{title:won?(battle.siege?(siegeCaptured?'Sede conquistada':'Guarnição vencida'):'O campo é seu'):battle.result==='retirada'?'Vocês saíram da linha':'A linha quebrou',
         text:text+(levelUp?` Nível ${next.level}: abra sua ficha para distribuir os pontos.`:''),levelUp},
     }};
     return logged(next,'evento',`${battle.enemyName}: ${text}`);
   });
+  if(battle.siege&&battle.result==='vitoria'&&ownerOf(battle.siege.fiefId)===battle.siege.defender)setOwner(battle.siege.fiefId,'player');
 }
 
 /** Mercadores de resgate pagam por todos os cativos de uma vez. */

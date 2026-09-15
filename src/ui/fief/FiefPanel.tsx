@@ -12,6 +12,10 @@ import { relationLabel, relationWith } from "../../data/player";
 import { regionById } from "../../world/valdoria";
 import { useGame } from "../../game/store";
 import { negotiateBlocker, negotiateChance, negotiateFief, offeredPrice } from "../../game/fiefNegotiation";
+import { beginSiege, declareSiegeWar, siegeBlocker, siegeDistance, SIEGE_RANGE } from "../../game/siege";
+import { belligerentOf } from "../../game/allegiance";
+import { atWar } from "../../game/worldSim";
+import { pactActive } from "../../game/diplomacy";
 import "../agent/agent.css";
 
 /**
@@ -30,7 +34,7 @@ const BLOCK_TEXT: Record<string, string> = {
   gold: "Ouro insuficiente.",
 };
 
-export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }) {
+export function FiefPanel({ fief, onClose, onTravelToSeat }: { fief: Fief; onClose: () => void; onTravelToSeat: () => void }) {
   useFiefOwners();
   const game = useGame();
   const [note, setNote] = useState<string | null>(null);
@@ -44,6 +48,11 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
   const blocker = buyBlocker(fief.id);
   const relation = house ? relationWith(house.id) : 0;
   const offerBlock = negotiateBlocker(game, fief.id);
+  const siegeBlock=owner==='player'?null:siegeBlocker(game,fief);
+  const me=belligerentOf(game);
+  const war=owner!=='player'&&!!me&&atWar(game,me,owner);
+  const canDeclare=owner!=='player'&&game.allegiance.kind==='independente'&&!war&&game.influence>=8&&!pactActive(game,owner);
+  const far=owner!=='player'&&siegeDistance(game,fief)>SIEGE_RANGE;
 
   if (managing && owner === "player") {
     return (
@@ -131,7 +140,7 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
         {note && <p className="realm-rumor">{note}</p>}
       </div>
 
-      <div className="agent-actions">
+      <div className="agent-actions fief-actions">
         {owner === "player" ? (
           <button className="btn" onClick={() => setManaging(true)}>
             Gerir
@@ -155,6 +164,14 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
         }}>
           {owner === "player" ? "Negociação encerrada" : `Oferecer ${offeredPrice(fief.id).toLocaleString("pt-BR")} · ${negotiateChance(game, fief.id)}%`}
         </button>
+        {owner!=="player"&&<button className="btn" disabled={!!siegeBlock} title={siegeBlock??undefined} onClick={()=>{if(beginSiege(fief.id))onClose();}}>
+          Cercar sede
+        </button>}
+        {far&&<button className="btn" onClick={onTravelToSeat}>Ir à sede</button>}
+        {owner!=="player"&&game.allegiance.kind==='independente'&&!war&&<button className="btn danger" disabled={!canDeclare} title={pactActive(game,owner)?'Um tratado de não agressão ainda protege esta Casa.':game.influence<8?'Precisa de 8 influência.':undefined} onClick={()=>{if(declareSiegeWar(fief.id))setNote('Guerra declarada. Agora sua hoste pode cercar esta sede.');}}>
+          Declarar guerra · −8 influência
+        </button>}
+        {owner!=="player"&&siegeBlock&&<span className="fief-siege-hint">{siegeBlock}</span>}
         <button className="btn" onClick={onClose}>
           Fechar
         </button>

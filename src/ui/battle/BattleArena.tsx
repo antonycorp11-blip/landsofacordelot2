@@ -38,8 +38,17 @@ function drawTerrain(ctx:CanvasRenderingContext2D,battle:Battle){
   if(battle.terrain==="marsh")for(let i=0;i<8;i++)pixel(ctx,"#33555a",15+i*41,70+(i%3)*22,25,4);
   if(battle.terrain==="coast"){pixel(ctx,"#3c6e72",0,114,W,30);for(let i=0;i<8;i++)pixel(ctx,"#79a69a",i*44,118+(i%2)*8,27,2);}
   if(battle.terrain==="river_crossing"){pixel(ctx,"#315b67",142,44,38,100);for(let y=48;y<144;y+=12)pixel(ctx,"#78a19a",145+(y%3),y,29,2);pixel(ctx,"#6c5940",154,44,13,100);}
-  // A estrada une as duas formações e continua visível sob os soldados.
-  pixel(ctx,"#897452",0,91,W,20);pixel(ctx,"#aa9365",0,96,W,2);
+  if(battle.siege){
+    pixel(ctx,"#524a42",185,50,135,65);pixel(ctx,"#807666",185,50,135,7);
+    for(let x=187;x<320;x+=14)pixel(ctx,"#958a75",x,40,9,13);
+    for(let y=65;y<114;y+=17)for(let x=192;x<320;x+=35)pixel(ctx,"#3d3a36",x+(y%4)*4,y,24,1);
+    pixel(ctx,"#352923",204,89,24,26);pixel(ctx,"#9d8657",202,88,2,28);pixel(ctx,"#9d8657",228,88,2,28);
+    pixel(ctx,"#564c3f",146,92,38,11);pixel(ctx,"#302d29",153,104,18,3);
+    if(battle.siege.ramBuilt){pixel(ctx,"#7d6039",118,94,34,10);pixel(ctx,"#c7a46a",131,87,8,7);pixel(ctx,"#2b2a27",124,104,5,5);pixel(ctx,"#2b2a27",141,104,5,5);}
+  }else{
+    // A estrada une as duas formações e continua visível sob os soldados.
+    pixel(ctx,"#897452",0,91,W,20);pixel(ctx,"#aa9365",0,96,W,2);
+  }
 }
 
 function drawFormation(ctx:CanvasRenderingContext2D,count:TroopCount,team:Team,lastOrder:Battle["lastOrder"]){
@@ -72,7 +81,7 @@ export function BattleArena({battle}:{battle:Battle}){
   },[battle]);
   const terrain=BATTLE_TERRAINS[battle.terrain]??BATTLE_TERRAINS.plain;
   return <figure className="battle-arena">
-    <canvas ref={ref} width={W} height={H} role="img" aria-label={`Formações em ${terrain.name.toLowerCase()}`}/>
-    <figcaption><b>{terrain.name}</b><span>{terrain.blurb}</span></figcaption>
+    <canvas ref={ref} width={W} height={H} role="img" aria-label={battle.siege?`Assalto às muralhas, proteção ${Math.round(battle.siege.wallProtection*100)}%`:`Formações em ${terrain.name.toLowerCase()}`}/>
+    <figcaption><b>{battle.siege?'Assalto às muralhas':terrain.name}</b><span>{battle.siege?`Guarnição protegida ×${battle.siege.wallProtection.toFixed(2)}${battle.siege.ramBuilt?' · aríete em ação':''}. Avançar expõe a linha; segurar poupa homens.`:terrain.blurb}</span></figcaption>
   </figure>;
 }
