@@ -1,5 +1,6 @@
 /** Estratégia diária das forças: comércio, caça, pilhagem, suprimento e cerco. */
 import { troopStrength, troopTotal, troops as troopTypes, type TroopCount, type TroopId } from "../data/troops";
+import { estateOf, wallDefence } from "./estates";
 import { goodById } from "../data/goods";
 import { houseById } from "../data/houses";
 import { fiefs } from "../world/fiefs";
@@ -314,8 +315,8 @@ function resolvePlayerSiege(s:GameState,force:WorldForceState,def:{name:string;h
   const target=playerTarget(s);
   if(!target)return {state:s,troops:force.troops,news:{kind:"fronteira",text:`${def.name} não encontrou terra sua para cercar.`},repelled:false};
   const fief=fiefs.find((f)=>f.id===target.fiefId)!;
-  const estate=s.fiefEstates?.[fief.id];
-  const defenders=defenceOf(fief.defense,estate?.garrison??{});
+  const estate=estateOf(s,fief.id);
+  const defenders=defenceOf(wallDefence(fief.defense,estate),estate.garrison);
   const besiegers=troopStrength(force.troops);
   const repelled=defenders>=besiegers*.45;
 

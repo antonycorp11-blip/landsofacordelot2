@@ -58,6 +58,7 @@ html, body, #root {
 @media(prefers-reduced-motion:reduce) { .firefly { animation:none; opacity:.6; } }
 
 .atmosphere-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:hidden; }
+.map-night-glaze { position:absolute; inset:0; pointer-events:none; background:#17233c; transition:opacity 700ms linear; }
 
 .scenery-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; image-rendering:pixelated; }
 

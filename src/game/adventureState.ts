@@ -21,6 +21,8 @@ export type JourneySave = {
   hours: number;
   speed: number;
   paused: boolean;
+  /** Modo da rota em curso; saves antigos seguem a estrada por padrão. */
+  routeMode?: 'road' | 'concealed';
 };
 export type Contract = {
   id: string;

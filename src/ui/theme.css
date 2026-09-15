@@ -209,3 +209,52 @@ button:focus-visible { outline:2px solid #ecd19a; outline-offset:3px; }
  * com o retrato ao lado do texto, deixa cada carta curta e a escolha
  * comparável de relance.
  */
+
+/* Ficha do personagem: pergaminho de campanha, com progresso em ouro. */
+.sheet {
+  border: 2px solid #c39d5d;
+  border-radius: 4px;
+  background: repeating-linear-gradient(6deg, #e9d3a3 0 18px, #e6cb98 19px 33px, #ead6aa 34px 45px);
+  color: #432b1b;
+  box-shadow: inset 0 0 0 2px #8a6437, 0 18px 60px #000a;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.sheet-heading {
+  border-bottom: 1px solid #bd9256;
+  background: repeating-linear-gradient(173deg, #302118 0 20px, #291c15 21px 39px);
+}
+.sheet-heading h1 { color: #fff0c7; font-weight: 700; }
+.sheet-heading p { color: #d1b58b; }
+.sheet-heading .hs-kicker { color: #d4a960; }
+.sheet-close { border: 1px solid #ad824f; background: #1b140f; color: #e7c78b; border-radius: 2px; }
+.sheet-bar { border-bottom: 1px solid #bd9256; background: #2b1e16; }
+.sheet-tab { color: #dfcba4; }
+.sheet-tab[aria-selected="true"] { color: #4d2f1b; border-color: #a9793e; background: #e9d3a3; border-radius: 3px 3px 0 0; }
+.sheet-body { background: radial-gradient(circle at 10% 0%, #fff0c5a3, transparent 45%); }
+.sheet .panel { border: 1px solid #ab8351; border-radius: 3px; background: #f2dfb5a6; box-shadow: inset 0 0 0 2px #fbe9be75; }
+.sheet .panel-title { color: #8a512b; font-weight: 700; }
+.sheet .id-name, .sheet .attr-name, .sheet .skill-name, .sheet .comp-name { color: #462a18; }
+.sheet .id-line, .sheet .id-line b, .sheet .pair, .sheet .pair b, .sheet .meter-head, .sheet .meter-head b { color: #65452b; }
+.sheet .attr-val { color: #e8c87d; background: #5d3422; border: 1px solid #aa7540; border-radius: 2px; }
+.sheet .attr-row, .sheet .career, .sheet .skill, .sheet .comp, .sheet .troop-row { border-top-color: #a47a48a1; }
+.sheet .career-name { color: #89572f; font-weight: 700; }
+.sheet .career-rank { color: #4b2c19; }
+.sheet .meter-bar { background: #a98b5f; }
+.sheet .meter-bar i, .sheet .meter-bar.xp i { background: linear-gradient(90deg, #9a5627, #e8bd68); }
+.sheet .attr-plus, .sheet .skill-up { border-color: #b58245; color: #4b2c19; background: #e5bd73; }
+.sheet .attr-plus:disabled, .sheet .skill-up:disabled { opacity: .35; }
+.sheet .skill-val, .sheet .comp-line, .sheet .troop-str, .sheet .empty { color: #76583c; }
+.sheet .perk { color: #775a3c; border-color: #a98150; }
+.sheet .perk.on { color: #4c2e16; background: #e4bd77; }
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .sheet-heading { padding: 7px 13px 5px; }
+  .sheet-heading h1 { font-size: 18px; margin: 2px 0 1px; }
+  .sheet-heading p { font-size: 9px; }
+  .sheet-close { width: 28px; height: 28px; }
+  .sheet-body { padding: 7px 13px 8px; overflow: hidden; }
+  .sheet-core { gap: 5px; }
+  .sheet .panel:has(.attr-row) { padding: 7px 9px; gap: 2px 8px; }
+  .sheet .panel:has(.attr-row) .attr-row { padding: 2px 0; }
+}

@@ -52,8 +52,10 @@ const BIOME_LAYERS: Record<Biome, ScatterLayer[]> = {
     { type: "farm", assetKeys: ["field"], density: 120, minZoom: lod(2.5), scale: [0.8, 1.2], clearance: 26, within: "farmland" },
   ],
   dense_forest: [
-    { type: "forest", assetKeys: ["forest_cluster"], density: 210, minZoom: lod(0.9), scale: [0.9, 1.6], clearance: 30, within: "forest" },
-    { type: "hill", assetKeys: ["hill"], density: 12, minZoom: lod(1.4), scale: [0.7, 1.1], clearance: 32 },
+    { type: "forest", assetKeys: ["forest_cluster"], density: 250, minZoom: lod(0.9), scale: [0.9, 1.6], clearance: 30, within: "forest" },
+    { type: "hill", assetKeys: ["hill"], density: 48, minZoom: lod(1.4), scale: [0.7, 1.2], clearance: 32, within: "highland" },
+    { type: "forest", assetKeys: ["scrub_cluster"], density: 82, minZoom: lod(1.8), scale: [0.55, 0.85], clearance: 24 },
+    { type: "tree", assetKeys: ["oak_tree", "pine_tree"], density: 115, minZoom: lod(2.8), scale: [0.55, 0.9], clearance: 18 },
     { type: "tree", assetKeys: ["pine_tree", "pine_tree", "oak_tree"], density: 620, minZoom: lod(2.8), scale: [0.7, 1.25], clearance: 16, within: "forest" },
   ],
   alpine: [
@@ -73,7 +75,8 @@ const BIOME_LAYERS: Record<Biome, ScatterLayer[]> = {
     { type: "tree", assetKeys: ["oak_tree", "cypress_tree"], density: 120, minZoom: lod(3.1), scale: [0.7, 1.05], clearance: 18 },
   ],
   plains: [
-    { type: "farm", assetKeys: ["field", "field", "wheat_field"], density: 150, minZoom: lod(0.95), scale: [0.9, 1.5], clearance: 26, within: "farmland" },
+    { type: "farm", assetKeys: ["field", "field", "wheat_field"], density: 185, minZoom: lod(0.95), scale: [0.9, 1.5], clearance: 26, within: "farmland" },
+    { type: "hill", assetKeys: ["hill"], density: 26, minZoom: lod(1.5), scale: [0.6, 0.9], clearance: 32, within: "highland" },
     { type: "forest", assetKeys: ["forest_cluster"], density: 85, minZoom: lod(1.6), scale: [0.6, 1], clearance: 36, within: "forest" },
     { type: "tree", assetKeys: ["oak_tree"], density: 55, minZoom: lod(3.1), scale: [0.7, 1.1], clearance: 18 },
   ],

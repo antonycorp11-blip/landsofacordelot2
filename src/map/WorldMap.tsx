@@ -22,7 +22,7 @@ import { bounds } from "../world/geo";
 import type { Point, PointOfInterest, RegionId, TravelEvents } from "../world/types";
 import { borderCrossingById } from "../world/borderCrossings";
 import { poiById, regionById, regions, valdoria } from "../world/valdoria";
-import { useTravel } from "../travel/useTravel";
+import { useTravel, type TravelRouteMode } from "../travel/useTravel";
 import { useWanderers, type WandererRuntime } from "../travel/useWanderers";
 import { WanderersLayer } from "../render/layers/WanderersLayer";
 import { PoliticalLayer } from "../render/layers/PoliticalLayer";
@@ -55,6 +55,7 @@ import { routeEdgeById } from "../world/navgraph";
 import { routeNodeById } from "../world/valdoria";
 import { useCamera } from "./useCamera";
 import { Hud } from "../ui/Hud";
+import { RouteChoice } from "../ui/travel/RouteChoice";
 import type { JournalKind } from "../ui/journal";
 
 /** Onde a campanha começa, quando o herói escolhido não disser outra coisa. */
@@ -66,6 +67,15 @@ const KINGDOM_BOUNDS = bounds(valdoria.outline);
 
 
 const REGION_LABELS = regions.map((r) => ({ id: r.id, name: r.name, at: centroid(r.polygon) }));
+
+/** Warm daylight fades into a readable blue night; the map stays interactive. */
+function nightAmount(hours: number) {
+  const hour = ((hours % 24) + 24) % 24;
+  if (hour >= 17.5) return Math.min(1, (hour - 17.5) / 3.5);
+  if (hour < 5) return 1;
+  if (hour < 7.5) return (7.5 - hour) / 2.5;
+  return 0;
+}
 
 export function WorldMap() {
   const game = useGame();
@@ -97,6 +107,8 @@ export function WorldMap() {
   const political = politicalView !== "off";
   const [adventureView, setAdventureView] = useState<AdventureView | null>(null);
   const [queuedDestination, setQueuedDestination] = useState<RoadStop | null>(null);
+  const queuedModeRef = useRef<TravelRouteMode>("road");
+  const [routeChoice, setRouteChoice] = useState<{destination:RoadStop;name:string;from:Point;roadStop:RoadStop}|null>(null);
   const [initialPosition] = useState(() => restoreJourney(startNode).position);
   /**
    * O QUE REALMENTE IMPEDE DE ANDAR.
@@ -106,12 +118,12 @@ export function WorldMap() {
    * aberto no canto e NENHUM clique no mapa funcionava: nem castelo, nem
    * estrada, nem nada. O jogador só via o jogo parar de responder.
    */
-  const adventureBlocked = !!adventureView || sheetOpen || !!game.adventure.event || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending || !!game.adventure.story.pending || !!game.adventure.cinematic;
+  const adventureBlocked = !!adventureView || !!routeChoice || sheetOpen || !!game.adventure.event || !!game.adventure.raid || !!game.adventure.battle || !!game.adventure.quest?.pending || !!game.adventure.story.pending || !!game.adventure.cinematic;
 
   const followRef = useRef(follow);
   followRef.current = follow;
 
-  const camera = useCamera({ world: WORLD, focus: KINGDOM_BOUNDS, maxZoom: 24 * LOD_SCALE, initialCenter: initialPosition, initialScale: 0.3 });
+  const camera = useCamera({ world: WORLD, focus: KINGDOM_BOUNDS, maxZoom: 24 * LOD_SCALE, initialCenter: initialPosition, initialScale: 0.42 });
   const { centerOn } = camera;
 
   const pushLog = useCallback((kind: JournalKind, text: string) => recordJourney(kind, text), []);
@@ -175,7 +187,9 @@ export function WorldMap() {
     if (!queuedDestination || adventureBlocked) return;
     const destination = queuedDestination;
     setQueuedDestination(null);
-    travel.travelTo(destination);
+    const mode = queuedModeRef.current;
+    queuedModeRef.current = "road";
+    travel.travelTo(destination,mode);
   }, [queuedDestination, adventureBlocked, travel.travelTo]);
 
   const view = useMemo(
@@ -201,11 +215,11 @@ export function WorldMap() {
       // o recuo pelo terreno, tocar nelas não fazia absolutamente nada.
       setHeadingTo(poi.name);
       const node = nodeStop(poi.id);
-      if (node) { setQueuedDestination(node); return; }
+      if (node) { setRouteChoice({destination:node,name:poi.name,from:{...travel.posRef.current},roadStop:travel.stop}); return; }
       const target = nearestWalkable({ x: poi.x, y: poi.y });
-      if (target) setQueuedDestination({ kind: "free", x: target.x, y: target.y });
+      if (target) setRouteChoice({destination:{ kind: "free", x: target.x, y: target.y },name:poi.name,from:{...travel.posRef.current},roadStop:travel.stop});
     },
-    [camera, travel.currentNodeId],
+    [camera, travel.currentNodeId, travel.stop, travel.posRef],
   );
 
   /**
@@ -329,7 +343,9 @@ export function WorldMap() {
   useEffect(() => { if (travel.state !== "traveling") setHeadingTo(null); }, [travel.state]);
 
 
-  const destinationId = travel.path?.nodeIds[travel.path.nodeIds.length - 1] ?? null;
+  const destinationId = travel.path?.endStop?.kind === "node"
+    ? travel.path.endStop.id
+    : travel.path?.nodeIds[travel.path.nodeIds.length - 1] ?? null;
   /**
    * PARA ONDE VOCÊ ESTÁ INDO.
    *
@@ -476,10 +492,8 @@ export function WorldMap() {
         </g>
       </svg>
 
-      {/* Sem ciclo de dia e noite: o mapa é lido a toda hora, e escurecê-lo
-          por metade do relógio só atrapalhava a leitura. A camada de atmosfera
-          continua, sempre em luz plena. */}
-      <AtmosphereOverlay subscribe={camera.subscribe} night={0} view={view} zoom={zoom} />
+      <div className="map-night-glaze" style={{ opacity: nightAmount(travel.worldHours) * 0.22 }} aria-hidden="true" />
+      <AtmosphereOverlay subscribe={camera.subscribe} night={nightAmount(travel.worldHours)} view={view} zoom={zoom} />
 
       <Hud
         placeName={regionById.get(travel.regionId)?.name ?? "Valdória"}
@@ -519,7 +533,7 @@ export function WorldMap() {
         key={panelPoiId}
         poi={panelPoiId ? poiById.get(panelPoiId) ?? null : null}
         worldHours={travel.worldHours}
-        onTravel={(id) => setQueuedDestination(nodeStop(id))}
+        onTravel={(id) => { const node=nodeStop(id); if(node)setRouteChoice({destination:node,name:poiById.get(id)?.name??id,from:{...travel.posRef.current},roadStop:travel.stop}); }}
         onClose={() => setPanelPoiId(null)}
       />
 
@@ -563,7 +577,7 @@ export function WorldMap() {
       {/* O guia não é uma tela: é uma linha dizendo a próxima ação, que some
           quando a ação acontece. */}
       <Coach stop={travel.stop} traveling={travel.state === "traveling"} />
-      <OfferCard onTravel={(id) => setQueuedDestination(nodeStop(id))} />
+      <OfferCard onTravel={(id) => { const node=nodeStop(id); if(node)setRouteChoice({destination:node,name:poiById.get(id)?.name??id,from:{...travel.posRef.current},roadStop:travel.stop}); }} />
       {sheetOpen && <CharacterScreen onClose={() => setSheetOpen(false)} />}
       <AdventurePanel view={adventureView} onView={setAdventureView} onClose={() => setAdventureView(null)}
         // Mesmo recuo do toque numa localidade: nem todo destino é nó de
@@ -575,11 +589,23 @@ export function WorldMap() {
           const poi = poiById.get(id);
           setHeadingTo(poi?.name ?? null);
           const node = nodeStop(id);
-          if (node) { setQueuedDestination(node); return; }
+          if (node) { setRouteChoice({destination:node,name:poi?.name??id,from:{...travel.posRef.current},roadStop:travel.stop}); return; }
           const target = poi ? nearestWalkable({ x: poi.x, y: poi.y }) : null;
-          if (target) setQueuedDestination({ kind: "free", x: target.x, y: target.y });
+          if (target) setRouteChoice({destination:{ kind: "free", x: target.x, y: target.y },name:poi?.name??id,from:{...travel.posRef.current},roadStop:travel.stop});
         }}
         onSheet={openSheet} />
+      {routeChoice && <RouteChoice
+        destination={routeChoice.destination}
+        name={routeChoice.name}
+        from={routeChoice.from}
+        roadStop={routeChoice.roadStop}
+        onClose={() => setRouteChoice(null)}
+        onChoose={(mode) => {
+          queuedModeRef.current=mode;
+          setQueuedDestination(routeChoice.destination);
+          setRouteChoice(null);
+        }}
+      />}
     </div>
   );
 }

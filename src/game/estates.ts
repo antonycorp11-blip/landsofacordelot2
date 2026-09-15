@@ -21,6 +21,8 @@ import { fiefById } from "../world/fiefs";
 import type { GameState } from "./store";
 
 export type TaxLevel = "baixo" | "justo" | "pesado";
+export type EstateWork = "walls" | "granary" | "market";
+export type EstateProject = { kind: EstateWork; readyDay: number };
 
 export type Estate = {
   tax: TaxLevel;
@@ -30,7 +32,22 @@ export type Estate = {
   loyalty: number;
   /** Homens destacados para ficar na terra. */
   garrison: TroopCount;
+  /** Obras levam dias; no máximo uma construção por senhorio. */
+  buildings?: Partial<Record<EstateWork, number>>;
+  project?: EstateProject;
 };
+
+export const WORKS: Record<EstateWork, { name: string; gold: number; wood: number; tools: number; days: number; max: number; effect: string }> = {
+  walls: { name: "Muralhas", gold: 140, wood: 3, tools: 1, days: 5, max: 3, effect: "+12 defesa por nível; protege a guarnição em cercos" },
+  granary: { name: "Celeiro", gold: 95, wood: 2, tools: 0, days: 3, max: 2, effect: "+0,6 lealdade por dia e por nível" },
+  market: { name: "Feira", gold: 120, wood: 2, tools: 1, days: 4, max: 2, effect: "+15% renda por nível" },
+};
+
+export function workCost(estate: Estate, kind: EstateWork) {
+  const work = WORKS[kind];
+  const level = estate.buildings?.[kind] ?? 0;
+  return { gold: Math.round(work.gold * (1 + level * .55)), wood: work.wood + level, tools: work.tools + (level > 1 ? 1 : 0), days: work.days + level };
+}
 
 export const TAX: Record<TaxLevel, { income: number; loyalty: number; label: string; blurb: string }> = {
   baixo:  { income: 0.65, loyalty:  1.6, label: "Brando",  blurb: "Rende menos e compra paz. A lealdade sobe." },
@@ -61,7 +78,7 @@ export function incomeOf(s: GameState, fiefId: string): number {
   // A prosperidade precisa PESAR: com a curva antiga, obras de duas mil
   // moedas se pagavam em quinhentos dias e ninguém investiria nunca. Assim,
   // de cinquenta a cem a terra quase dobra o que rende.
-  const base = fief.income * TAX[estate.tax].income * (0.4 + estate.prosperity / 60);
+  const base = fief.income * TAX[estate.tax].income * (0.4 + estate.prosperity / 60) * (1 + (estate.buildings?.market ?? 0) * .15);
   return Math.max(0, Math.round(base * loyaltyFactor(estate.loyalty)));
 }
 
@@ -73,6 +90,10 @@ export function garrisonCost(estate: Estate): number {
 /** O que uma guarnição vale para a região onde está. */
 export function garrisonSecurity(estate: Estate): number {
   return Math.min(6, Math.floor(troopTotal(estate.garrison) / 4));
+}
+
+export function wallDefence(base: number, estate: Estate): number {
+  return base + (estate.buildings?.walls ?? 0) * 12;
 }
 
 export const INVEST_STEP = 15;
@@ -94,15 +115,16 @@ export type EstateDay = {
   security: number;
   /** A terra se levantou e deixou de ser sua. */
   revolt: boolean;
+  completedWork: EstateWork | null;
 };
 
 /**
  * Um dia de cada terra sua. Devolve o que mudar, e quem chama decide o que
  * fazer com a revolta — perder um senhorio é notícia, não um número.
  */
-export function estateDay(s: GameState, fiefId: string): EstateDay {
+export function estateDay(s: GameState, fiefId: string, day: number): EstateDay {
   const estate = estateOf(s, fiefId);
-  const drift = TAX[estate.tax].loyalty;
+  const drift = TAX[estate.tax].loyalty + (estate.buildings?.granary ?? 0) * .6;
   const loyalty = Math.max(0, Math.min(100, estate.loyalty + drift));
   return {
     fiefId,
@@ -112,5 +134,6 @@ export function estateDay(s: GameState, fiefId: string): EstateDay {
     security: garrisonSecurity(estate),
     // Abaixo de cinco a terra deixa de obedecer. O aviso vem muito antes.
     revolt: loyalty <= 4,
+    completedWork: estate.project && estate.project.readyDay <= day ? estate.project.kind : null,
   };
 }

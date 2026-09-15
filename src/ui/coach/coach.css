@@ -41,3 +41,20 @@
   font: inherit; font-size: 14px; line-height: 1; cursor: pointer; padding: 0;
 }
 .coach-close:hover { background: #ffffff12; color: #d9cba8; }
+
+/* A dica é um bilhete de viagem preso à moldura do mapa. */
+.coach {
+  padding: 10px 12px 10px 15px;
+  border: 1px solid #a17c48;
+  border-left: 4px solid #8f3e29;
+  border-radius: 2px 7px 7px 2px;
+  background: repeating-linear-gradient(7deg, #e7d1a0 0 15px, #e5c994 16px 28px, #e9d4a6 29px 40px);
+  color: #3d2818;
+  box-shadow: inset 0 0 0 2px #bb9765, 0 3px 13px #0008;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.coach-text b { color: #452a17; font: 700 14px/1.15 Georgia, serif; }
+.coach-text span { color: #705238; font: 10.5px/1.35 var(--ui-small); }
+.coach-close { color: #765338; }
+.coach-close:hover { background: #9c744d2c; color: #482813; }

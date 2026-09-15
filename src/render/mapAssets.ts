@@ -32,9 +32,9 @@ const CENTERED = { x: 0.5, y: 0.5 };
 
 export const mapAssets: Record<string, AssetDefinition> = {
   /* --- assentamentos e edifícios --- */
-  castle_royal: { size: 104 },
-  castle_medium: { size: 84 },
-  fortress: { size: 84 },
+  castle_royal: { size: 160 },
+  castle_medium: { size: 126 },
+  fortress: { size: 132 },
   city_large: { size: 82 },
   city_small: { size: 70 },
   village: { size: 54 },

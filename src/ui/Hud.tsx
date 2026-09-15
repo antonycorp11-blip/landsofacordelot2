@@ -7,6 +7,9 @@ import { formatDuration } from "../world/time";
 import { JOURNAL_GLYPH, stamp, type JournalEntry } from "./journal";
 import { BalanceBar } from "./BalanceBar";
 import type { BalanceState } from "../game/balance";
+import { useGame } from "../game/store";
+import { journeyFocus } from "./hud/journeyFocus";
+import chronicleSeal from "../assets/hud/chronicle_wax_seal_128.png?url";
 import "./hud.css";
 
 const SPEEDS = [1, 2, 4];
@@ -90,6 +93,8 @@ export function Hud({
   political, onTogglePolitical, heroId, xp, onOpenJourney, balance,
 }: Props) {
   const [journalOpen, setJournalOpen] = useState(false);
+  const game = useGame();
+  const focus = journeyFocus(game, worldHours);
 
   const listRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -107,6 +112,9 @@ export function Hud({
   // um instante abaixo de zero, e isso aparecia na barra.
   const day = Math.max(1, Math.floor(worldHours / 24) + 1);
   const hour = String(Math.floor(((worldHours % 24) + 24) % 24)).padStart(2, "0");
+
+  const hourNumber = Math.floor(((worldHours % 24) + 24) % 24);
+  const period = hourNumber >= 19 || hourNumber < 5 ? "Noite" : hourNumber >= 17 ? "Crepúsculo" : hourNumber < 8 ? "Aurora" : "Dia";
 
   return (
     <div className="hud-layer">
@@ -129,8 +137,9 @@ export function Hud({
           </button>
 
           <div className="hud-place">
+            <small>Terras de Valdória</small>
             <b>{placeName}</b>
-            <span>Dia {day} · {hour}h{paused ? " · pausa" : ""}</span>
+            <span>{period} · dia {day} · {hour}h{paused ? " · pausa" : ""}</span>
           </div>
 
           <div className="hud-resources" aria-label="Recursos do viajante">
@@ -149,19 +158,28 @@ export function Hud({
           </div>
         </div>
 
-        <BalanceBar balance={balance} />
+        <div className="hud-balance-wrap"><BalanceBar balance={balance} /></div>
 
         {/* A viagem só ocupa espaço enquanto existe. */}
         {traveling && destinationName && (
           <div className="hud-journey">
             <div className="hud-journey-line">
-              <span className="to">{destinationName}</span>
-              <span className="eta">{formatDuration(travelHours)}</span>
+              <span className="to"><em>Em viagem para</em> {destinationName}</span>
+              <span className="eta">{formatDuration(travelHours)} restantes</span>
             </div>
             <div className="hud-progress"><i style={{ width: `${Math.round(progress * 100)}%` }} /></div>
           </div>
         )}
       </div>
+
+      <button className={`hud-quest urgency-${focus.urgency}`} onClick={onOpenJourney} aria-label={`Abrir crônica. ${focus.act}. ${focus.title}`}>
+        <img className="hud-quest-seal" src={chronicleSeal} alt="" aria-hidden="true" />
+        <span className="hud-quest-head"><span>{focus.act}</span>{focus.progress && <b>{focus.progress}</b>}</span>
+        <strong>{focus.title}</strong>
+        <span className="hud-quest-detail">{focus.detail}</span>
+        {focus.secondary && <span className="hud-quest-secondary">{focus.secondary}</span>}
+        <span className="hud-quest-open">Abrir crônica <span aria-hidden="true">›</span></span>
+      </button>
 
       {/* ----------------------------- doca ----------------------------- */}
       <div className="hud-dock">
@@ -202,8 +220,8 @@ export function Hud({
 
         <span className="sep" />
 
-        <button className="hud-btn icon" onClick={onOpenJourney} title="Registro da jornada: contrato em curso e crônica">
-          <Icon name="party" />
+        <button className="hud-btn hud-btn-journey" onClick={onOpenJourney} title="Registro da jornada: contrato em curso e crônica">
+          <Icon name="party" /> <span>Jornada</span>
         </button>
         <button className={`hud-btn icon ${journalOpen ? "on" : ""}`} onClick={() => setJournalOpen((o) => !o)} aria-pressed={journalOpen} title="Diário de viagem">
           <Icon name="journal" />

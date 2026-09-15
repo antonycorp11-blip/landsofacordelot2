@@ -1,146 +1,68 @@
 import { useState } from "react";
-import { houseById, houses } from "../../data/houses";
+import { houses, houseById } from "../../data/houses";
+import { marriageCandidates } from "../../data/dynasty";
 import { crestUrl } from "../../data/houseAssets";
-import { relationLabel } from "../../data/player";
 import { troopTotal } from "../../data/troops";
-import {
-  BLOCK_TEXT, GRANT_STEPS, INDEPENDENCE_FIEFS, INDEPENDENCE_INFLUENCE, INDEPENDENCE_TROOPS,
-  allegianceLabel, breakOath, declareIndependence, enemiesOf, independenceBlocker,
-  nextGrantAt, playerFiefCount, swearBlocker, swearTo, vassalStipend,
-} from "../../game/allegiance";
+import { FacePortrait } from "../../render/portraits/FacePortrait";
+import { faceOf } from "../../render/portraits/characterFace";
+import { BLOCK_TEXT, INDEPENDENCE_FIEFS, INDEPENDENCE_INFLUENCE, INDEPENDENCE_TROOPS, allegianceLabel, breakOath, declareIndependence, enemiesOf, independenceBlocker, nextGrantAt, playerFiefCount, swearBlocker, swearTo, vassalStipend } from "../../game/allegiance";
+import { allianceBlocker, allianceChance, currentDay, marriageBlocker, marriageChance, marriageOf, pactUntil, proposeAlliance, proposeMarriage } from "../../game/diplomacy";
 import { belligerentName } from "../../game/worldSim";
 import { useGame } from "../../game/store";
+import type { HouseId } from "../../world/types";
 
-/**
- * DE QUEM VOCÊ É.
- *
- * A pergunta que organiza a segunda metade da partida, e a tela onde ela é
- * respondida. As duas saídas estão lado a lado de propósito, com o que cada
- * uma exige escrito antes: jurar é carreira, declarar-se é aposta.
- *
- * Os requisitos aparecem mesmo quando não são cumpridos — um caminho que só
- * existe depois de você descobri-lo por acaso não organiza nada.
- */
 export function CourtPanel() {
-  const game = useGame();
-  const a = game.allegiance;
-  const [naming, setNaming] = useState(false);
-  const [name, setName] = useState("Casa Arven");
+  const game=useGame(), a=game.allegiance;
+  const [view,setView]=useState<"juramento"|"diplomacia">("juramento");
+  const [name,setName]=useState("Casa Arven"), [naming,setNaming]=useState(false);
+  const [candidateId,setCandidateId]=useState(marriageCandidates[0].id);
+  const [houseId,setHouseId]=useState<HouseId>("house_silvarden");
+  const [note,setNote]=useState("");
+  const fiefCount=playerFiefCount(game), soldiers=troopTotal(game.troops), indep=independenceBlocker(game);
+  const candidate=marriageCandidates.find(c=>c.id===candidateId)!;
+  const spouse=marriageOf(game), marriageStop=marriageBlocker(game,candidateId), pactStop=allianceBlocker(game,houseId);
+  const enemies=enemiesOf(game);
 
-  const fiefCount = playerFiefCount(game);
-  const troops = troopTotal(game.troops);
-  const indep = independenceBlocker(game);
-  const enemies = enemiesOf(game);
-
-  return (
-    <div className="court">
-      <div className="court-status">
-        <span className="panel-title">Posição</span>
-        <b>{allegianceLabel(a)}</b>
-        {a.kind === "jurado" && (
-          <span className="court-line">
-            Soldo de {vassalStipend(a)} moedas/dia · serviço {a.service}
-            {nextGrantAt(a) ? ` · próxima concessão em ${nextGrantAt(a)}` : " · sem mais concessões"}
-          </span>
-        )}
-        {a.kind === "independente" && (
-          <span className="court-line">Soberano desde o dia {a.since}. Ninguém lhe deve proteção.</span>
-        )}
-        {a.kind === "livre" && (
-          <span className="court-line">Livre: ninguém lhe paga, e ninguém marcha contra a sua terra.</span>
-        )}
-        {enemies.length > 0 && (
-          <span className="court-line war">
-            Em guerra com {enemies.map((e) => belligerentName(game, e)).join(" · ")}
-          </span>
-        )}
+  return <div className="court court-reworked">
+    <div className="court-top">
+      <div className="court-status"><span className="panel-title">Sua posição</span><b>{allegianceLabel(a)}</b>
+        <span className="court-line">{a.kind==="jurado" ? `Soldo +${vassalStipend(a)}/dia · serviço ${a.service} · próxima terra ${nextGrantAt(a)??"—"}` : a.kind==="independente" ? `Soberano · ${fiefCount} senhorios` : "Livre · sem soldo ou protetor"}</span>
+        {!!enemies.length&&<span className="court-line war">Guerra: {enemies.map(e=>belligerentName(game,e)).join(" · ")}</span>}
       </div>
-
-      {/* ------------------------------ jurar ----------------------------- */}
-      {a.kind !== "independente" && (
-        <div className="court-block">
-          <span className="panel-title">{a.kind === "jurado" ? "Seu senhor" : "Jurar a uma Casa"}</span>
-          {a.kind === "jurado" ? (
-            <>
-              <p className="court-note">
-                As guerras da sua Casa são suas: os inimigos dela podem marchar sobre os seus senhorios, e a
-                guarnição que você deixou lá é a única coisa entre a terra e um exército. Servir rende terra
-                nos degraus de {GRANT_STEPS.join(", ")} de serviço.
-              </p>
-              <button className="btn danger court-wide" onClick={breakOath}>
-                Romper o juramento · −45 de relação, −15 de influência
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="court-note">
-                Um vassalo recebe soldo todo dia e terra por serviço prestado. Em troca herda as guerras do
-                senhor — e a terra dele deixa de ser intocável.
-              </p>
-              <div className="court-houses">
-                {houses.map((house) => {
-                  const block = swearBlocker(game, house.id);
-                  const relation = game.houseRelations[house.id] ?? 0;
-                  const crest = crestUrl(house.crestAssetKey);
-                  return (
-                    <button
-                      key={house.id}
-                      className="court-house"
-                      disabled={block !== "none"}
-                      title={block === "none" ? undefined : BLOCK_TEXT[block]}
-                      onClick={() => swearTo(house.id)}
-                    >
-                      {crest && <img src={crest} alt="" loading="lazy" />}
-                      <span className="court-house-body">
-                        <b>{house.shortName}</b>
-                        <em>{relationLabel(relation)} · {relation}</em>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* -------------------------- independência ------------------------- */}
-      {a.kind !== "independente" && (
-        <div className="court-block">
-          <span className="panel-title">Declarar-se soberano</span>
-          <p className="court-note">
-            Não dá nada: tira. Sem soldo, sem protetor, e qualquer Casa pode declarar guerra a você como declara
-            a outra qualquer. É o caminho de quem quer o reino, não um lugar nele.
-          </p>
-          <div className="court-reqs">
-            <Req ok={fiefCount >= INDEPENDENCE_FIEFS} label={`${fiefCount}/${INDEPENDENCE_FIEFS} senhorios`} />
-            <Req ok={game.influence >= INDEPENDENCE_INFLUENCE} label={`${Math.round(game.influence)}/${INDEPENDENCE_INFLUENCE} influência`} />
-            <Req ok={troops >= INDEPENDENCE_TROOPS} label={`${troops}/${INDEPENDENCE_TROOPS} homens`} />
-          </div>
-          {naming ? (
-            <div className="court-name">
-              <input value={name} maxLength={28} onChange={(e) => setName(e.target.value)} aria-label="Nome da sua Casa" />
-              <button className="btn primary" onClick={() => declareIndependence(name)}>Declarar</button>
-            </div>
-          ) : (
-            <button
-              className="btn court-wide"
-              disabled={indep !== "none"}
-              title={indep === "none" ? undefined : BLOCK_TEXT[indep]}
-              onClick={() => setNaming(true)}
-            >
-              {indep === "none" ? "Nomear a sua Casa" : BLOCK_TEXT[indep]}
-            </button>
-          )}
-          {a.kind === "jurado" && indep === "none" && (
-            <p className="court-note war">Fazer isto jurado é traição: guerra imediata com {houseById.get(a.houseId)?.shortName}.</p>
-          )}
-        </div>
-      )}
+      <div className="court-switch" role="tablist" aria-label="Mesa da Corte"><button role="tab" aria-selected={view==="juramento"} onClick={()=>setView("juramento")}>Juramento</button><button role="tab" aria-selected={view==="diplomacia"} onClick={()=>setView("diplomacia")}>Diplomacia</button></div>
     </div>
-  );
-}
 
-function Req({ ok, label }: { ok: boolean; label: string }) {
-  return <span className={`court-req ${ok ? "ok" : ""}`}>{ok ? "✓" : "·"} {label}</span>;
+    {view==="juramento"&&<div className="court-paths">
+      <div className="court-block"><span className="panel-title">{a.kind==="jurado"?"Seu senhor":"Jurar a uma Casa"}</span>
+        {a.kind==="jurado"?<><p className="court-note">Serviço rende terra. As guerras da Casa ameaçam sua guarnição.</p><button className="btn danger court-wide" onClick={breakOath}>Romper · −45 relação · −15 influência</button></>
+        :a.kind==="independente"?<p className="court-note">Sua Casa negocia tratados próprios.</p>
+        :<><p className="court-note">Soldo e concessões por serviço. Requer relação 25.</p><div className="court-houses">{houses.map(h=>{const block=swearBlocker(game,h.id), crest=crestUrl(h.crestAssetKey);return <button className="court-house" key={h.id} disabled={block!=="none"} title={block==="none"?undefined:BLOCK_TEXT[block]} onClick={()=>swearTo(h.id)}>{crest&&<img src={crest} alt=""/>}<span className="court-house-body"><b>{h.shortName}</b><em>Relação {game.houseRelations[h.id]??0}</em></span></button>})}</div></>}
+      </div>
+      <div className="court-block"><span className="panel-title">Declarar-se soberano</span>
+        {a.kind==="independente"?<p className="court-note">Você defende seus senhorios sem protetor e pode firmar alianças.</p>:<><p className="court-note">Sem soldo nem protetor. Sua bandeira pode ser atacada.</p>
+          <div className="court-reqs"><Req ok={fiefCount>=INDEPENDENCE_FIEFS} label={`${fiefCount}/${INDEPENDENCE_FIEFS} senhorios`}/><Req ok={game.influence>=INDEPENDENCE_INFLUENCE} label={`${Math.round(game.influence)}/${INDEPENDENCE_INFLUENCE} influência`}/><Req ok={soldiers>=INDEPENDENCE_TROOPS} label={`${soldiers}/${INDEPENDENCE_TROOPS} homens`}/></div>
+          {naming?<div className="court-name"><input value={name} maxLength={28} onChange={e=>setName(e.target.value)} aria-label="Nome da sua Casa"/><button className="btn primary" onClick={()=>declareIndependence(name)}>Declarar</button></div>
+            :<button className="btn court-wide" disabled={indep!=="none"} title={indep==="none"?undefined:BLOCK_TEXT[indep]} onClick={()=>setNaming(true)}>{indep==="none"?"Nomear sua Casa":BLOCK_TEXT[indep]}</button>}
+          {a.kind==="jurado"&&indep==="none"&&<p className="court-note war">Trair {houseById.get(a.houseId)?.shortName} declara guerra imediata.</p>}</>}
+      </div>
+    </div>}
+
+    {view==="diplomacia"&&<div className="court-paths court-political">
+      <div className="court-block"><span className="panel-title">Casamento de Casa</span>
+        {spouse?<p className="court-note">União com {spouse.name}: +3 ouro e +0,2 influência/dia. Tratado com {houseById.get(spouse.houseId)?.shortName} até o dia {pactUntil(game,spouse.houseId)}.</p>
+        :<><div className="court-candidates">{marriageCandidates.map(c=><button key={c.id} aria-pressed={candidateId===c.id} onClick={()=>{setCandidateId(c.id);setNote("")}}><FacePortrait {...faceOf(c)} size={26}/><span>{c.name.replace(/^Lady /,"")}</span></button>)}</div>
+          <p className="court-note court-person">{candidate.description} · chance {marriageChance(game,candidate.id)}%</p>
+          <button className="btn court-wide" disabled={!!marriageStop} title={marriageStop??undefined} onClick={()=>{const r=proposeMarriage(candidate.id);if(r)setNote(r.success?`${candidate.name} aceitou. Tratado firmado por 30 dias.`:"Família recusou. −4 influência, −5 relação. Nova proposta em sete dias.")}}>Propor · 150 ouro · 15 influência</button>
+          {marriageStop&&<p className="court-note">{marriageStop}</p>}</>}
+      </div>
+      <div className="court-block"><span className="panel-title">Tratado entre Casas</span>
+        <div className="court-houses court-treaties">{houses.map(h=>{const crest=crestUrl(h.crestAssetKey), until=pactUntil(game,h.id);return <button key={h.id} className="court-house" aria-pressed={houseId===h.id} onClick={()=>{setHouseId(h.id);setNote("")}}>{crest&&<img src={crest} alt=""/>}<span className="court-house-body"><b>{h.shortName}</b><em>{until>=currentDay(game)?`Pacto até ${until}`:`Relação ${game.houseRelations[h.id]??0}`}</em></span></button>})}</div>
+        <p className="court-note">{houseById.get(houseId)?.shortName}: chance {allianceChance(game,houseId)}%. Por 24 dias, esta Casa não declara guerra a você.</p>
+        <button className="btn court-wide" disabled={!!pactStop} title={pactStop??undefined} onClick={()=>{const r=proposeAlliance(houseId);if(r)setNote(r.success?`Tratado firmado até o dia ${pactUntil(game,houseId)}.`:"Recusaram. −4 influência, −4 relação. Novo emissário em cinco dias.")}}>Enviar emissário · 100 ouro · 12 influência</button>
+        {pactStop&&<p className="court-note">{pactStop}</p>}
+      </div>
+      {note&&<p className="court-outcome" role="status">{note}</p>}
+    </div>}
+  </div>;
 }
+function Req({ok,label}:{ok:boolean;label:string}){return <span className={`court-req ${ok?"ok":""}`}>{ok?"✓":"·"} {label}</span>}

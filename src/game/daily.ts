@@ -19,8 +19,9 @@
  */
 import { troopById, troopTotal, troops as troopTypes, type TroopCount, type TroopId } from "../data/troops";
 import { fiefById, fiefs } from "../world/fiefs";
-import { estateDay, estateOf, garrisonCost, incomeOf } from "./estates";
+import { estateDay, estateOf, garrisonCost, incomeOf, WORKS, type EstateWork } from "./estates";
 import { vassalStipend } from "./allegiance";
+import { marriageOf } from "./diplomacy";
 import { passiveInfluencePerDay } from "./careers";
 import { dailyCost } from "./progression";
 import { derivedInput } from "./experience";
@@ -58,8 +59,10 @@ export type DayReport = {
   garrison: number;
   /** Terras que se levantaram hoje e deixaram de ser suas. */
   revolts: string[];
+  completedWorks: { fiefId: string; kind: EstateWork }[];
   /** Soldo pago pela Casa a que você jurou. */
   stipend: number;
+  kinship: number;
   food: number;
   income: number;
   influence: number;
@@ -104,15 +107,17 @@ export function applyDay(s: GameState, day: number): { state: GameState; report:
   // Soldo de vassalo: a Casa sustenta quem lhe serve, e é a razão prática de
   // jurar em vez de continuar livre.
   const stipend = vassalStipend(s.allegiance);
-  const influence = passiveInfluencePerDay(s.careerXp);
+  const kinship = marriageOf(s) ? 3 : 0;
+  const influence = passiveInfluencePerDay(s.careerXp) + (kinship ? .2 : 0);
 
   /* ---------------------- o que a terra fez hoje ----------------------- */
   const estates = { ...(s.fiefEstates ?? {}) };
   const fiefOwners = { ...s.fiefOwners };
   const regionSecurity = { ...(s.regionSecurity ?? {}) };
   const revolts: string[] = [];
+  const completedWorks: { fiefId: string; kind: EstateWork }[] = [];
   for (const id of playerFiefIds(s)) {
-    const result = estateDay(s, id);
+    const result = estateDay(s, id, day);
     if (result.revolt) {
       // A terra volta para a Casa que a tinha antes de você.
       delete estates[id];
@@ -120,14 +125,19 @@ export function applyDay(s: GameState, day: number): { state: GameState; report:
       revolts.push(id);
       continue;
     }
-    estates[id] = { ...estateOf(s, id), loyalty: result.loyalty };
+    const current = estateOf(s, id);
+    estates[id] = result.completedWork
+      ? { ...current, loyalty: result.loyalty, project: undefined,
+          buildings: { ...current.buildings, [result.completedWork]: (current.buildings?.[result.completedWork] ?? 0) + 1 } }
+      : { ...current, loyalty: result.loyalty };
+    if (result.completedWork) completedWorks.push({ fiefId: id, kind: result.completedWork });
     const region = fiefById.get(id)?.regionId;
     if (region && result.security > 0) {
       regionSecurity[region] = Math.max(-30, Math.min(30, (regionSecurity[region] ?? 0) + result.security * 0.2));
     }
   }
 
-  let gold = s.gold + income + stipend - garrison;
+  let gold = s.gold + income + stipend + kinship - garrison;
   let food = s.food;
   let troops = s.troops;
   let wounded: TroopCount = {...s.wounded};
@@ -184,7 +194,7 @@ export function applyDay(s: GameState, day: number): { state: GameState; report:
       dayProcessed: day,
       hardshipDays,
     },
-    report: { day, wages, garrison, stipend, food: eaten, income, influence, deserted, unpaid, hungry, recovered, revolts },
+    report: { day, wages, garrison, stipend, kinship, food: eaten, income, influence, deserted, unpaid, hungry, recovered, revolts, completedWorks },
   };
 }
 
@@ -194,12 +204,14 @@ export function reportLine(report: DayReport, troops: TroopCount): string | null
   if (report.income > 0) parts.push(`+${report.income} de renda`);
   if (report.garrison > 0) parts.push(`−${report.garrison} de guarnição`);
   if (report.stipend > 0) parts.push(`+${report.stipend} de soldo do senhor`);
+  if (report.kinship > 0) parts.push(`+${report.kinship} do vínculo matrimonial`);
   if (report.wages > 0) parts.push(`−${report.wages} de soldo`);
   if (report.food > 0 && troopTotal(troops) > 0) parts.push(`−${report.food} de comida`);
   if (report.unpaid) parts.push("SEM SOLDO");
   if (report.hungry) parts.push("SEM COMIDA");
   if (report.deserted > 0) parts.push(`${report.deserted} desertaram`);
   if (report.recovered > 0) parts.push(`${report.recovered} ferido(s) voltaram à linha`);
+  for (const work of report.completedWorks) parts.push(`${WORKS[work.kind].name} de ${fiefById.get(work.fiefId)?.name ?? work.fiefId} concluídas`);
   if (!parts.length) return null;
   return `Dia ${report.day}: ${parts.join(" · ")}`;
 }

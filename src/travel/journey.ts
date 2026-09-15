@@ -4,6 +4,7 @@ import { routeEdgeById } from '../world/navgraph';
 import { routeNodeById } from '../world/valdoria';
 import { regionAtPoint } from '../world/navigation/navigationGrid';
 import { samplePath } from './samplePath';
+import { terrainPath } from '../world/navigation/routePlanner';
 import type { RegionId } from '../world/types';
 
 /**
@@ -17,7 +18,12 @@ export function restoreJourney(fallbackId: string) {
 
   const from = loadStop(saved?.from);
   const to = loadStop(saved?.to);
-  const found = from && to ? pathBetween(from, to) : null;
+  const overland = from && to && (saved?.routeMode === 'concealed' || from.kind === 'free');
+  const found = from && to
+    ? overland
+      ? (() => { const route=terrainPath(from,to,saved?.routeMode==='concealed'?'avoid_roads':'prefer_roads'); return route?{...route,endStop:to,navigationMode:saved?.routeMode??'road'}:null; })()
+      : pathBetween(from,to)
+    : null;
   const distance = found
     ? Math.max(0, Math.min(found.totalDistance, Number.isFinite(saved?.distance) ? saved!.distance : 0))
     : 0;

@@ -30,6 +30,7 @@ export const greystone: Region = {
   borderCrossingIds: ["bc_portao_de_pedra", "bc_trilha_das_faias", "bc_passagem_do_norte"],
   pointsOfInterest: makePois(ID, HOUSE, "ring", [
     { id: "fortaleza_pedra_cinza", name: "Fortaleza de Pedra Cinza", type: "fortress", assetKey: "fortress", tier: 1, a: 91, t: 0.46, scale: 1.2 },
+    { id: "castelo_do_corvo", name: "Castelo do Corvo", type: "castle", assetKey: "castle_medium", tier: 2, a: 104, t: 0.76, scale: 0.92, description: "Guarda a Passagem do Norte quando a neve fecha os outros caminhos." },
     { id: "pedra_alta", name: "Pedra Alta", type: "city", assetKey: "city_large", tier: 1, a: 79, t: 0.34 },
     { id: "mina_negra", name: "Mina Negra", type: "mine", assetKey: "mine", tier: 2, a: 99, t: 0.66 },
     { id: "cruz_de_ferro", name: "Cruz de Ferro", type: "town", assetKey: "city_small", tier: 2, a: 85, t: 0.18 },
@@ -47,7 +48,7 @@ export const greystone: Region = {
   junctions: [],
   roads: makeRoads(ID, [
     { id: "road_grey_mina", name: "Estrada da Mina Negra", type: "secondary", nodes: ["fortaleza_pedra_cinza", "mina_negra"], terrain: "mountain", danger: 0.18, movementModifier: 1.5 },
-    { id: "road_grey_passagem", name: "Trilha da Passagem", type: "trail", nodes: ["mina_negra", "passagem_do_norte"], terrain: "mountain", danger: 0.3, movementModifier: 1.9, windiness: 1.4 },
+    { id: "road_grey_passagem", name: "Trilha da Passagem", type: "trail", nodes: ["mina_negra", "castelo_do_corvo", "passagem_do_norte"], terrain: "mountain", danger: 0.3, movementModifier: 1.9, windiness: 1.4 },
     { id: "road_grey_pedreira", name: "Estrada da Pedreira", type: "secondary", nodes: ["pedra_alta", "grande_pedreira"], terrain: "mountain", danger: 0.14, movementModifier: 1.45 },
   ]),
 };

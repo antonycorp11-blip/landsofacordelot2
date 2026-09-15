@@ -33,3 +33,32 @@
 .offer-card.cerco small { color: #e0a086; }
 .offer-card strong { font-size: 13px; font-weight: 400; line-height: 1.2; }
 .offer-card span { font: 10px/1.35 var(--ui-small); color: #9fae9f; }
+
+/* O chamado agora aparece como recado lacrado, abaixo da crônica. */
+.offer-card {
+  top: calc(max(8px, env(safe-area-inset-top)) + 165px);
+  right: max(9px, env(safe-area-inset-right));
+  bottom: auto;
+  width: min(320px, 40vw);
+  max-width: calc(100% - 18px);
+  padding: 9px 13px 10px 16px;
+  border: 1px solid #76502c;
+  border-left: 4px solid #9a3d28;
+  border-radius: 2px 7px 7px 2px;
+  color: #3c2617;
+  background: repeating-linear-gradient(8deg, #ead6aa 0 17px, #e6ce9d 18px 29px, #eddbb4 30px 40px);
+  box-shadow: inset 0 0 0 2px #c29c67, 0 4px 14px #0009;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.offer-card:hover { background: #f2e2bc; }
+.offer-card small, .offer-card.cerco small { color: #884c2a; }
+.offer-card strong { font: 700 14px/1.15 Georgia, serif; color: #402414; }
+.offer-card span { color: #76593d; }
+.offer-card.cerco { border-left-color: #ab3227; }
+@media (orientation: landscape) and (max-height: 560px) {
+  .offer-card { top: calc(max(7px, env(safe-area-inset-top)) + 180px); width: min(300px, 36vw); }
+}
+@media (orientation: portrait) and (max-width: 720px) {
+  .offer-card { top: 265px; width: min(320px, calc(100% - 18px)); }
+}

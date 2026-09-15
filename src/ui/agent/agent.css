@@ -135,6 +135,58 @@
 .estate-defence { display: flex; gap: 10px; align-items: flex-start; padding: 7px 9px; border: 1px solid #a8915b44; border-radius: 6px; background: #0f202780; }
 .estate-defence small { display: block; font: 8.5px var(--ui-small); letter-spacing: .12em; text-transform: uppercase; color: #b6a97a; }
 .estate-defence b { font-size: 19px; font-weight: 400; color: #f2e5c1; font-variant-numeric: tabular-nums; }
+.estate-works { display: flex; flex-direction: column; gap: 5px; }
+.estate-project { color: #eacb84; border-left: 2px solid #c99a50; padding: 3px 7px; }
+.estate-work { width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 4px; text-align: left; padding: 6px 8px; border: 1px solid #ad895a; border-radius: 4px; background: #382719; color: #f5dfad; cursor: pointer; }
+.estate-work:hover:not(:disabled) { background: #563920; }
+.estate-work:disabled { opacity: .54; cursor: default; }
+.estate-work span { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.estate-work strong { font-size: 11px; }
+.estate-work small { color: #cfbb95; font: 9px var(--ui-small); }
+.estate-work em { font: 9px var(--ui-small); font-style: normal; color: #e5c178; }
+@media (orientation: landscape) and (max-height: 560px) { .estate-work { padding: 4px 6px; gap: 2px; } .estate-work small { font-size: 8.5px; } }
+
+.court-reworked { gap: 9px; color: #4d301a; }
+.court-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #ad8352; padding-bottom: 7px; }
+.court-reworked .court-status { padding: 0; border: 0; min-width: 0; }
+.court-reworked .court-status b { color: #4d301a; font-weight: 700; }
+.court-reworked .court-line, .court-reworked .court-note { color: #68462a; }
+.court-switch { display: flex; flex: none; gap: 3px; }
+.court-switch button { border: 1px solid #aa7f47; border-radius: 3px; background: #ead6a9; color: #553519; padding: 5px 8px; font: 600 10px var(--ui-small); cursor: pointer; }
+.court-switch button[aria-selected="true"] { background: #5d3921; color: #ffe7b3; }
+.court-paths { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; min-height: 0; }
+.court-reworked .court-block { border: 1px solid #aa7f47; border-radius: 3px; background: #f4e4bb; box-shadow: inset 0 0 0 2px #f9edcb; padding: 8px; gap: 5px; min-width: 0; }
+.court-reworked .court-block .panel-title { color: #814824; }
+.court-reworked .court-houses { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 4px; }
+.court-reworked .court-house { background: #ead3a4; border: 1px solid #af8654; color: #573719; padding: 4px 3px; gap: 3px; }
+.court-reworked .court-house[aria-pressed="true"] { background: #d0a55f; border-color: #714625; }
+.court-reworked .court-house:disabled { opacity: .5; }
+.court-reworked .court-house img { width: 19px; height: 23px; }
+.court-reworked .court-house b { color: #4a2e1b; font-size: 9px; }
+.court-reworked .court-house em { color: #745134; font-size: 8px; }
+.court-reworked .court-req { color: #6d4e31; }
+.court-reworked .court-req.ok { color: #446338; }
+.court-reworked .court-wide { background: #593720; color: #ffe7b3; min-height: 26px; }
+.court-reworked .court-wide:disabled { opacity: .65; }
+.court-candidates { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 3px; }
+.court-candidates button { display: flex; align-items: center; gap: 5px; min-width: 0; background: #ead3a4; border: 1px solid #ad8352; color: #51301a; padding: 2px 4px; border-radius: 3px; font: 10px var(--ui-small); cursor: pointer; }
+.court-candidates button[aria-pressed="true"] { background: #d3ab6f; border-color: #694322; }
+.court-candidates button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.court-candidates svg { flex: none; }
+.court-reworked .court-outcome { grid-column: 1/-1; margin: 0; color: #4f341e; border-left: 3px solid #a87030; background: #f3dfae; padding: 4px 8px; font-size: 10px; }
+@media (orientation: landscape) and (max-height: 560px) {
+  .court-reworked { gap: 5px; }
+  .court-top { padding-bottom: 4px; }
+  .court-reworked .court-status .panel-title { display: none; }
+  .court-reworked .court-status b { font-size: 14px; }
+  .court-reworked .court-block { padding: 6px; gap: 3px; }
+  .court-reworked .court-note { font-size: 9px; line-height: 1.25; }
+  .court-reworked .court-houses { gap: 3px; }
+  .court-reworked .court-house { padding: 2px; }
+  .court-reworked .court-house img { width: 15px; height: 18px; }
+  .court-reworked .court-house b { font-size: 8px; }
+  .court-reworked .court-house em { font-size: 7px; }
+}
 .estate-defence p { flex: 1; margin: 0; }
 .pair b.pursuit-tracking { color:#ef9a6d; }
 .pair b.pursuit-searching { color:#e0c071; }

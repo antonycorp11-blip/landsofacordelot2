@@ -4,7 +4,6 @@ import { poiById, allPois } from "../../world/valdoria";
 import { holdingFor } from "../../data/holdings";
 import { tutorialFlag } from "../../game/adventure";
 import { troopTotal } from "../../data/troops";
-import { chapterOfStep, currentStep } from "../../game/story";
 import type { RoadStop } from "../../world/roadStops";
 import { amountOwned } from "../../game/economy";
 import { goodById } from "../../data/goods";
@@ -73,7 +72,7 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
         id: "reach",
         title: target ? `Há fumaça adiante: ${target.name}` : "Siga a estrada",
         body: target
-          ? `Toque em ${target.name}. Um toque num lugar é partir para ele, e o menu abre na chegada.`
+          ? `Toque em ${target.name}, escolha estrada ou mata e parta. Na chegada você verá a cena do lugar.`
           : "Siga a estrada até encontrar gente.",
       };
     }
@@ -83,7 +82,7 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
       return {
         id: "talk",
         title: `Você chegou a ${atPlace?.name ?? "um lugar"}`,
-        body: "Toque em Falar. Ninguém prega serviço em mural: quem manda aqui conta o que precisa, e só então oferece.",
+        body: "Na cena de chegada, escolha Procurar quem manda. O serviço vem de uma pessoa, e a conversa decide o que você aceita.",
       };
     }
 
@@ -98,7 +97,7 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
           id:"buy-cargo",
           title:`Faltam ${missing} ${good?.name.toLowerCase()}`,
           body:atOrigin
-            ? "Abra o menu desta localidade e entre no mercado. A compra sai do seu bolso e precisa caber na carga."
+            ? "Na cena de chegada, escolha Ir ao mercado. A compra sai do seu bolso e precisa caber na carga."
             : `Volte a ${poiById.get(contract.sourceId)?.name ?? "origem"} ou encontre outro mercado com a mercadoria antes de entregar.`,
         };
       }
@@ -130,7 +129,7 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
       return {
         id: "gold",
         title: `Você tem ${game.gold} moedas`,
-        body: "Ouro vem de encargo cumprido e serve para comprar gente — mas homem custa soldo TODO DIA. Menu de uma cidade: Recrutar tropas.",
+        body: "Ouro vem de encargo cumprido e paga homens, mas o soldo corre todo dia. Numa cidade, escolha Ver quem quer alistar-se.",
       };
     }
 
@@ -224,19 +223,8 @@ export function Coach({ stop, traveling }: { stop: RoadStop; traveling: boolean 
       };
     }
 
-    /* --------------------- a campanha principal ----------------------- */
-    // Por último e sem condição: quando o básico está aprendido, o que o jogo
-    // tem a dizer é a linha da partida — e ela nunca some até acabar.
-    const step = currentStep(game.adventure.story);
-    if (step) {
-      const chapter = chapterOfStep.get(step.id);
-      return {
-        id: `story-${step.id}`,
-        title: `${chapter ? `Capítulo ${chapter.number}` : "Campanha"} · ${step.objective}`,
-        body: step.detail,
-      };
-    }
-
+    /* A campanha permanece no pergaminho do HUD, inclusive se as dicas
+       forem dispensadas. O guia termina quando o básico foi aprendido. */
     return null;
   }
 

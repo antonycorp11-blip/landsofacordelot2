@@ -30,6 +30,7 @@ export const greenfields: Region = {
   borderCrossingIds: ["bc_marco_dos_graos", "bc_estrada_costeira", "bc_vau_do_oeste"],
   pointsOfInterest: makePois(ID, HOUSE, "ring", [
     { id: "castelo_de_campo_alto", name: "Castelo de Campo Alto", type: "castle", assetKey: "castle_medium", tier: 1, a: -150, t: 0.5, scale: 1.15 },
+    { id: "castelo_dos_moinhos", name: "Castelo dos Moinhos", type: "castle", assetKey: "castle_medium", tier: 2, a: -162, t: 0.76, scale: 0.92, description: "Vigia os celeiros, a água dos moinhos e o caminho por onde passa o trigo." },
     { id: "trigal", name: "Trigal", type: "city", assetKey: "city_large", tier: 1, a: -140, t: 0.36 },
     { id: "estrela_do_sul", name: "Estrela do Sul", type: "town", assetKey: "city_small", tier: 2, a: -165, t: 0.56 },
     { id: "mercado_de_graos", name: "Mercado de Grãos", type: "market", assetKey: "market_large", tier: 2, a: -133, t: 0.28 },
@@ -48,7 +49,7 @@ export const greenfields: Region = {
   ]),
   junctions: [],
   roads: makeRoads(ID, [
-    { id: "road_gf_moinhos", name: "Estrada dos Moinhos", type: "secondary", nodes: ["trigal", "grandes_moinhos", "estrela_do_sul"], terrain: "plain", danger: 0.07 },
+    { id: "road_gf_moinhos", name: "Estrada dos Moinhos", type: "secondary", nodes: ["trigal", "grandes_moinhos", "castelo_dos_moinhos", "estrela_do_sul"], terrain: "plain", danger: 0.07 },
     { id: "road_gf_haras", name: "Via do Haras", type: "secondary", nodes: ["estrela_do_sul", "haras_real"], terrain: "plain", danger: 0.08 },
     { id: "road_gf_fazendas", name: "Estrada das Fazendas", type: "secondary", nodes: ["trigal", "fazendas_centrais"], terrain: "plain", danger: 0.07 },
     { id: "road_gf_campoalto", name: "Trilha de Campo Alto", type: "trail", nodes: ["castelo_de_campo_alto", "grandes_moinhos"], terrain: "plain", danger: 0.12, movementModifier: 1.25 },

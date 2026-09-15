@@ -405,6 +405,8 @@ export type TravelPath = {
   endPoint?: Point;
   /** Fração do trajeto feita sobre estrada. */
   roadShare?: number;
+  /** Escolha de viagem do jogador, para reconstruir o mesmo caminho após recarregar. */
+  navigationMode?: "road" | "concealed";
 };
 
 export type TravelEvents = {

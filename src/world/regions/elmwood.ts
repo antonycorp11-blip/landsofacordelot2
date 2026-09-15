@@ -30,6 +30,7 @@ export const elmwood: Region = {
   borderCrossingIds: ["bc_ponte_do_bosque", "bc_trilha_das_faias", "bc_vau_do_oeste"],
   pointsOfInterest: makePois(ID, HOUSE, "ring", [
     { id: "castelo_verde", name: "Castelo Verde", type: "castle", assetKey: "castle_medium", tier: 1, a: 152, t: 0.55, scale: 1.15 },
+    { id: "castelo_das_faias", name: "Castelo das Faias", type: "castle", assetKey: "castle_medium", tier: 2, a: 123, t: 0.71, scale: 0.92, description: "Guarda a trilha fechada entre Folhaterra e o Bosque Sagrado." },
     { id: "serenvale", name: "Serenvale", type: "city", assetKey: "city_large", tier: 1, a: 136, t: 0.42 },
     { id: "folhaterra", name: "Folhaterra", type: "town", assetKey: "city_small", tier: 2, a: 123, t: 0.58 },
     { id: "grande_serraria", name: "Grande Serraria", type: "sawmill", assetKey: "sawmill", tier: 2, a: 161, t: 0.35 },
@@ -50,6 +51,6 @@ export const elmwood: Region = {
     { id: "road_elm_folhaterra", name: "Estrada de Folhaterra", type: "secondary", nodes: ["serenvale", "folhaterra"], terrain: "forest", danger: 0.12, movementModifier: 1.2 },
     { id: "road_elm_serraria", name: "Estrada da Madeira", type: "secondary", nodes: ["castelo_verde", "grande_serraria"], terrain: "forest", danger: 0.1, movementModifier: 1.15 },
     { id: "road_elm_lago", name: "Trilha do Lago Verde", type: "trail", nodes: ["serenvale", "lago_verde", "posto_dos_cacadores", "castelo_verde"], terrain: "forest", danger: 0.22, movementModifier: 1.45, windiness: 1.3 },
-    { id: "road_elm_bosque", name: "Trilha do Bosque Sagrado", type: "trail", nodes: ["folhaterra", "bosque_sagrado"], terrain: "forest", danger: 0.2, movementModifier: 1.4, windiness: 1.25 },
+    { id: "road_elm_bosque", name: "Trilha do Bosque Sagrado", type: "trail", nodes: ["folhaterra", "castelo_das_faias", "bosque_sagrado"], terrain: "forest", danger: 0.2, movementModifier: 1.4, windiness: 1.25 },
   ]),
 };

@@ -11,6 +11,7 @@ import { faceOf } from "../../render/portraits/characterFace";
 import { relationLabel, relationWith } from "../../data/player";
 import { regionById } from "../../world/valdoria";
 import { useGame } from "../../game/store";
+import { negotiateBlocker, negotiateChance, negotiateFief, offeredPrice } from "../../game/fiefNegotiation";
 import "../agent/agent.css";
 
 /**
@@ -42,6 +43,7 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
   const region = regionById.get(fief.regionId);
   const blocker = buyBlocker(fief.id);
   const relation = house ? relationWith(house.id) : 0;
+  const offerBlock = negotiateBlocker(game, fief.id);
 
   if (managing && owner === "player") {
     return (
@@ -147,8 +149,11 @@ export function FiefPanel({ fief, onClose }: { fief: Fief; onClose: () => void }
             Comprar
           </button>
         )}
-        <button className="btn" disabled title="Ainda não disponível">
-          Negociar
+        <button className="btn" disabled={owner === "player" || !!offerBlock} title={offerBlock ?? undefined} onClick={() => {
+          const result=negotiateFief(fief.id);
+          if(result)setNote(result.success?`A Casa aceitou ${result.price} moedas. ${fief.name} agora é seu.`:`Oferta recusada (${result.chance}% de chance). −3 influência, −6 relação. Pode tentar em sete dias.`);
+        }}>
+          {owner === "player" ? "Negociação encerrada" : `Oferecer ${offeredPrice(fief.id).toLocaleString("pt-BR")} · ${negotiateChance(game, fief.id)}%`}
         </button>
         <button className="btn" onClick={onClose}>
           Fechar

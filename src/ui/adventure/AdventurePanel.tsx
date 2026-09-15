@@ -17,7 +17,8 @@ import { abandonContract, canRecruitCompanion, completeContract, dismissNotice, 
 import { choiceChance, roadEventById } from '../../game/roadEvents';
 import { actOnRaid, attemptParley, chooseQuestOption, giveOrder, startQuestBattle, startRaidBattle } from '../../game/adventure';
 import { BATTLE_TERRAINS, ORDERS, canDemandSurrender, canFlank, orderAvailable, orderEffects, parleyChance } from '../../game/battle';
-import { chapterOfStep, currentStep } from '../../game/story';
+import { currentStep } from '../../game/story';
+import { journeyFocus } from '../hud/journeyFocus';
 import { abandonContract as giveUpContract } from '../../game/adventure';
 import { fleeChance, winChance } from '../../game/raid';
 import { readForce } from '../../game/estimate';
@@ -95,46 +96,55 @@ function RestartButton() {
  *
  * As perguntas vêm primeiro de propósito: é o que puxa o jogador para o mapa.
  */
-function StoryTab() {
+function StoryTab({onNavigate}:{onNavigate:(id:string)=>void}) {
   const game=useGame();
   const k=game.knowledge;
   const step=currentStep(game.adventure.story);
-  const chapter=step?chapterOfStep.get(step.id):null;
+  const focus=journeyFocus(game,game.journey?.hours??0);
   const vazio=!k.facts.length&&!k.questions.length&&!k.evidence.length;
-  const caminhos=leadsFor(k.evidence,game.storyFlags);
+  const firstAct=!game.storyFlags.includes('arco_ii_aberto');
+  const people=firstAct&&k.evidence.includes('royal_seal')
+    ? storyPeople.filter(p=>!game.storyFlags.includes(p.doneFlag))
+    : [];
+  const place=step?.trigger.kind==='visit'?poiById.get(step.trigger.poiId):undefined;
+  const traveling=!!game.journey?.destinationId;
 
   if(vazio) return <>
     <p className="adv-story">Você chegou a Valdória sem nada que valha registrar. Ainda.</p>
     <p className="adv-caption">O que você descobrir pelo caminho fica anotado aqui.</p>
   </>;
 
-  return <>
-    {chapter && <span className="adv-eyebrow">Capítulo {chapter.number} · {chapter.title}</span>}
-    {step && <p className="adv-caption">{step.objective}</p>}
-
-    {k.questions.length>0 && <>
-      <span className="adv-eyebrow">Perguntas em aberto{k.questions.length>3?` · ${k.questions.length}`:''}</span>
-      <ul className="know-list ask">{ultimos(k.questions,3).map((q)=><li key={q}>{q}</li>)}</ul>
-    </>}
-
-    {k.facts.length>0 && <>
-      <span className="adv-eyebrow">O que você sabe{k.facts.length>3?` · ${k.facts.length}`:''}</span>
-      <ul className="know-list">{ultimos(k.facts,3).map((f)=><li key={f}>{f}</li>)}</ul>
-    </>}
-
-    {k.evidence.length>0 && <>
-      <span className="adv-eyebrow">Em suas mãos</span>
-      <ul className="know-list proof">{ultimos(k.evidence,3).map((id)=><li key={id}>
-        {EVIDENCE_ART[id] && <img src={EVIDENCE_ART[id]} alt="" />}
-        <span>{EVIDENCE_NAME[id]??id}</span>
-      </li>)}</ul>
-    </>}
-
-    {caminhos.length>0 && <>
-      <span className="adv-eyebrow">Quem saberia dizer{caminhos.length>3?` · ${caminhos.length}`:''}</span>
-      <ul className="know-list where">{ultimos(caminhos,3).map((c)=><li key={c.text} className={c.done?'done':undefined}>{c.text}</li>)}</ul>
-    </>}
-  </>;
+  const proof=k.evidence[k.evidence.length-1];
+  return <div className="story-board">
+    <section className="story-board-main">
+      <span className="adv-eyebrow">{focus.act}</span>
+      <h3>{focus.title}</h3>
+      <p className="story-board-context">{focus.detail}</p>
+      {k.questions.length>0 && <div className="story-board-note ask">
+        <small>Perguntas que ainda pesam · {k.questions.length}</small>
+        {k.questions.slice(-2).map(q=><span key={q}>{q}</span>)}
+      </div>}
+      {proof && <div className="story-board-proof">
+        {EVIDENCE_ART[proof] && <img src={EVIDENCE_ART[proof]} alt=""/>}
+        <div><small>Prova em suas mãos · {k.evidence.length}</small><span>{EVIDENCE_NAME[proof]??proof}</span></div>
+      </div>}
+      {k.facts.length>0 && <div className="story-board-known">
+        <small>O que você descobriu · {k.facts.length}</small>
+        <span>{k.facts[k.facts.length-1]}</span>
+      </div>}
+    </section>
+    <section className="story-board-paths">
+      <span className="adv-eyebrow">{people.length?'Quem você pode procurar':place?'Um caminho possível':'O próximo passo'}</span>
+      {people.length>0 ? people.map(p=><button className="story-person" key={p.id} disabled={traveling} onClick={()=>onNavigate(p.poiId)}>
+        <span><b>{p.name}</b><small>{p.role} · {poiById.get(p.poiId)?.name}</small></span>
+        <em>{traveling?'A caminho':'Procurar ›'}</em>
+      </button>) : place ? <button className="story-person" disabled={traveling} onClick={()=>onNavigate(place.id)}>
+        <span><b>{place.name}</b><small>{step?.detail}</small></span>
+        <em>{traveling?'A caminho':'Seguir pista ›'}</em>
+      </button> : <p className="story-board-quiet">Suas próximas respostas dependem do que fizer no mundo. Fale com gente, acompanhe rumores e observe as forças na estrada.</p>}
+      {firstAct&&people.length>0 && <p className="story-board-warning">Cada pessoa enxerga um valor diferente no selo. A guarda também pode contar a alguém que você o carrega.</p>}
+    </section>
+  </div>;
 }
 
 /**
@@ -152,19 +162,6 @@ function StoryTab() {
  * pixels. Mostra o que chegou por último, que é o que ainda está vivo, e o
  * número ao lado do título diz quanto mais existe.
  */
-function ultimos<T>(list: T[], n: number): T[] {
-  return list.length <= n ? list : list.slice(-n);
-}
-
-function leadsFor(evidence: string[], flags: string[]): { text: string; done: boolean }[] {
-  if (!evidence.includes('royal_seal')) return [];
-  // O LUGAR VAI JUNTO, de propósito. Caminho sem endereço é decoração, e foi
-  // exatamente isso que deixou o jogador sem rumo depois da carruagem.
-  return storyPeople.map((p) => ({
-    text: flags.includes(p.doneFlag) ? p.leadDone : p.lead,
-    done: flags.includes(p.doneFlag),
-  }));
-}
 
 /** Nome legível de cada prova. A função escondida delas não é dita aqui. */
 const EVIDENCE_NAME: Record<string,string> = {
@@ -444,8 +441,9 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
   const here=!!placeId&&isPresent(placeId,game);
   const contract=a.contract;
   const tab=view?.tab==='guide'?'story':view?.tab??'story';
+  const register=!battle&&!beat&&!raid&&!event&&!notice;
   const title=battle?.enemyName??beat?.title??raid?.name??event?.title??notice?.title??(tab==='companions'?'Companheiros de estrada':tab==='history'?'Crônica da jornada':tab==='story'?'A campanha':contract?'Encargo em curso':'Para onde ir');
-  return <div className="adv-backdrop"><div className="adv-dialog" role="dialog" aria-modal="true" aria-labelledby="adv-title" ref={dialog} tabIndex={-1}>
+  return <div className="adv-backdrop"><div className={`adv-dialog${register?' is-register':''}${register&&tab==='story'?' is-investigation':''}`} role="dialog" aria-modal="true" aria-labelledby="adv-title" ref={dialog} tabIndex={-1}>
     <header className="adv-head"><div><span className="hs-kicker">{battle?`Rodada ${battle.round}`:beat?(a.quest?.phase==='entrega'?'Na chegada':'No meio do caminho'):raid?'A estrada está tomada':event?'Encontro na estrada':notice?'Crônica de Valdória':'Lands of Acordelot'}</span><h2 id="adv-title">{title}</h2></div>
       {!event && !raid && !battle && !beat && <button className="sheet-close" onClick={()=>closeRef.current()} aria-label="Fechar">×</button>}
     </header>
@@ -467,7 +465,7 @@ export function AdventurePanel({view,onClose,onView,onNavigate,onSheet}:{view:Ad
       </> : notice ? <>
         <div className={`adv-result ${notice.levelUp?'level-up':''}`}><span aria-hidden="true">✦</span><p>{notice.text}</p></div>
         <div className="adv-actions">{notice.levelUp && <button className="btn" onClick={()=>{dismissNotice();onSheet();}}>Distribuir pontos</button>}<button className="btn primary" onClick={dismissNotice}>Continuar</button></div>
-      </> : tab==='story' ? <StoryTab/> : tab==='contracts' ? <>
+      </> : tab==='story' ? <StoryTab onNavigate={onNavigate}/> : tab==='contracts' ? <>
         {contract ? <article className="adv-contract active"><span className="adv-eyebrow">Contrato em andamento · {CAREER_LABEL[contract.career]}</span><h3>{contract.title}</h3><p>{contract.description}</p><p className="adv-route">{poiById.get(contract.sourceId)?.name} → <b>{poiById.get(contract.destinationId)?.name}</b></p><p>Prazo restante: {formatDuration(remainingContractHours(game))}</p>
           {contract.cargo && <div className="adv-cargo"><b>Carga exigida</b><span>{amountOwned(game,contract.cargo.goodId)}/{contract.cargo.amount} {goodById.get(contract.cargo.goodId)?.name.toLowerCase()}</span><small>{amountOwned(game,contract.cargo.goodId)>=contract.cargo.amount?'Encomenda completa. Proteja a carga até a entrega.':'Compre o restante num mercado antes de viajar.'}</small></div>}
           <Gains reward={contract.reward}/><div className="adv-actions">

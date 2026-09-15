@@ -25,6 +25,13 @@
 - Terra: imposto, obras, prosperidade, lealdade, guarnição, revolta.
   Juramento a uma Casa, serviço, concessão de senhorio, rompimento e
   **independência** com Casa própria.
+- Obras de feudo com madeira e ferramentas físicas, prazo de construção,
+  celeiro, feira e muralha que altera a defesa de um cerco. Casamento político
+  e tratados com exigências, chance, recusa e prazo; oferta negociada por
+  senhorio menor com perda real em caso de fracasso.
+- Rota escolhida antes de viajar: estrada rápida e visível, ou terreno mais
+  lento que evita estradas e reduz contato com perseguidores. A Crônica mostra
+  sempre a próxima pergunta da campanha, e o grupo mostra suprimento e custo.
 - Eventos parados no mundo (`worldEvents`) e cenas em conversa com rosto
   gerado (`cinematics.ts` + `sceneRunner.ts`). A abertura é a carruagem.
 
@@ -45,8 +52,11 @@ A fila, em ordem de valor:
    Elmwood provaram a forma; o resto do reino ainda não tem.
 2. **Cerco ofensivo como o Arco IV promete.** A guerra contra Karneth hoje se
    resolve em mesa; a alternativa armada está escrita e não construída.
-3. **A Balança lida de volta** (abaixo).
-4. **O segundo estágio** — o continente, os outros reinos
+3. **Política com gente em cena.** Os tratados e casamentos agora têm regras e
+   efeitos, mas precisam de negociação presencial com rosto, interesses,
+   contrapropostas e memória das Casas depois do acordo.
+4. **A Balança lida de volta** (abaixo).
+5. **O segundo estágio** — o continente, os outros reinos
    ([`narrativa.md`](narrativa.md) §8). Fora do escopo desta campanha.
 
 ## O que a Balança ainda não faz

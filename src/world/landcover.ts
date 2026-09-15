@@ -35,8 +35,8 @@ type MassSpec = {
 
 const BIOME_MASSES: Record<Biome, MassSpec[]> = {
   dense_forest: [
-    { type: "forest", count: 26, radius: [30, 72] },
-    { type: "highland", count: 4, radius: [22, 40] },
+    { type: "forest", count: 32, radius: [34, 76] },
+    { type: "highland", count: 7, radius: [22, 44] },
   ],
   temperate_valley: [
     { type: "forest", count: 9, radius: [18, 38] },
@@ -51,6 +51,7 @@ const BIOME_MASSES: Record<Biome, MassSpec[]> = {
   plains: [
     { type: "farmland", count: 20, radius: [22, 50] },
     { type: "forest", count: 4, radius: [14, 26] },
+    { type: "highland", count: 3, radius: [14, 28] },
   ],
   steppe_march: [
     { type: "scrub", count: 16, radius: [20, 44] },

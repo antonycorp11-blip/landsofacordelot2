@@ -16,6 +16,7 @@
  */
 import { houses, houseById } from "../data/houses";
 import { allegianceLabel, type Belligerent } from "./allegiance";
+import { pactActive } from "./diplomacy";
 import type { GameState } from "./store";
 
 /** O nome de quem briga, seja Casa ou o próprio jogador. */
@@ -75,8 +76,9 @@ export function advanceWorld(s: GameState, day: number, rolls: number[]): { stat
     // quem primeiro marcha. É a conta que a independência cobra.
     const sovereign = s.allegiance.kind === "independente";
     const hatesYou = sovereign && (s.houseRelations[a.id] ?? 0) <= -20;
-    if (sovereign && !wars.some((w) => w.a === "player" || w.b === "player")) rest.push("player");
-    const b = hatesYou && !wars.some((w) => w.a === "player" || w.b === "player")
+    const shielded = pactActive(s, a.id, day);
+    if (sovereign && !shielded && !wars.some((w) => w.a === "player" || w.b === "player")) rest.push("player");
+    const b = hatesYou && !shielded && !wars.some((w) => w.a === "player" || w.b === "player")
       ? "player"
       : rest[pickIndex(rest.length, roll())];
     if (b && !wars.some((w) => (w.a === a.id && w.b === b) || (w.a === b && w.b === a.id))) {

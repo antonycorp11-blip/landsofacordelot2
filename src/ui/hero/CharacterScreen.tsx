@@ -13,6 +13,10 @@ import { spendAttributePoint, spendSkillPoint } from "../../game/experience";
 import { setCompanionStatus, useGame, type CompanionState } from "../../game/store";
 import { poiById } from "../../world/valdoria";
 import { CourtPanel } from "../allegiance/CourtPanel";
+import { houseById } from "../../data/houses";
+import { estateOf } from "../../game/estates";
+import { foodPerDay, garrisonCostPerDay, playerFiefIds } from "../../game/daily";
+import { marriageOf } from "../../game/diplomacy";
 import "./hero.css";
 
 /**
@@ -96,6 +100,9 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
   const speedWord = speed >= 1.0 ? "Ótima" : speed >= 0.85 ? "Boa" : speed >= 0.7 ? "Moderada" : "Lenta";
   const portrait = heroPortraitUrl(hero.portraitAssetKey);
   const companions = Object.values(game.companions);
+  const spouse = marriageOf(game);
+  const garrisonTotal = playerFiefIds(game).reduce((n,id)=>n+troopTotal(estateOf(game,id).garrison),0);
+  const rationDays = Math.floor(game.food / foodPerDay(game.troops));
 
   return (
     <div className="sheet-backdrop"><div className="sheet" ref={sheetRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`Ficha de ${hero.name}`}>
@@ -134,8 +141,8 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
                   Nível <b>{game.level}</b> · {hero.age} anos
                 </div>
                 <div className="id-line">Origem: <b>{CAREER_LABEL[hero.archetype]}</b></div>
-                <div className="id-line">Título: <b>Nenhum</b></div>
-                <div className="id-line">Casa: <b>Nenhuma</b></div>
+                <div className="id-line">Título: <b>{game.allegiance.kind === "independente" ? "Soberano" : game.allegiance.kind === "jurado" ? "Vassalo" : "Nenhum"}</b></div>
+                <div className="id-line">Casa: <b>{game.allegiance.kind === "independente" ? game.allegiance.name : game.allegiance.kind === "jurado" ? houseById.get(game.allegiance.houseId)?.shortName ?? "Juramento" : "Nenhuma"}</b></div>
               </div>
             </div>
 
@@ -153,7 +160,7 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
                 </div>
                 <div className="pair">
                   <span>Influência passiva</span>
-                  <b>{passiveInfluencePerDay(game.careerXp).toFixed(1)} / dia</b>
+                  <b>{(passiveInfluencePerDay(game.careerXp) + (spouse ? .2 : 0)).toFixed(1)} / dia</b>
                 </div>
               </div>
 
@@ -342,6 +349,8 @@ export function CharacterScreen({ onClose }: { onClose: () => void }) {
                 <span>Força estimada</span>
                 <b>{Math.round(partyStrength(input))}</b>
               </div>
+              <div className="pair"><span>Comida para</span><b>{rationDays} dia{rationDays===1?"":"s"}</b></div>
+              <div className="pair"><span>Em guarnições</span><b>{garrisonTotal} · −{garrisonCostPerDay(game)}/dia</b></div>
             </div>
 
             {(woundedTotal>0||prisonerTotal>0)&&<div className="panel">

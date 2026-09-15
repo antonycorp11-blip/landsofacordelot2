@@ -30,6 +30,7 @@ export const karneth: Region = {
   borderCrossingIds: ["bc_vau_de_karneth", "bc_passagem_do_norte", "bc_passo_da_vigilia"],
   pointsOfInterest: makePois(ID, HOUSE, "ring", [
     { id: "castelo_karneth", name: "Castelo Karneth", type: "castle", assetKey: "castle_medium", tier: 1, a: 30, t: 0.52, scale: 1.15 },
+    { id: "castelo_da_marcha", name: "Castelo da Marcha", type: "castle", assetKey: "castle_medium", tier: 2, a: 48, t: 0.76, scale: 0.95, description: "Fortaleza avançada de Karneth; daqui se vê o Portão Rubro e a estrada da guerra." },
     { id: "baradra", name: "Baradra", type: "city", assetKey: "city_large", tier: 1, a: 20, t: 0.37 },
     { id: "portao_rubro", name: "Portão Rubro", type: "gate", assetKey: "gate", tier: 2, a: 43, t: 0.62 },
     { id: "vigilia", name: "Vigília", type: "watchtower", assetKey: "watchtower", tier: 3, a: 8, t: 0.68 },
@@ -47,8 +48,8 @@ export const karneth: Region = {
   ]),
   junctions: [],
   roads: makeRoads(ID, [
-    { id: "road_kar_portao", name: "Estrada do Portão Rubro", type: "secondary", nodes: ["castelo_karneth", "portao_rubro"], terrain: "hill", danger: 0.25, movementModifier: 1.2 },
-    { id: "road_kar_trincheira", name: "Trilha da Trincheira", type: "trail", nodes: ["castelo_karneth", "trincheira"], terrain: "hill", danger: 0.4, movementModifier: 1.5, windiness: 1.2 },
+    { id: "road_kar_portao", name: "Estrada do Portão Rubro", type: "secondary", nodes: ["castelo_karneth", "portao_rubro", "castelo_da_marcha"], terrain: "hill", danger: 0.25, movementModifier: 1.2 },
+    { id: "road_kar_trincheira", name: "Trilha da Trincheira", type: "trail", nodes: ["castelo_karneth", "trincheira", "castelo_da_marcha"], terrain: "hill", danger: 0.4, movementModifier: 1.5, windiness: 1.2 },
     { id: "road_kar_treino", name: "Via Militar de Baradra", type: "secondary", nodes: ["baradra", "campo_de_treinamento", "vigilia"], terrain: "plain", danger: 0.22, movementModifier: 1.1 },
   ]),
 };

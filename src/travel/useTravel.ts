@@ -3,6 +3,7 @@ import { UNITS_PER_HOUR, routeEdgeById } from '../world/navgraph';
 import { crossingByNodeId, routeNodeById } from '../world/valdoria';
 import { nodeStop, pathBetween, saveStop, stopAlong, type RoadStop } from '../world/roadStops';
 import { terrainPath } from '../world/navigation/routePlanner';
+import { regionAtPoint } from '../world/navigation/navigationGrid';
 import type { Point, RegionId, TravelEvents, TravelPath } from '../world/types';
 import { getState, flushGameSave } from '../game/store';
 import { saveJourney, settleDays, tutorialFlag } from '../game/adventure';
@@ -20,6 +21,7 @@ const WORLD_HOURS_PER_SECOND=4;
 const IDLE_HOURS_PER_SECOND=0.5;
 
 export type TravelState='idle'|'traveling'|'arrived';
+export type TravelRouteMode='road'|'concealed';
 type Options={startNodeId:string;events?:TravelEvents;blocked?:boolean;onFrame?:(pos:Point,regionId:RegionId)=>void};
 
 /**
@@ -88,9 +90,10 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
       destinationId:p?.endStop?.kind==='node'?p.endStop.id:null,
       at:saveStop(here),
       from:p?saveStop(initialStopOf(p,here)):null,
-      to:p?.endStop?saveStop(p.endStop):null,
+      to:p?.endStop?saveStop(p.endStop):p?.endPoint?saveStop({kind:'free',x:p.endPoint.x,y:p.endPoint.y}):null,
       distance:progressRef.current,
       hours:hoursRef.current,speed:speedRef.current,paused:pausedRef.current,
+      routeMode:p?.navigationMode,
     });
   },[]);
 
@@ -145,6 +148,14 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
     posRef.current={x:at.x,y:at.y};
     headingRef.current=at.heading;
     hoursRef.current+=((after-before)*modifier)/UNITS_PER_HOUR;
+    if(p.endPoint) {
+      const region=regionAtPoint(posRef.current);
+      if(region&&region!==regionRef.current) {
+        regionRef.current=region;
+        setRegionId(region);
+        eventsRef.current?.onRegionEntered?.(region);
+      }
+    }
     // O dia vira também na estrada: soldo e comida não esperam você parar.
     closeDay();
     if (now-lastUiRef.current>=100) {
@@ -169,7 +180,10 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
         setPath(null);
         setState('arrived');
         // Rota de terreno não termina em nó: a parada vira o próprio ponto.
-        if (p.endPoint) {
+        if (p.endStop?.kind==='node') {
+          posRef.current={x:p.endStop.x,y:p.endStop.y};
+          setStop(p.endStop);
+        } else if (p.endPoint) {
           posRef.current={x:p.endPoint.x,y:p.endPoint.y};
           setStop({kind:'free',x:p.endPoint.x,y:p.endPoint.y});
         } else {
@@ -213,12 +227,37 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
    * viagem: o trajeto novo começa exatamente onde o viajante está, sem
    * voltar a nenhum nó. É assim que se foge de alguma coisa.
    */
-  const travelTo=useCallback((destination:RoadStop|string|Point)=>{
+  const travelTo=useCallback((destination:RoadStop|string|Point,mode:TravelRouteMode='road')=>{
     // `notice` NÃO entra aqui. É informação, não janela modal, e enquanto
     // estava nesta lista um cartão aberto no canto impedia qualquer viagem.
     if (blockedRef.current || getState().adventure.event || getState().adventure.raid || getState().adventure.battle || getState().adventure.quest?.pending) return null;
     const target=typeof destination==='string'?nodeStop(destination):destination;
     if (!target) return null;
+    const isStop='kind' in target;
+
+    // Leaving the road is a real choice: a slower overland route uses the
+    // existing terrain planner's avoid_roads cost field, so pursuers see less.
+    if(mode==='concealed') {
+      const route=terrainPath(posRef.current,target,'avoid_roads');
+      if(!route)return null;
+      const endStop:RoadStop=isStop?target as RoadStop:{kind:'free',x:target.x,y:target.y};
+      const found:TravelPath={...route,endStop,navigationMode:'concealed'};
+      stopLoop();
+      pathRef.current=found;
+      boundariesRef.current=found.legAt??[0,found.totalDistance];
+      progressRef.current=0;
+      legCursorRef.current=0;
+      setPath(found);
+      setState('traveling');
+      pausedRef.current=false;
+      setPaused(false);
+      checkpoint();
+      tutorialFlag('departed');
+      eventsRef.current?.onTravelStart?.(found);
+      lastTimeRef.current=performance.now();
+      rafRef.current=requestAnimationFrame(frame);
+      return found;
+    }
 
     /**
      * DUAS MANEIRAS DE TRAÇAR O CAMINHO, e a escolha é do destino.
@@ -229,31 +268,31 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
      * única coisa caminhável, mas continua sendo a mais rápida, porque o
      * planejador prefere estrada quando ela compensa.
      */
-    const isStop='kind' in target;
     if (!isStop || (target as RoadStop).kind==='free') {
       const to=target as Point;
-      const found=terrainPath(posRef.current,to,'prefer_roads');
-      if (!found) return null;
+      const route=terrainPath(posRef.current,to,'prefer_roads');
+      if (!route) return null;
+      const found:TravelPath={...route,endStop:{kind:'free',x:to.x,y:to.y},navigationMode:'road'};
       stopLoop();
-      pathRef.current=found as unknown as TravelPath;
-      boundariesRef.current=found.legAt;
+      pathRef.current=found;
+      boundariesRef.current=found.legAt??[0,found.totalDistance];
       progressRef.current=0;
       legCursorRef.current=0;
-      setPath(found as unknown as TravelPath);
+      setPath(found);
       setState('traveling');
       pausedRef.current=false;
       setPaused(false);
       checkpoint();
       tutorialFlag('departed');
-      eventsRef.current?.onTravelStart?.(found as unknown as TravelPath);
+      eventsRef.current?.onTravelStart?.(found);
       lastTimeRef.current=performance.now();
       rafRef.current=requestAnimationFrame(frame);
-      return found as unknown as TravelPath;
+      return found;
     }
 
     const p=pathRef.current;
     const here=p ? (stopAlong(p,progressRef.current) ?? stopRef.current) : stopRef.current;
-    const found=pathBetween(here,target as RoadStop);
+    const roadPath=pathBetween(here,target as RoadStop);
     /**
      * QUANDO O GRAFO NÃO DÁ CONTA, O TERRENO DÁ.
      *
@@ -262,25 +301,27 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
      * partir de fora da estrada não traçava rota nenhuma e o jogo parecia
      * ignorar o clique — inclusive o botão "Partir" do quadro de trabalho.
      */
-    if (!found || found.totalDistance<=0) {
-      const overland=terrainPath(posRef.current,target as Point,'prefer_roads');
-      if (!overland) return null;
+    if (!roadPath || roadPath.totalDistance<=0) {
+      const route=terrainPath(posRef.current,target as Point,'prefer_roads');
+      if (!route) return null;
+      const overland:TravelPath={...route,endStop:target as RoadStop,navigationMode:'road'};
       stopLoop();
-      pathRef.current=overland as unknown as TravelPath;
-      boundariesRef.current=overland.legAt;
+      pathRef.current=overland;
+      boundariesRef.current=overland.legAt??[0,overland.totalDistance];
       progressRef.current=0;
       legCursorRef.current=0;
-      setPath(overland as unknown as TravelPath);
+      setPath(overland);
       setState('traveling');
       pausedRef.current=false;
       setPaused(false);
       checkpoint();
       tutorialFlag('departed');
-      eventsRef.current?.onTravelStart?.(overland as unknown as TravelPath);
+      eventsRef.current?.onTravelStart?.(overland);
       lastTimeRef.current=performance.now();
       rafRef.current=requestAnimationFrame(frame);
-      return overland as unknown as TravelPath;
+      return overland;
     }
+    const found:TravelPath={...roadPath,navigationMode:'road'};
     stopLoop();
     setStop(here);
     pathRef.current=found;
@@ -302,7 +343,9 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
   const halt=useCallback(()=>{
     const p=pathRef.current;
     if (!p) return;
-    const here=stopAlong(p,progressRef.current)??stopRef.current;
+    const here:RoadStop=p.endPoint
+      ? {kind:'free',x:posRef.current.x,y:posRef.current.y}
+      : stopAlong(p,progressRef.current)??stopRef.current;
     stopLoop();
     pathRef.current=null;
     setPath(null);
@@ -359,5 +402,6 @@ export function useTravel({startNodeId,events,blocked=false,onFrame}:Options) {
 
 /** De onde o trajeto guardado partiu, para poder ser refeito igual. */
 function initialStopOf(path:TravelPath,fallback:RoadStop):RoadStop {
+  if(path.endPoint&&path.points[0]) return {kind:'free',x:path.points[0].x,y:path.points[0].y};
   return stopAlong(path,0) ?? fallback;
 }

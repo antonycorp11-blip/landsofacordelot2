@@ -297,3 +297,51 @@
   background: #0b1a1e; color: #f0e4c6;
 }
 .court-name input:focus { outline: 1px solid #d8b85c; }
+
+/* Origens: o retrato é a escolha, não um cartão vazio em torno da arte. */
+.hero-select {
+  background: radial-gradient(ellipse at 50% 0%, #785b3552, transparent 55%),
+              repeating-linear-gradient(175deg, #261b17 0 28px, #2b2018 29px 53px, #201914 54px 76px);
+}
+.hs-stage { min-width: 0; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 10px; }
+.hs-grid { min-width: 0; gap: 7px; }
+.hs-card {
+  min-width: 0; overflow: hidden; padding: 4px 4px 7px; gap: 3px;
+  border: 1px solid #c39656; border-top: 3px solid var(--arch);
+  border-radius: 3px;
+  background: radial-gradient(circle at 50% 55%, #6c503a9c, #231d18 75%);
+  box-shadow: inset 0 0 0 3px #2a211c, inset 0 0 0 4px #a17a4859;
+}
+.hs-card:hover { transform: translateY(-2px); background: radial-gradient(circle at 50% 55%, #7e6141, #2d2119 75%); }
+.hs-card[aria-pressed="true"] { background: radial-gradient(circle at 50% 55%, #9b7648, #33231a 75%); }
+.hs-figure { overflow: hidden; }
+.hs-figure img {
+  width: 100%; height: 100%; max-width: none;
+  object-fit: cover; object-position: 50% 52%;
+  image-rendering: auto;
+  filter: drop-shadow(0 3px 6px #0009);
+}
+.hs-role { color: #ead6ab; font-size: 9px; text-shadow: 0 1px #000; }
+.hs-detail {
+  min-width: 0; overflow: hidden; padding: 12px 13px;
+  border: 1px solid #c39656; border-left: 3px solid var(--arch, #a99365);
+  border-radius: 3px;
+  background: radial-gradient(circle at 50% 0%, #664d344d, transparent 55%),
+              repeating-linear-gradient(173deg, #2d2119 0 14px, #281c15 15px 28px);
+  box-shadow: inset 0 0 0 2px #b48b5240;
+}
+.hs-detail-head b { font: 600 21px/1.1 Georgia, serif; }
+.hs-go { border-color: #e5c681; background: linear-gradient(#d7ad67, #94612d); color: #2d1b0e; }
+@media (orientation: landscape) and (max-height: 430px) {
+  .hero-select { gap: 5px; padding: max(5px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(5px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+  .hs-head { gap: 0; }
+  .hs-title { font-size: 20px; line-height: 1.1; }
+  .hs-stage { grid-template-columns: minmax(0, 1fr) 240px; }
+  .hs-detail { gap: 4px; padding: 8px 9px; }
+  .hs-detail-head b { font-size: 17px; }
+  .hs-tag { font-size: 12px; line-height: 1.3; }
+  .hs-strengths { font-size: 9px; line-height: 1.25; }
+  .hs-attrs { padding-top: 4px; }
+  .hs-attr b { font-size: 15px; }
+  .hs-go { min-height: 30px; font-size: 11px; }
+}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { troopById, troops as troopTypes, troopTotal, type TroopId } from "../../data/troops";
-import { estateOf, garrisonCost, incomeOf, investCost, INVEST_STEP, TAX, type TaxLevel } from "../../game/estates";
-import { setTax, invest, moveGarrison } from "../../game/estateActions";
+import { estateOf, garrisonCost, incomeOf, investCost, INVEST_STEP, TAX, WORKS, wallDefence, workCost, type EstateWork, type TaxLevel } from "../../game/estates";
+import { setTax, invest, moveGarrison, startWork } from "../../game/estateActions";
 import { defenceOf } from "../../game/forceSimulation";
 import { landIsAtRisk } from "../../game/allegiance";
 import { useGame } from "../../game/store";
@@ -25,7 +25,7 @@ export function EstatePanel({ fief, onClose }: { fief: Fief; onClose: () => void
   const game = useGame();
   // Duas abas em vez de uma coluna comprida: a regra da casa é que nada rola,
   // e terra + guarnição juntas não cabem nos 430 px de um telefone deitado.
-  const [tab, setTab] = useState<"terra" | "guarnicao">("terra");
+  const [tab, setTab] = useState<"terra" | "guarnicao" | "obras">("terra");
   const estate = estateOf(game, fief.id);
   const income = incomeOf(game, fief.id);
   const cost = investCost(estate);
@@ -41,6 +41,7 @@ export function EstatePanel({ fief, onClose }: { fief: Fief; onClose: () => void
         <div className="estate-tabs" role="tablist">
           <button role="tab" aria-selected={tab === "terra"} onClick={() => setTab("terra")}>Terra</button>
           <button role="tab" aria-selected={tab === "guarnicao"} onClick={() => setTab("guarnicao")}>Guarnição</button>
+          <button role="tab" aria-selected={tab === "obras"} onClick={() => setTab("obras")}>Obras</button>
         </div>
         <button className="sheet-close" onClick={onClose} aria-label="Voltar">×</button>
       </div>
@@ -97,7 +98,7 @@ export function EstatePanel({ fief, onClose }: { fief: Fief; onClose: () => void
       <div className="estate-defence">
         <div>
           <small>Defesa</small>
-          <b>{Math.round(defenceOf(fief.defense, estate.garrison))}</b>
+          <b>{Math.round(defenceOf(wallDefence(fief.defense, estate), estate.garrison))}</b>
         </div>
         <p className="estate-note">
           {landIsAtRisk(game)
@@ -130,6 +131,22 @@ export function EstatePanel({ fief, onClose }: { fief: Fief; onClose: () => void
         )}
       </div>
       </>}
+
+      {tab === "obras" && <div className="estate-works">
+        {estate.project && <p className="estate-note estate-project">{WORKS[estate.project.kind].name} em obra · pronta no dia {estate.project.readyDay}. O ouro e os materiais já foram gastos.</p>}
+        {(["walls", "granary", "market"] as EstateWork[]).filter(kind => kind !== "walls" || ["castle", "fort", "fortress"].includes(fief.seatType)).map(kind => {
+          const work = WORKS[kind];
+          const level = estate.buildings?.[kind] ?? 0;
+          const cost = workCost(estate, kind);
+          const maxed = level >= work.max;
+          const lacks = game.gold < cost.gold || (game.inventory.wood ?? 0) < cost.wood || (game.inventory.tools ?? 0) < cost.tools;
+          return <button key={kind} className="estate-work" disabled={!!estate.project || maxed || lacks} onClick={() => startWork(fief.id, kind)}>
+            <span><strong>{work.name} · {level}/{work.max}</strong><small>{work.effect}</small></span>
+            <em>{maxed ? "Concluída" : `${cost.gold} ouro · ${cost.wood} madeira${cost.tools ? ` · ${cost.tools} ferramentas` : ""} · ${cost.days} dias`}</em>
+          </button>;
+        })}
+        <p className="estate-note">Na bolsa: {Math.round(game.gold)} ouro · {game.inventory.wood ?? 0} madeira · {game.inventory.tools ?? 0} ferramentas. Compre materiais no mercado e traga-os até aqui.</p>
+      </div>}
     </div>
   );
 }

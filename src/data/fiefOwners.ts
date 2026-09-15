@@ -100,6 +100,15 @@ export function buyFief(fiefId: string): BuyBlock {
   return "none";
 }
 
+/** Acordo negociado também troca ouro e posse na mesma alteração. */
+export function purchaseAt(fiefId: string, price: number): boolean {
+  const fief = fiefById.get(fiefId);
+  if (!fief || fief.tier === "nobre" || ownerOf(fiefId) === "player" || getState().gold < price) return false;
+  update(s => ({ ...s, gold: s.gold - price, fiefOwners: { ...s.fiefOwners, [fiefId]: "player" } }));
+  emit();
+  return true;
+}
+
 function subscribe(fn: () => void) {
   listeners.add(fn);
   return () => listeners.delete(fn);

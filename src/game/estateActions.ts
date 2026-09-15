@@ -7,7 +7,8 @@
  */
 import type { TroopId } from "../data/troops";
 import { getState, update } from "../game/store";
-import { estateOf, investCost, INVEST_STEP, type TaxLevel } from "./estates";
+import { estateOf, investCost, INVEST_STEP, WORKS, workCost, type EstateWork, type TaxLevel } from "./estates";
+import { fiefById } from "../world/fiefs";
 import { tilt, TILT } from "./balance";
 
 function owns(fiefId: string): boolean {
@@ -42,6 +43,34 @@ export function invest(fiefId: string): boolean {
     } },
   }));
   tilt(TILT.investir, "Obra paga do seu bolso");
+  return true;
+}
+
+/** Materiais comprados e transportados viram uma obra que demora dias reais. */
+export function startWork(fiefId: string, kind: EstateWork): boolean {
+  const s = getState();
+  const fief = fiefById.get(fiefId);
+  if (!fief || !owns(fiefId)) return false;
+  if (kind === "walls" && !["castle", "fort", "fortress"].includes(fief.seatType)) return false;
+  const estate = estateOf(s, fiefId);
+  if (estate.project || (estate.buildings?.[kind] ?? 0) >= WORKS[kind].max) return false;
+  const cost = workCost(estate, kind);
+  if (s.gold < cost.gold || (s.inventory.wood ?? 0) < cost.wood || (s.inventory.tools ?? 0) < cost.tools) return false;
+  const today = Math.max(s.dayProcessed, Math.floor((s.journey?.hours ?? 0) / 24) + 1);
+  update(g => {
+    const inventory = { ...g.inventory };
+    const inventoryCost = { ...g.inventoryCost };
+    for (const [good, amount] of [["wood", cost.wood], ["tools", cost.tools]] as const) {
+      if (!amount) continue;
+      const old = inventory[good] ?? 0;
+      const left = old - amount;
+      inventory[good] = left;
+      inventoryCost[good] = left ? Math.round((inventoryCost[good] ?? 0) * left / old) : 0;
+      if (!left) { delete inventory[good]; delete inventoryCost[good]; }
+    }
+    return { ...g, gold: g.gold - cost.gold, inventory, inventoryCost,
+      fiefEstates: { ...g.fiefEstates, [fiefId]: { ...estate, project: { kind, readyDay: today + cost.days } } } };
+  });
   return true;
 }
 
