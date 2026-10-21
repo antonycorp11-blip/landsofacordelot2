@@ -68,7 +68,7 @@ real do mundo:
    crescimento depende do tempo, umidade (chuva e evaporação), temperatura,
    fertilidade e ervas. Colheita atrasada perde produtividade e acaba se
    perdendo.
-5. **Colheita e logística.** Colheitadeira alugada (ou comprada) corta,
+5. **Colheita e logística.** Colheitadeira alugada (taxa de retirada + valor por hora de motor) ou comprada corta,
    enche o tanque e descarrega pelo tubo animado numa carreta ou caminhão
    posicionado embaixo da saída. A carreta transporta a carga, bascula na
    moega da cooperativa (venda pelo preço do dia) ou no silo da sede, e pode

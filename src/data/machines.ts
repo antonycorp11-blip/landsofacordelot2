@@ -20,7 +20,8 @@ export interface VehicleDef {
   category: VehicleCategory;
   sizeClass: "leve" | "médio" | "pesado" | "-";
   price: number;
-  rentPerDay?: number;
+  /** Aluguel cobrado por hora de motor ligado (hora de trabalho). */
+  rentPerHour?: number;
   powerHp: number;
   maxSpeedKmh: number;
   reverseKmh: number;
@@ -163,7 +164,7 @@ export const VEHICLES: Record<string, VehicleDef> = {
     category: "combine",
     sizeClass: "-",
     price: 540000,
-    rentPerDay: 2400,
+    rentPerHour: 150,
     powerHp: 260,
     maxSpeedKmh: 22,
     reverseKmh: 8,
@@ -192,7 +193,7 @@ export const VEHICLES: Record<string, VehicleDef> = {
     category: "combine",
     sizeClass: "-",
     price: 890000,
-    rentPerDay: 3900,
+    rentPerHour: 240,
     powerHp: 420,
     maxSpeedKmh: 25,
     reverseKmh: 8,

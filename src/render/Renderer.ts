@@ -1,6 +1,8 @@
 import { hash2 } from "../core/rng";
 import { cropByIndex } from "../data/crops";
 import { ST } from "../systems/FieldSystem";
+import { pipeOutlet } from "../systems/geometry";
+import { containerUnderPipe } from "../systems/ImplementSystem";
 import { daylight, season, sunAngle } from "../systems/TimeSystem";
 import type { World } from "../world/World";
 import type { Zone } from "../world/types";
@@ -169,6 +171,19 @@ export class Renderer {
       const col = w.owner === "player" ? "#e07a2f" : world.farmOf(w.owner).color;
       drawCharacter(ctx, w.x, w.y, w.heading, w.walkPhase, true, { shirt: col, hat: "#6b4a2a", skin: "#c99572" }, sun);
     }
+    // alvo da descarga: ajuda a posicionar a carreta sob o tubo
+    for (const v of world.vehicles) {
+      if (!v.def.combine || v.pipeAnim < 0.9 || !inView(v.x, v.y, 15)) continue;
+      const o = pipeOutlet(v);
+      const ok = !!containerUnderPipe(world, v);
+      ctx.strokeStyle = ok ? "rgba(120,230,120,0.9)" : "rgba(255,220,120,0.85)";
+      ctx.lineWidth = 0.12;
+      ctx.setLineDash([0.5, 0.35]);
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, 0.9 + Math.sin(this.time * 5) * 0.08, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
     this.particles.drawHigh(ctx);
     if (!lod) {
       const wind = world.weather.wind;
@@ -211,9 +226,9 @@ export class Renderer {
       const pos = ((t * (6 + wind * 10)) % span) + b.minX - 30;
       for (const off of [0, span / 2]) {
         const x = ((pos + off - b.minX) % span) + b.minX - 30;
-        const g = ctx.createLinearGradient(x - 14, b.minY, x + 14, b.maxY);
+        const g = ctx.createLinearGradient(x - 14, 0, x + 14, 0);
         g.addColorStop(0, "rgba(255,255,230,0)");
-        g.addColorStop(0.5, `rgba(255,255,230,${0.1 + wind * 0.08})`);
+        g.addColorStop(0.5, `rgba(255,255,230,${0.05 + wind * 0.05})`);
         g.addColorStop(1, "rgba(255,255,230,0)");
         ctx.fillStyle = g;
         ctx.fillRect(x - 14, b.minY, 28, b.maxY - b.minY);

@@ -29,6 +29,8 @@ export const BALANCE = {
   leaseDailyPerHa: 160,
   siloCapacityKg: 60000,
   deliveryFee: 450,
+  /** Taxa fixa de retirada de máquina alugada. */
+  rentalFee: 600,
   autosaveSeconds: 45,
   candidatesPerDay: 3,
   /** Penalidade de produtividade por dia após maturação. */

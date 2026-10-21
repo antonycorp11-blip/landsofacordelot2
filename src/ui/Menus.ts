@@ -134,12 +134,12 @@ export class Menus {
       }
       case "rent": {
         const def = VEHICLES[arg];
-        if (!def?.rentPerDay) return;
-        if (!w.economy.spend(def.rentPerDay + BALANCE.deliveryFee, `Aluguel · ${def.name}`, "aluguel", t)) return bad("Dinheiro insuficiente para o aluguel.");
+        if (!def?.rentPerHour) return;
+        if (!w.economy.spend(BALANCE.rentalFee + BALANCE.deliveryFee, `Aluguel · ${def.name}`, "aluguel", t)) return bad("Dinheiro insuficiente para o aluguel.");
         const v = this.deliver("v", def.id) as ReturnType<typeof w.addVehicle>;
         v.rented = true;
         v.fuel = def.fuelCapacity;
-        ok(`${def.name} alugada e entregue na sede. Cobrança diária: ${money(def.rentPerDay)}.`);
+        ok(`${def.name} alugada e entregue na sede. Cobrança: ${money(def.rentPerHour)} por hora de motor ligado. Devolva pela aba Frota.`);
         break;
       }
       case "sellV": {
@@ -431,7 +431,7 @@ export class Menus {
     const vCards = Object.values(VEHICLES)
       .map((d) => {
         const spec = d.combine ? `Plataforma ${d.combine.headerWidth} m · tanque ${kgLabel(d.cargoKg ?? 0)}` : d.cargoKg ? `Caçamba ${kgLabel(d.cargoKg)} · ${d.maxSpeedKmh} km/h` : `${d.sizeClass} · ${d.maxSpeedKmh} km/h · tanque ${d.fuelCapacity} L`;
-        const rent = d.rentPerDay ? `<button data-act="rent:${d.id}">Alugar · ${money(d.rentPerDay)}/dia</button>` : "";
+        const rent = d.rentPerHour ? `<button data-act="rent:${d.id}">Alugar · ${money(BALANCE.rentalFee)} + ${money(d.rentPerHour)}/h motor</button>` : "";
         return `<div class="card shop"><h3>${d.name}</h3><p><small>${d.brand} · ${d.powerHp} cv</small><br>${spec}</p><p class="price">${money(d.price)}</p><div class="btns"><button class="primary" data-act="buy:v:${d.id}:cash">Comprar</button><button data-act="buy:v:${d.id}:fin">Financiar (25% entrada)</button>${rent}</div></div>`;
       })
       .join("");

@@ -340,7 +340,7 @@ function doorPoint(v: Vehicle): Vec2 {
   return localToWorld(v.x, v.y, v.heading, (v.def.body.cabinFront + v.def.body.cabinBack) / 2, -v.def.width / 2 - 0.9);
 }
 
-function walkTo(w: Worker, target: Vec2, dt: number, speed = 2.6): boolean {
+function walkTo(w: Worker, target: Vec2, dt: number, speed = 2.6, world?: World): boolean {
   const dx = target.x - w.x;
   const dy = target.y - w.y;
   const d = Math.hypot(dx, dy);
@@ -350,6 +350,14 @@ function walkTo(w: Worker, target: Vec2, dt: number, speed = 2.6): boolean {
   w.y += (dy / d) * s;
   w.heading = Math.atan2(dy, dx);
   w.walkPhase += s * 3;
+  if (world) {
+    const r = world.collision.resolveCircle(w.x, w.y, 0.35);
+    // contorna o obstáculo deslizando pela tangente
+    if (r.x || r.y) {
+      w.x += r.x - (r.y * s) / Math.max(0.01, Math.hypot(r.x, r.y));
+      w.y += r.y + (r.x * s) / Math.max(0.01, Math.hypot(r.x, r.y));
+    }
+  }
   return false;
 }
 
@@ -592,7 +600,7 @@ export function updateWorker(world: World, w: Worker, dt: number): void {
         w.note = "Aguardando: você está nesta máquina";
         return;
       }
-      if (walkTo(w, doorPoint(tv), dt)) {
+      if (walkTo(w, doorPoint(tv), dt, 2.6, world)) {
         tv.driver = "worker";
         tv.workerId = w.id;
         tv.engineOn = tv.fuel > 0;
@@ -603,7 +611,7 @@ export function updateWorker(world: World, w: Worker, dt: number): void {
     }
     case "walkHome": {
       const farm = world.farmOf(w.owner);
-      if (walkTo(w, { x: farm.x - 30, y: farm.y - 30 }, dt)) {
+      if (walkTo(w, { x: farm.x - 30, y: farm.y - 30 }, dt, 2.6, world)) {
         w.state = "idle";
         w.note = "Disponível na sede";
       }

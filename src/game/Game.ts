@@ -36,6 +36,7 @@ export class Game {
   private crops = new CropScheduler();
   private saveTimer = 0;
   private hudTimer = 0;
+  private rentAcc = 0;
   actions: Action[] = [];
   hint = "";
   /** Veículo acompanhado pela câmera (funcionário), quando o jogador escolhe assistir. */
@@ -132,6 +133,15 @@ export class Game {
     }
     this.collideVehicles();
     stepContainers(w, dt);
+    // aluguel por hora de motor (1 h de trabalho = BALANCE.workHourRealSeconds)
+    this.rentAcc += dt;
+    if (this.rentAcc >= 5) {
+      for (const v of w.vehicles) {
+        if (!v.rented || !v.engineOn || !v.def.rentPerHour) continue;
+        w.economy.charge((v.def.rentPerHour * this.rentAcc) / BALANCE.workHourRealSeconds, `Aluguel por hora · ${v.def.name}`, "aluguel", w.time);
+      }
+      this.rentAcc = 0;
+    }
     if (w.flags.sold !== true && w.economy.ledger.some((l) => l.cat === "venda")) w.flags.sold = true;
     updateObjectives(w);
     this.saveTimer += dt;
@@ -215,7 +225,6 @@ export class Game {
     const w = this.world;
     const t = w.time;
     w.economy.dailyInterest(t);
-    for (const v of w.vehicles) if (v.rented && v.def.rentPerDay) w.economy.charge(v.def.rentPerDay, `Aluguel diário · ${v.def.name}`, "aluguel", t);
     for (const f of w.fields) if (f.leased && f.owner === "player") w.economy.charge(f.areaHa * BALANCE.leaseDailyPerHa, `Arrendamento · ${f.name}`, "terras", t);
     w.candidates = generateCandidates(w.seed, t.day);
     w.candidatesDay = t.day;

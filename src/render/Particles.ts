@@ -67,7 +67,7 @@ export class Particles implements FxSink {
 
   smoke(x: number, y: number, amount: number): void {
     if (!this.visible(x, y) || Math.random() > amount * 0.35 * this.quality) return;
-    this.spawn(T_SMOKE, x, y, 0.3 + Math.random() * 0.3, -0.2 - Math.random() * 0.3, 1.3 + Math.random(), 0.25, "#555");
+    this.spawn(T_SMOKE, x, y, 0.3 + Math.random() * 0.3, -0.2 - Math.random() * 0.3, 1.0 + Math.random() * 0.6, 0.2, "#6a6a6a");
   }
 
   grain(x: number, y: number, vx: number, vy: number, color: string): void {
@@ -113,7 +113,7 @@ export class Particles implements FxSink {
         this.vx[i] *= 0.97;
         this.vy[i] *= 0.97;
         this.size[i] += dt * 1.1;
-      } else if (t === T_SMOKE) this.size[i] += dt * 0.9;
+      } else if (t === T_SMOKE) this.size[i] += dt * 0.45;
       else if (t === T_CHAFF) {
         this.vx[i] *= 0.95;
         this.vy[i] *= 0.95;
@@ -173,7 +173,7 @@ export class Particles implements FxSink {
       if (t === T_GRAIN || t === T_CHAFF) continue;
       const k = this.life[i] / this.max[i];
       const s = this.size[i];
-      ctx.globalAlpha = t === T_SMOKE ? k * 0.32 : t === T_SPRAY ? k * 0.25 : k * 0.18;
+      ctx.globalAlpha = t === T_SMOKE ? k * 0.2 : t === T_SPRAY ? k * 0.25 : k * 0.18;
       ctx.fillStyle = this.col[i];
       ctx.beginPath();
       ctx.arc(this.x[i], this.y[i], s, 0, Math.PI * 2);
