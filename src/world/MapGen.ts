@@ -61,6 +61,27 @@ interface FieldSpec {
   cut?: number;
 }
 
+/** Verifica se um trecho reto passa longe das construções e de outros campos. */
+function segmentClear(ax: number, ay: number, bx: number, by: number, buildings: Building[], specs: FieldSpec[], self: number): boolean {
+  const len = Math.hypot(bx - ax, by - ay);
+  const steps = Math.max(2, Math.ceil(len / 2));
+  for (let k = 0; k <= steps; k++) {
+    const x = ax + ((bx - ax) * k) / steps;
+    const y = ay + ((by - ay) * k) / steps;
+    for (const b of buildings) {
+      if (!b.def.collide) continue;
+      const r = Math.max(b.def.w, b.def.h) / 2 + 4.5;
+      if (Math.abs(x - b.x) < r && Math.abs(y - b.y) < r) return false;
+    }
+    for (let i = 0; i < specs.length; i++) {
+      if (i === self) continue;
+      const f = specs[i];
+      if (x > f.x0 - 2 && x < f.x1 + 2 && y > f.y0 - 2 && y < f.y1 + 2) return false;
+    }
+  }
+  return true;
+}
+
 export function generateMap(seed: number): GameMap {
   const rng = new Rng(seed);
   const roads = new RoadNetwork();
@@ -306,8 +327,14 @@ export function generateMap(seed: number): GameMap {
     // trilha de acesso até a estrada mais próxima
     const gateNode = roads.addNode(gate.x, gate.y);
     fields.push({ id: idx + 1, name: sp.name, poly, owner: sp.owner, price: Math.round((area * sp.pricePerHa) / 100) * 100, gate, gateNode, initial: sp.initial });
-    const near = roads.nearestNode(gate.x, gate.y, (n) => n.id !== gateNode && n.edges.length > 0 && roads.edges[n.edges[0]].kind !== "track");
-    roads.addEdge(gateNode, near.id, "track", 4.5);
+    // escolhe o nó viário mais próximo com caminho livre (sem atravessar construções ou outros campos)
+    const candidates = roads.nodes
+      .filter((n) => n.id !== gateNode && n.edges.length > 0 && roads.edges[n.edges[0]].kind !== "track")
+      .map((n) => ({ n, d: Math.hypot(n.x - gate.x, n.y - gate.y) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, 40);
+    const clear = candidates.find(({ n }) => segmentClear(gate.x, gate.y, n.x, n.y, buildings, specs, idx));
+    roads.addEdge(gateNode, (clear ?? candidates[0]).n.id, "track", 4.5);
   });
 
   // ---------------- Compradores ----------------

@@ -173,7 +173,7 @@ export class Renderer {
     if (!lod) {
       const wind = world.weather.wind;
       const s = season(world.time.day);
-      ctx.fillStyle = `rgba(0,0,0,${shadowAlpha * 0.9})`;
+      ctx.fillStyle = `rgba(0,0,0,${shadowAlpha * 0.7})`;
       for (const t of world.map.trees) if (inView(t.x, t.y, t.r + 3)) this.structures.drawTreeShadow(ctx, t, sx, sy);
       for (const t of world.map.trees) if (inView(t.x, t.y, t.r + 1)) this.structures.drawTree(ctx, t, this.time, wind, s);
     }

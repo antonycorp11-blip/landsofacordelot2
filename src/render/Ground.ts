@@ -3,7 +3,7 @@ import { fbm, hash2, valueNoise } from "../core/rng";
 import type { GameMap } from "../world/MapGen";
 import type { RoadEdge } from "../world/types";
 
-export const CHUNK = 64;
+export const CHUNK = 48;
 
 const SEASON_GRASS: [number, number, number][] = [
   [104, 150, 64],
@@ -59,8 +59,8 @@ export class Ground {
     private map: GameMap,
     mobile: boolean,
   ) {
-    this.res = 4;
-    this.maxChunks = mobile ? 48 : 110;
+    this.res = mobile ? 4 : 6;
+    this.maxChunks = mobile ? 60 : 130;
   }
 
   setSeason(s: number): void {

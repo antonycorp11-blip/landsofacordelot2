@@ -59,6 +59,8 @@ export function hireWorker(world: World, c: Candidate, owner = "player"): Worker
     blockedTimer: 0,
     paidSeconds: 0,
     hiredDay: world.time.day,
+    stuckT: 0,
+    reverseT: 0,
   };
   world.workers.push(w);
   return w;
@@ -475,6 +477,19 @@ function pursue(world: World, w: Worker, v: Vehicle, leg: Leg, dt: number, isLas
   const err = vt - v.speed;
   v.ctrl.brake = err < -1.2 ? clamp(-err / 3, 0, 1) : 0;
   v.ctrl.throttle = clamp(err * 1.2 + (vt > 0.1 ? 0.25 : 0), 0, 1);
+  // destravamento: preso contra um obstáculo, dá ré esterçando ao contrário
+  if (w.reverseT > 0) {
+    w.reverseT -= dt;
+    v.ctrl.throttle = -0.7;
+    v.ctrl.brake = 0;
+    v.ctrl.steer = -v.ctrl.steer;
+  } else if (v.ctrl.throttle > 0.3 && Math.abs(v.speed) < 0.3) {
+    w.stuckT += dt;
+    if (w.stuckT > 3) {
+      w.stuckT = 0;
+      w.reverseT = 2.2;
+    }
+  } else w.stuckT = Math.max(0, w.stuckT - dt);
   return false;
 }
 

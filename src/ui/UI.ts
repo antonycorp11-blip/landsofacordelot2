@@ -80,6 +80,7 @@ export class UI {
     this.mini = el<HTMLCanvasElement>(root, ".minimap");
     this.menuEl = el(root, ".menu");
     this.menus = new Menus(game, this, this.menuEl);
+    this.objCollapsed = document.body.classList.contains("touch") || window.innerHeight < 560;
     this.speedBtns.innerHTML = BALANCE.timeScales.map((s, i) => `<button data-act="speed:${i}">${s}×</button>`).join("");
     root.addEventListener("click", (e) => {
       const t = (e.target as HTMLElement).closest("[data-act]") as HTMLElement | null;

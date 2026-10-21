@@ -61,6 +61,8 @@ export interface Worker {
   /** Trabalho acumulado (s) para cálculo de salário. */
   paidSeconds: number;
   hiredDay: number;
+  stuckT: number;
+  reverseT: number;
 }
 
 export interface Candidate {

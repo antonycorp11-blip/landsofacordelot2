@@ -3,13 +3,13 @@ import { clamp, lerp } from "../core/math";
 export class Camera {
   x = 0;
   y = 0;
-  zoom = 10;
-  targetZoom = 10;
+  zoom = 13;
+  targetZoom = 13;
   /** Tamanho da viewport em pixels CSS. */
   w = 800;
   h = 600;
   minZoom = 0.55;
-  maxZoom = 16;
+  maxZoom = 26;
   private shakeT = 0;
 
   follow(tx: number, ty: number, vx: number, vy: number, dt: number): void {

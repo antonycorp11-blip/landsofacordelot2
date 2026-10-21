@@ -72,7 +72,7 @@ export class Particles implements FxSink {
 
   grain(x: number, y: number, vx: number, vy: number, color: string): void {
     if (!this.visible(x, y)) return;
-    this.spawn(T_GRAIN, x, y, vx, vy, 0.35 + Math.random() * 0.25, 0.12 + Math.random() * 0.1, color);
+    this.spawn(T_GRAIN, x + (Math.random() - 0.5) * 0.3, y + (Math.random() - 0.5) * 0.3, vx, vy, 0.4 + Math.random() * 0.3, 0.14 + Math.random() * 0.12, color);
   }
 
   chaff(x: number, y: number, vx: number, vy: number): void {
@@ -173,7 +173,7 @@ export class Particles implements FxSink {
       if (t === T_GRAIN || t === T_CHAFF) continue;
       const k = this.life[i] / this.max[i];
       const s = this.size[i];
-      ctx.globalAlpha = t === T_SMOKE ? k * 0.35 : t === T_SPRAY ? k * 0.28 : k * 0.3;
+      ctx.globalAlpha = t === T_SMOKE ? k * 0.32 : t === T_SPRAY ? k * 0.25 : k * 0.18;
       ctx.fillStyle = this.col[i];
       ctx.beginPath();
       ctx.arc(this.x[i], this.y[i], s, 0, Math.PI * 2);

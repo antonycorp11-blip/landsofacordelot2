@@ -507,8 +507,8 @@ export class StructureRenderer {
     c.width = c.height = 64;
     const g = c.getContext("2d")!;
     const grd = g.createRadialGradient(32, 32, 4, 32, 32, 32);
-    grd.addColorStop(0, "rgba(0,0,0,0.42)");
-    grd.addColorStop(0.7, "rgba(0,0,0,0.3)");
+    grd.addColorStop(0, "rgba(0,0,0,0.3)");
+    grd.addColorStop(0.7, "rgba(0,0,0,0.2)");
     grd.addColorStop(1, "rgba(0,0,0,0)");
     g.fillStyle = grd;
     g.fillRect(0, 0, 64, 64);

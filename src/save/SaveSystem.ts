@@ -199,7 +199,7 @@ export function deserialize(raw: SaveData, setupWorld: (w: World) => void = () =
     Object.assign(im, s, { def: IMPLEMENTS[s.defId], cargo: s.cargo ? { ...s.cargo } : im.cargo, lowerAnim: s.lowered ? 1 : 0 });
   }
   world.nextId = Math.max(world.nextId, data.nextId);
-  world.workers = data.workers.map((w) => ({ ...w }));
+  world.workers = data.workers.map((w) => ({ ...w, stuckT: w.stuckT ?? 0, reverseT: w.reverseT ?? 0 }));
   world.candidates = data.candidates;
   world.candidatesDay = data.candidatesDay;
   world.flags = { ...(data.flags ?? {}) };

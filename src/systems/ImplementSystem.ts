@@ -233,7 +233,7 @@ export function pipeUnload(world: World, v: Vehicle, dt: number): number {
     v.unloading = true;
     const o = pipeOutlet(v);
     const col = CROPS[crop].colors.grain;
-    for (let k = 0; k < 2; k++) world.fx.grain(o.x, o.y, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1.2, col);
+    for (let k = 0; k < 4; k++) world.fx.grain(o.x, o.y, (Math.random() - 0.5) * 1.6, (Math.random() - 0.5) * 1.6, col);
   }
   return took;
 }
@@ -284,7 +284,7 @@ export function updateTipping(world: World, c: ContainerRef, dt: number): void {
   }
   if (moved > 0) {
     const col = CROPS[crop].colors.grain;
-    world.fx.grain(c.bed.tip.x, c.bed.tip.y, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, col);
+    for (let k = 0; k < 3; k++) world.fx.grain(c.bed.tip.x, c.bed.tip.y, (Math.random() - 0.5) * 2.4, (Math.random() - 0.5) * 2.4, col);
   }
 }
 

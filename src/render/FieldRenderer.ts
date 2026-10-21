@@ -138,6 +138,8 @@ export class FieldRenderer {
         }
         const wx = f.ox + (X + 0.5) / PX;
         const h = hash2(Math.floor(wx * PX), Math.floor(wy * PX), seed + 9);
+        // variação de solo em manchas grandes (relevo/drenagem)
+        const macro = 0.9 + valueNoise(wx / 14, wy / 14, seed + 21) * 0.2;
         const along = wx * ca + wy * sa;
         const perp = -wx * sa + wy * ca;
         let r = soilR;
@@ -156,12 +158,12 @@ export class FieldRenderer {
           b *= k;
           wetApply = false;
         } else if (stage === ST.Cultivated) {
-          const furrow = 0.5 + 0.5 * Math.sin((perp * Math.PI * 2) / 0.55);
+          const furrow = 0.5 + 0.5 * Math.sin((perp * Math.PI * 2) / 0.5);
           const clod = valueNoise(wx * 2.3, wy * 2.3, seed + 5);
-          const k = 0.8 + furrow * 0.24 + (clod - 0.5) * 0.22 + (h - 0.5) * 0.1;
-          r = soilR * 0.92 * k;
-          gg = soilG * 0.92 * k;
-          b = soilB * 0.92 * k;
+          const k = 0.72 + furrow * 0.34 + (clod - 0.5) * 0.26 + (h - 0.5) * 0.12;
+          r = soilR * 0.86 * k;
+          gg = soilG * 0.84 * k;
+          b = soilB * 0.82 * k;
         } else if (stage === ST.Plowed) {
           let ph = (perp / 1.1) % 1;
           if (ph < 0) ph += 1;
@@ -172,10 +174,11 @@ export class FieldRenderer {
           gg = soilG * 0.83 * k;
           b = soilB * 0.8 * k;
         } else if (stage === ST.Stubble || stage === ST.Withered) {
-          const streak = valueNoise(along * 0.9, perp * 7, seed + 7);
+          const streak = valueNoise(along * 0.7, perp * 5.5, seed + 7);
+          const swath = 0.5 + 0.5 * Math.sin((perp * Math.PI * 2) / 0.36);
           const straw = crop ? crop.colors.stubble : [190, 170, 120];
           const dead = stage === ST.Withered;
-          const m = clamp((streak - 0.3) * 1.6, 0, 1) * (dead ? 0.9 : 0.85);
+          const m = clamp((streak - 0.25) * 1.7 * (0.55 + swath * 0.45), 0, 1) * (dead ? 0.9 : 0.92);
           r = 146 + (straw[0] - 146) * m;
           gg = 118 + (straw[1] - 118) * m;
           b = 84 + (straw[2] - 84) * m;
@@ -207,7 +210,8 @@ export class FieldRenderer {
             else if (g < 1) c0 = mix(C.tall, C.mature, clamp((g - 0.78) / 0.22, 0, 1));
             else {
               const tex = valueNoise(along * 1.6, perp * 2.4, seed + 10);
-              c0 = mix(C.mature, C.matureDark, clamp(tex * 0.9 + (h - 0.5) * 0.5, 0, 1));
+              const heads = valueNoise(wx * 4.5, wy * 4.5, seed + 12);
+              c0 = mix(C.mature, C.matureDark, clamp(tex * 0.75 + (heads - 0.5) * 0.6 + (h - 0.5) * 0.4, 0, 1));
               if (g > 1.3) {
                 const k = clamp((g - 1.3) / 0.9, 0, 1);
                 c0 = mix(c0, [128, 112, 86], k * 0.8);
@@ -235,9 +239,9 @@ export class FieldRenderer {
           gg *= 0.94;
           b *= 0.92;
         }
-        data[o] = r;
-        data[o + 1] = gg;
-        data[o + 2] = b;
+        data[o] = r * macro;
+        data[o + 1] = gg * macro;
+        data[o + 2] = b * macro;
         data[o + 3] = 255;
       }
     }

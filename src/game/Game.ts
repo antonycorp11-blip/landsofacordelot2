@@ -58,6 +58,7 @@ export class Game {
       (_a, fdt) => this.frame(fdt),
     );
     this.renderer.resize();
+    if (mobile) this.renderer.camera.zoom = this.renderer.camera.targetZoom = 10;
     window.addEventListener("resize", () => this.renderer.resize());
     const v = world.vehicle(world.player.vehicleId);
     this.renderer.camera.snap(v ? v.x : world.player.x, v ? v.y : world.player.y);
