@@ -1,6 +1,5 @@
 node_modules/
 dist/
-.art-backup/
 .claude/
 .vercel/
 .DS_Store
