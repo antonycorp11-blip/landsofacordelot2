@@ -18,7 +18,7 @@ import { localToWorld } from "../core/math";
 import type { World } from "../world/World";
 import { UI } from "../ui/UI";
 import { contextActions, type Action } from "./Interactions";
-import { updateObjectives } from "./Objectives";
+import { currentObjective, updateObjectives, type Guide } from "./Objectives";
 
 export interface GameDom {
   canvas: HTMLCanvasElement;
@@ -38,6 +38,7 @@ export class Game {
   private hudTimer = 0;
   private rentAcc = 0;
   actions: Action[] = [];
+  guide: Guide | null = null;
   hint = "";
   /** Veículo acompanhado pela câmera (funcionário), quando o jogador escolhe assistir. */
   watchId: number | null = null;
@@ -59,7 +60,7 @@ export class Game {
       (_a, fdt) => this.frame(fdt),
     );
     this.renderer.resize();
-    if (mobile) this.renderer.camera.zoom = this.renderer.camera.targetZoom = 10;
+    this.renderer.camera.zoom = this.renderer.camera.targetZoom = mobile ? 17 : 16;
     window.addEventListener("resize", () => this.renderer.resize());
     const v = world.vehicle(world.player.vehicleId);
     this.renderer.camera.snap(v ? v.x : world.player.x, v ? v.y : world.player.y);
@@ -143,7 +144,8 @@ export class Game {
       this.rentAcc = 0;
     }
     if (w.flags.sold !== true && w.economy.ledger.some((l) => l.cat === "venda")) w.flags.sold = true;
-    updateObjectives(w);
+    const completed = updateObjectives(w);
+    if (completed && !w.flags.tutorialOff) w.notify(`✓ ${completed}`, "good");
     this.saveTimer += dt;
     if (this.saveTimer > BALANCE.autosaveSeconds) {
       this.saveTimer = 0;
@@ -184,7 +186,8 @@ export class Game {
     if (v) {
       if (!v.engineOn && ax.y !== 0 && v.fuel > 0) v.engineOn = true;
       v.ctrl.steer = ax.x;
-      v.ctrl.throttle = ax.y;
+      // joystick: curva mais agressiva para chegar à velocidade máxima sem esticar o dedo até o fim
+      v.ctrl.throttle = Math.sign(ax.y) * Math.min(1, Math.abs(ax.y) * 1.4);
       v.ctrl.brake = ax.brake ? 1 : 0;
       w.player.x = v.x;
       w.player.y = v.y;
@@ -194,7 +197,7 @@ export class Game {
     const mag = Math.min(1, Math.hypot(ax.x, ax.y));
     p.moving = mag > 0.05;
     if (p.moving) {
-      const speed = (ax.run ? 6.2 : 3.4) * mag;
+      const speed = (ax.run || mag > 0.92 ? 9 : 5.5) * Math.min(1, mag * 1.2);
       const dx = ax.x / (mag || 1);
       const dy = -ax.y / (mag || 1);
       p.x += dx * speed * dt;
@@ -323,11 +326,13 @@ export class Game {
     cam.follow(tx, ty, vx, vy, fdt);
     const pv = w.vehicle(w.player.vehicleId);
     const field = pv ? w.fieldAt(pv.x, pv.y) : undefined;
-    this.renderer.render(fdt, { highlightFieldId: field?.id, showZones: true, showLabels: true });
+    this.renderer.render(fdt, { highlightFieldId: field?.id, showZones: true, showLabels: true, guide: this.guide });
     this.hudTimer += fdt;
     if (this.hudTimer > 0.1) {
       this.hudTimer = 0;
       this.refreshActions();
+      const obj = currentObjective(w);
+      this.guide = obj ? obj.guide(w) : null;
       this.ui.update();
     }
     this.input.endFrame();

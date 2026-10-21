@@ -25,6 +25,7 @@ const ZONE_COLORS: Record<string, string> = {
 
 export interface RenderOptions {
   highlightFieldId?: number;
+  guide?: { target?: { x: number; y: number }; label?: string } | null;
   showZones: boolean;
   showLabels: boolean;
 }
@@ -188,8 +189,10 @@ export class Renderer {
     if (!lod) {
       const wind = world.weather.wind;
       const s = season(world.time.day);
-      ctx.fillStyle = `rgba(0,0,0,${shadowAlpha * 0.7})`;
-      for (const t of world.map.trees) if (inView(t.x, t.y, t.r + 3)) this.structures.drawTreeShadow(ctx, t, sx, sy);
+      this.structures.treeBudget = this.mobile ? 2 : 5;
+      ctx.globalAlpha = Math.min(1, shadowAlpha * 1.9);
+      for (const t of world.map.trees) if (inView(t.x, t.y, t.r + 6)) this.structures.drawTreeShadow(ctx, t, sx, sy, s);
+      ctx.globalAlpha = 1;
       for (const t of world.map.trees) if (inView(t.x, t.y, t.r + 1)) this.structures.drawTree(ctx, t, this.time, wind, s);
     }
     this.cloudShadows(ctx, view);
@@ -198,6 +201,7 @@ export class Renderer {
     ctx.setTransform(d, 0, 0, d, 0, 0);
     if (opt.showLabels) this.labels(ctx);
     this.workerTags(ctx);
+    if (opt.guide?.target) this.guideMarker(ctx, opt.guide.target, opt.guide.label ?? "");
     this.lighting(ctx, dl);
     this.rain(ctx, frameDt);
   }
@@ -305,6 +309,77 @@ export class Renderer {
         label((c.minX + c.maxX) / 2, (c.minY + c.maxY) / 2, f.owner === null ? `${f.name} · à venda` : f.name, 11, own);
       }
     }
+  }
+
+  /** Marcador do tutorial: alvo pulsante no mundo ou seta na borda da tela com a distância. */
+  private guideMarker(ctx: CanvasRenderingContext2D, t: { x: number; y: number }, label: string): void {
+    const cam = this.camera;
+    const s = cam.worldToScreen(t.x, t.y);
+    const p = this.world.player;
+    const distM = Math.round(Math.hypot(t.x - p.x, t.y - p.y));
+    const margin = 46;
+    const inside = s.x > margin && s.x < cam.w - margin && s.y > 90 && s.y < cam.h - margin;
+    const pulse = 0.5 + 0.5 * Math.sin(this.time * 4);
+    ctx.save();
+    ctx.font = "700 13px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    if (inside) {
+      const r = Math.max(14, 3.5 * cam.zoom) * (1 + pulse * 0.15);
+      ctx.strokeStyle = `rgba(255,214,70,${0.55 + pulse * 0.4})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      // pino acima do alvo
+      const py = s.y - r - 26 - pulse * 6;
+      ctx.fillStyle = "#ffd646";
+      ctx.beginPath();
+      ctx.moveTo(s.x, py + 18);
+      ctx.lineTo(s.x - 9, py + 4);
+      ctx.lineTo(s.x + 9, py + 4);
+      ctx.closePath();
+      ctx.fill();
+      if (label) {
+        const tw = ctx.measureText(label).width + 16;
+        ctx.fillStyle = "rgba(25,30,18,0.85)";
+        ctx.fillRect(s.x - tw / 2, py - 20, tw, 22);
+        ctx.fillStyle = "#ffd646";
+        ctx.fillText(label, s.x, py - 9);
+      }
+    } else {
+      const cx = cam.w / 2;
+      const cy = cam.h / 2;
+      const a = Math.atan2(s.y - cy, s.x - cx);
+      const hw = cam.w / 2 - margin;
+      const hh = cam.h / 2 - margin - 30;
+      const k = Math.min(hw / Math.abs(Math.cos(a) || 1e-6), hh / Math.abs(Math.sin(a) || 1e-6));
+      const ex = cx + Math.cos(a) * k;
+      const ey = cy + 15 + Math.sin(a) * k;
+      ctx.translate(ex, ey);
+      ctx.save();
+      ctx.rotate(a);
+      ctx.fillStyle = "#ffd646";
+      ctx.strokeStyle = "rgba(25,30,18,0.9)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(22 + pulse * 4, 0);
+      ctx.lineTo(-6, -15);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(-6, 15);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fill();
+      ctx.restore();
+      const text = `${label} · ${distM} m`;
+      const tw = ctx.measureText(text).width + 16;
+      const ly = Math.sin(a) > 0.5 ? -30 : 30;
+      ctx.fillStyle = "rgba(25,30,18,0.85)";
+      ctx.fillRect(-tw / 2, ly - 11, tw, 22);
+      ctx.fillStyle = "#ffd646";
+      ctx.fillText(text, 0, ly);
+    }
+    ctx.restore();
   }
 
   private workerTags(ctx: CanvasRenderingContext2D): void {

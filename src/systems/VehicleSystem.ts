@@ -48,7 +48,7 @@ export function speedLimit(world: World, v: Vehicle): { limit: number; onField: 
   } else {
     const r = world.map.roads.roadAt(v.x, v.y);
     if (r.d < r.width / 2 + 0.5) surface = "road";
-    else vmax = Math.min(vmax, ms(28));
+    else vmax = Math.min(vmax, ms(34));
   }
   if (world.weather.rain > 0.3 && surface !== "road") vmax *= 0.9;
   return { limit: vmax, onField: !!f, surface, wet };

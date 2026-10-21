@@ -1,9 +1,9 @@
-import { hash2 } from "../core/rng";
+import { hash2, valueNoise } from "../core/rng";
 import type { Building, Tree } from "../world/types";
 import { rrect } from "./Machines";
 
 const BRES = 10;
-const TRES = 9;
+const TRES = 14;
 
 function shade(hex: string, k: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -413,122 +413,226 @@ export class StructureRenderer {
     ctx.restore();
   }
 
-  private treeSprite(kind: number, r: number, season: number): Sprite {
+  /** Orçamento de geração de copas por frame (evita travadas). */
+  treeBudget = 4;
+  private treeShadows = new Map<string, HTMLCanvasElement>();
+
+  /**
+   * Copa gerada por pixel: um campo de altura formado por cachos de folhas,
+   * iluminado por um sol fixo a noroeste (normal pelo gradiente), com oclusão
+   * nos vãos, pontilhado de folhas e borda irregular.
+   */
+  private treeSprite(kind: number, r: number, season: number, variant: number): Sprite | null {
     const rb = Math.round(r * 2) / 2;
-    const key = `${kind}|${rb}|${season}`;
+    const key = `${kind}|${rb}|${season}|${variant}`;
     const hit = this.trees.get(key);
     if (hit) return hit;
+    if (this.treeBudget <= 0) return null;
+    this.treeBudget--;
     const S = rb * 2 + 1;
+    const N = Math.ceil(S * TRES);
     const c = document.createElement("canvas");
-    c.width = c.height = Math.ceil(S * TRES);
+    c.width = c.height = N;
     const g = c.getContext("2d")!;
-    g.setTransform(TRES, 0, 0, TRES, c.width / 2, c.height / 2);
-    const palettes: Record<number, string[][]> = {
+    const img = g.createImageData(N, N);
+    const d = img.data;
+    const seed = this.seed + kind * 101 + Math.round(rb * 10) * 7 + variant * 1009;
+    // paletas [escuro, médio, claro] por estação
+    const PAL: Record<number, number[][][]> = {
       0: [
-        ["#355f28", "#4d7d33", "#6d9c45"],
-        ["#2f5a24", "#467a2e", "#649540"],
-        ["#8a5a24", "#c07a2a", "#e0a63c"],
-        ["#5d5a40", "#77704c", "#8f8660"],
+        [[34, 62, 26], [72, 112, 44], [148, 180, 82]],
+        [[28, 56, 22], [62, 102, 38], [132, 168, 72]],
+        [[90, 52, 20], [176, 104, 34], [236, 182, 80]],
+        [[70, 66, 46], [110, 102, 72], [160, 150, 112]],
       ],
       1: [
-        ["#1f4a30", "#2e6140", "#3f7a52"],
-        ["#1d452c", "#2b5d3d", "#3a744d"],
-        ["#20482f", "#2f5f3f", "#3e7650"],
-        ["#294a39", "#365c48", "#456f58"],
+        [[16, 40, 28], [38, 78, 52], [96, 138, 98]],
+        [[14, 38, 26], [34, 72, 48], [88, 130, 90]],
+        [[18, 42, 30], [40, 78, 54], [96, 134, 98]],
+        [[30, 52, 42], [52, 80, 66], [104, 132, 114]],
       ],
       2: [
-        ["#3f6a3a", "#5a8a4a", "#7ba862"],
-        ["#3a6535", "#548343", "#73a05a"],
-        ["#6c7a3a", "#8e9a4a", "#b2b862"],
-        ["#596650", "#6f7d62", "#879576"],
+        [[44, 66, 40], [92, 120, 70], [170, 190, 120]],
+        [[40, 62, 36], [84, 114, 62], [160, 182, 110]],
+        [[86, 90, 40], [146, 146, 64], [214, 204, 112]],
+        [[70, 76, 62], [112, 120, 98], [164, 170, 146]],
       ],
     };
-    const pal = palettes[kind][season];
-    const seed = this.seed + kind * 101 + Math.round(rb * 10);
+    const pal = PAL[kind][season];
+    // tom individual
+    const tint = 0.9 + hash2(variant, kind, seed) * 0.2;
+    const H = new Float32Array(N * N);
+    const half = N / 2;
+    const toM = 1 / TRES;
     if (kind === 1) {
-      // conífera: camadas estreladas
-      for (let layer = 0; layer < 3; layer++) {
-        const rr = rb * (1 - layer * 0.28);
-        g.fillStyle = pal[layer];
-        g.beginPath();
-        const n = 11;
-        for (let k = 0; k <= n * 2; k++) {
-          const a = (k / (n * 2)) * Math.PI * 2 + layer * 0.3;
-          const rad = k % 2 ? rr * 0.62 : rr;
-          const x = Math.cos(a) * rad;
-          const y = Math.sin(a) * rad;
-          k ? g.lineTo(x, y) : g.moveTo(x, y);
+      // pinheiro: galhos irregulares saindo do topo, cada um com tufos de agulhas
+      const nb = 14 + Math.floor(hash2(1, 2, seed) * 8);
+      const br: [number, number, number][] = [];
+      for (let k = 0; k < nb; k++) br.push([(k / nb) * Math.PI * 2 + (hash2(k, 5, seed) - 0.5) * 0.5, rb * (0.7 + hash2(k, 6, seed) * 0.3), 0.16 + hash2(k, 7, seed) * 0.1]);
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++) {
+          const px = (x - half + 0.5) * toM;
+          const py = (y - half + 0.5) * toM;
+          const dd = Math.hypot(px, py);
+          if (dd > rb) continue;
+          const a = Math.atan2(py, px);
+          let h = 0;
+          for (const [ba, blen, bw] of br) {
+            const da = Math.abs(Math.atan2(Math.sin(a - ba), Math.cos(a - ba)));
+            const lat = da * Math.max(0.3, dd);
+            const wdt = bw * rb * (0.35 + 0.65 * (1 - dd / blen));
+            if (dd > blen || lat > wdt) continue;
+            const v = (1 - lat / wdt) * 0.45 + (1 - dd / blen) * 0.75;
+            if (v > h) h = v;
+          }
+          // miolo denso perto do tronco
+          const core = Math.max(0, 1 - dd / (rb * 0.42));
+          h = Math.max(h, core * 0.95);
+          if (h <= 0) continue;
+          h += (valueNoise(px * 9, py * 9, seed + 3) - 0.5) * 0.18 + (hash2(x, y, seed + 4) - 0.5) * 0.06;
+          H[y * N + x] = Math.max(0, h);
         }
-        g.closePath();
-        g.fill();
-      }
-      g.fillStyle = pal[2];
-      g.beginPath();
-      g.arc(-rb * 0.1, -rb * 0.1, rb * 0.15, 0, Math.PI * 2);
-      g.fill();
     } else {
-      const blobs = kind === 0 ? 9 : 7;
-      // base escura
-      g.fillStyle = pal[0];
-      g.beginPath();
-      g.arc(0, 0, rb * 0.92, 0, Math.PI * 2);
-      g.fill();
-      for (let k = 0; k < blobs; k++) {
+      const n = kind === 0 ? 18 + Math.floor(hash2(3, 4, seed) * 8) : 12 + Math.floor(hash2(3, 4, seed) * 6);
+      const bumps: [number, number, number, number][] = [];
+      for (let k = 0; k < n; k++) {
         const a = hash2(k, 1, seed) * Math.PI * 2;
-        const d = hash2(k, 2, seed) * rb * 0.55;
-        const rr = rb * (0.35 + hash2(k, 3, seed) * 0.22);
-        const x = Math.cos(a) * d;
-        const y = Math.sin(a) * d;
-        const grd = g.createRadialGradient(x - rr * 0.35, y - rr * 0.35, rr * 0.1, x, y, rr);
-        grd.addColorStop(0, pal[2]);
-        grd.addColorStop(0.7, pal[1]);
-        grd.addColorStop(1, pal[0]);
-        g.fillStyle = grd;
-        g.beginPath();
-        g.arc(x, y, rr, 0, Math.PI * 2);
-        g.fill();
+        const dist = Math.sqrt(hash2(k, 2, seed)) * rb * (kind === 0 ? 0.62 : 0.68);
+        const br = rb * (kind === 0 ? 0.28 + hash2(k, 3, seed) * 0.2 : 0.2 + hash2(k, 3, seed) * 0.17);
+        const top = 0.55 + (1 - dist / rb) * 0.45 + hash2(k, 4, seed) * 0.15;
+        bumps.push([Math.cos(a) * dist, Math.sin(a) * dist, br, top]);
       }
-      // folhas pontilhadas
-      for (let k = 0; k < rb * 26; k++) {
-        const a = hash2(k, 5, seed) * Math.PI * 2;
-        const d = Math.sqrt(hash2(k, 6, seed)) * rb * 0.9;
-        g.fillStyle = k % 2 ? "rgba(255,255,220,0.12)" : "rgba(0,20,0,0.15)";
-        g.fillRect(Math.cos(a) * d, Math.sin(a) * d, 0.18, 0.18);
-      }
+      for (let y = 0; y < N; y++)
+        for (let x = 0; x < N; x++) {
+          const px = (x - half + 0.5) * toM;
+          const py = (y - half + 0.5) * toM;
+          let h = 0;
+          for (const [bx, by, br, top] of bumps) {
+            const q = ((px - bx) ** 2 + (py - by) ** 2) / (br * br);
+            if (q < 1) {
+              const v = Math.sqrt(1 - q) * top;
+              if (v > h) h = v;
+            }
+          }
+          if (h <= 0) continue;
+          // tufos de folhas (textura fina) e falhas na borda
+          const leaf = valueNoise(px * 5.5, py * 5.5, seed + 7) - 0.5;
+          const fine = valueNoise(px * 12, py * 12, seed + 8) - 0.5;
+          h += leaf * 0.16 + fine * 0.08;
+          if (kind === 2 && h < 0.22 && valueNoise(px * 3, py * 3, seed + 9) < 0.45) h = 0;
+          H[y * N + x] = Math.max(0, h);
+        }
     }
-    const s = { c, w: S, h: S };
-    this.trees.set(key, s);
-    return s;
+    // iluminação
+    const L = [-0.55, -0.62, 0.56];
+    const ll = Math.hypot(L[0], L[1], L[2]);
+    for (let y = 1; y < N - 1; y++)
+      for (let x = 1; x < N - 1; x++) {
+        const i = y * N + x;
+        const h = H[i];
+        if (h <= 0) continue;
+        const gx = (H[i + 1] - H[i - 1]) * TRES * 0.18;
+        const gy = (H[i + N] - H[i - N]) * TRES * 0.18;
+        const nl = Math.hypot(gx, gy, 1);
+        let lam = (-gx * L[0] - gy * L[1] + L[2]) / (nl * ll);
+        lam = Math.max(0, Math.min(1, lam));
+        const ao = 0.5 + 0.5 * Math.min(1, h * 1.3);
+        const k = Math.min(1, lam * 1.15) * ao;
+        const spk = (hash2(x, y, seed + 11) - 0.5) * 0.18;
+        const mixc = (a: number, b: number, t: number) => a + (b - a) * t;
+        let rr: number, gg: number, bb: number;
+        if (k < 0.5) {
+          const t = k / 0.5;
+          rr = mixc(pal[0][0], pal[1][0], t);
+          gg = mixc(pal[0][1], pal[1][1], t);
+          bb = mixc(pal[0][2], pal[1][2], t);
+        } else {
+          const t = (k - 0.5) / 0.5;
+          rr = mixc(pal[1][0], pal[2][0], t);
+          gg = mixc(pal[1][1], pal[2][1], t);
+          bb = mixc(pal[1][2], pal[2][2], t);
+        }
+        const f = (1 + spk) * tint;
+        const o = i * 4;
+        d[o] = rr * f;
+        d[o + 1] = gg * f;
+        d[o + 2] = bb * f;
+        d[o + 3] = Math.min(255, h * 1400);
+      }
+    g.putImageData(img, 0, 0);
+    if (kind === 2) {
+      // galhos aparecendo nas falhas da copa
+      g.globalCompositeOperation = "destination-over";
+      g.strokeStyle = "rgba(92,70,48,0.9)";
+      g.lineCap = "round";
+      for (let k = 0; k < 5; k++) {
+        const a = hash2(k, 21, seed) * Math.PI * 2;
+        g.lineWidth = TRES * 0.16;
+        g.beginPath();
+        g.moveTo(half, half);
+        g.lineTo(half + Math.cos(a) * rb * 0.8 * TRES, half + Math.sin(a) * rb * 0.8 * TRES);
+        g.stroke();
+      }
+      g.globalCompositeOperation = "source-over";
+    }
+    // sombra suave a partir da silhueta
+    const sc = document.createElement("canvas");
+    const SN = Math.max(8, Math.round(N / 4));
+    sc.width = sc.height = SN;
+    const sg = sc.getContext("2d")!;
+    sg.drawImage(c, 0, 0, SN, SN);
+    sg.globalCompositeOperation = "source-in";
+    sg.fillStyle = "#000";
+    sg.fillRect(0, 0, SN, SN);
+    this.treeShadows.set(key, sc);
+    const sp = { c, w: S, h: S };
+    this.trees.set(key, sp);
+    return sp;
   }
 
-  private treeShadow(): HTMLCanvasElement {
-    if (this.shadowTree) return this.shadowTree;
-    const c = document.createElement("canvas");
-    c.width = c.height = 64;
-    const g = c.getContext("2d")!;
-    const grd = g.createRadialGradient(32, 32, 4, 32, 32, 32);
-    grd.addColorStop(0, "rgba(0,0,0,0.3)");
-    grd.addColorStop(0.7, "rgba(0,0,0,0.2)");
-    grd.addColorStop(1, "rgba(0,0,0,0)");
-    g.fillStyle = grd;
-    g.fillRect(0, 0, 64, 64);
-    this.shadowTree = c;
-    return c;
+  private variantOf(t: Tree): number {
+    return Math.floor(((t.phase / (Math.PI * 2)) * 997) % 3);
   }
 
-  drawTreeShadow(ctx: CanvasRenderingContext2D, t: Tree, sx: number, sy: number): void {
-    const sh = this.treeShadow();
-    const r = t.r * 1.1;
-    ctx.drawImage(sh, t.x + sx * t.r * 1.4 - r, t.y + sy * t.r * 1.4 - r, r * 2, r * 2);
+  drawTreeShadow(ctx: CanvasRenderingContext2D, t: Tree, sx: number, sy: number, season = 0): void {
+    const rb = Math.round(t.r * 2) / 2;
+    const sh = this.treeShadows.get(`${t.kind}|${rb}|${season}|${this.variantOf(t)}`);
+    const S = rb * 2 + 1;
+    const ox = t.x + sx * t.r * 1.3;
+    const oy = t.y + sy * t.r * 1.3;
+    if (sh) {
+      ctx.drawImage(sh, ox - S / 2, oy - S / 2, S, S);
+      return;
+    }
+    if (!this.shadowTree) {
+      const c = document.createElement("canvas");
+      c.width = c.height = 32;
+      const g = c.getContext("2d")!;
+      const grd = g.createRadialGradient(16, 16, 2, 16, 16, 16);
+      grd.addColorStop(0, "rgba(0,0,0,1)");
+      grd.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grd;
+      g.fillRect(0, 0, 32, 32);
+      this.shadowTree = c;
+    }
+    ctx.drawImage(this.shadowTree, ox - t.r, oy - t.r, t.r * 2, t.r * 2);
   }
 
   drawTree(ctx: CanvasRenderingContext2D, t: Tree, time: number, wind: number, season: number): void {
-    const s = this.treeSprite(t.kind, t.r, season);
-    const sway = Math.sin(time * 1.4 + t.phase) * 0.05 * wind;
-    ctx.save();
-    ctx.translate(t.x + sway * t.r * 0.6, t.y + sway * t.r * 0.3);
-    ctx.rotate(sway + t.phase);
-    ctx.drawImage(s.c, -s.w / 2, -s.h / 2, s.w, s.h);
-    ctx.restore();
+    const s = this.treeSprite(t.kind, t.r, season, this.variantOf(t));
+    // balanço: deslocamento e leve escala, sem girar (a luz fica coerente)
+    const sway = Math.sin(time * 1.3 + t.phase) * wind;
+    const sway2 = Math.sin(time * 2.1 + t.phase * 1.7) * wind * 0.5;
+    const dx = sway * 0.14 * (t.r / 4);
+    const dy = sway2 * 0.1 * (t.r / 4);
+    if (!s) {
+      ctx.fillStyle = t.kind === 1 ? "#2c5a3a" : "#4a7a34";
+      ctx.beginPath();
+      ctx.arc(t.x + dx, t.y + dy, t.r, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+    const k = 1 + sway2 * 0.012;
+    ctx.drawImage(s.c, t.x + dx - (s.w * k) / 2, t.y + dy - (s.h * k) / 2, s.w * k, s.h * k);
   }
 }

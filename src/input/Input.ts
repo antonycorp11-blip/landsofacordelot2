@@ -60,6 +60,16 @@ export class Input {
         this.joyKnob.style.transform = "translate(-50%,-50%)";
       }
     }
+    // dois dedos ao mesmo tempo: vira pinça, mesmo que o primeiro tenha caído no lado do joystick
+    if (this.joyId !== null && this.touches.size >= 2 && !this.pinch) {
+      const jt = this.touches.get(this.joyId);
+      const moved = jt ? Math.hypot(jt.x - this.joyOrigin.x, jt.y - this.joyOrigin.y) : 99;
+      if (moved < 14) {
+        this.joyId = null;
+        this.joy = { x: 0, y: 0, active: false };
+        this.joyBase.classList.remove("on");
+      }
+    }
     const others = [...this.touches.keys()].filter((id) => id !== this.joyId);
     if (others.length >= 2 && !this.pinch) {
       const a = this.touches.get(others[0])!;

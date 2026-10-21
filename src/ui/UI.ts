@@ -5,7 +5,7 @@ import { kgLabel, money } from "../systems/Economy";
 import { clockLabel, dateLabel, daylight } from "../systems/TimeSystem";
 import { dayWeather, forecastLabel, weatherLabel } from "../systems/Weather";
 import type { Game } from "../game/Game";
-import { OBJECTIVES } from "../game/Objectives";
+import { OBJECTIVES, currentObjective } from "../game/Objectives";
 import { ICON, weatherIcon } from "./icons";
 import { drawMap } from "./Minimap";
 import { MENU_TABS, Menus, type MenuTab } from "./Menus";
@@ -45,11 +45,14 @@ export class UI {
   menuOpen: MenuTab | null = null;
   private menuTimer = 0;
   objCollapsed = false;
+  private introEl: HTMLElement | null = null;
+  private root: HTMLElement;
 
   constructor(
     private game: Game,
     root: HTMLElement,
   ) {
+    this.root = root;
     root.innerHTML = `
       <div class="topbar">
         <div class="tb tb-money">${ICON.coin}<b data-id="money"></b></div>
@@ -60,6 +63,7 @@ export class UI {
         <button class="tb-btn primary" data-act="menu:fleet" title="Menu">${ICON.menu}<span>Menu</span></button>
       </div>
       <canvas class="minimap" width="200" height="150" data-act="menu:map" title="Abrir mapa"></canvas>
+      <div class="zoombtns"><button data-act="zoom:in" title="Aproximar (+)">+</button><button data-act="zoom:out" title="Afastar (−)">−</button></div>
       <div class="notices"></div>
       <div class="objectives"></div>
       <div class="vpanel"></div>
@@ -80,7 +84,7 @@ export class UI {
     this.mini = el<HTMLCanvasElement>(root, ".minimap");
     this.menuEl = el(root, ".menu");
     this.menus = new Menus(game, this, this.menuEl);
-    this.objCollapsed = document.body.classList.contains("touch") || window.innerHeight < 560;
+    this.objCollapsed = window.innerHeight < 560;
     this.speedBtns.innerHTML = BALANCE.timeScales.map((s, i) => `<button data-act="speed:${i}">${s}×</button>`).join("");
     root.addEventListener("click", (e) => {
       const t = (e.target as HTMLElement).closest("[data-act]") as HTMLElement | null;
@@ -108,6 +112,9 @@ export class UI {
       case "menu":
         this.toggleMenu(arg as MenuTab);
         return;
+      case "zoom":
+        this.game.renderer.camera.zoomBy(arg === "in" ? 1.35 : 1 / 1.35);
+        return;
       case "speed":
         w.timeScaleIdx = Number(arg);
         return;
@@ -128,6 +135,18 @@ export class UI {
       }
       case "obj":
         this.objCollapsed = !this.objCollapsed;
+        this.lastObj = "";
+        return;
+      case "tut":
+        if (arg === "skip") w.flags.tutorialOff = true;
+        else w.flags.objDismissed = true;
+        this.lastObj = "";
+        return;
+      case "intro":
+        w.flags.introSeen = true;
+        if (arg === "skip") w.flags.tutorialOff = true;
+        this.introEl?.remove();
+        this.introEl = null;
         this.lastObj = "";
         return;
       default:
@@ -168,6 +187,8 @@ export class UI {
     this.updateActions();
     this.updateNotices();
     this.updateObjectives();
+    this.updateHighlights();
+    this.showIntro();
     this.miniTimer += 0.1;
     if (this.miniTimer >= 0.3) {
       this.miniTimer = 0;
@@ -254,19 +275,56 @@ export class UI {
   private updateObjectives(): void {
     const w = this.game.world;
     const done = OBJECTIVES.filter((o) => w.flags[`obj_${o.id}`]).length;
-    const sig = `${done}|${this.objCollapsed}`;
+    const next = currentObjective(w);
+    const guide = this.game.guide;
+    const sig = `${done}|${this.objCollapsed}|${next?.id}|${guide?.hint}|${w.flags.tutorialOff}|${w.flags.objDismissed}`;
     if (sig === this.lastObj) return;
     this.lastObj = sig;
-    if (done === OBJECTIVES.length && w.flags.objDismissed) {
+    if (w.flags.tutorialOff || (done === OBJECTIVES.length && w.flags.objDismissed)) {
       this.objEl.classList.add("hidden");
       return;
     }
-    const next = OBJECTIVES.find((o) => !w.flags[`obj_${o.id}`]);
-    const items = OBJECTIVES.map((o) => {
-      const ok = w.flags[`obj_${o.id}`];
-      return `<li class="${ok ? "ok" : o === next ? "next" : ""}">${o.text}</li>`;
-    }).join("");
-    this.objEl.innerHTML = `<button class="obj-head" data-act="obj:toggle"><b>Primeiro marco</b><span>${done}/${OBJECTIVES.length}</span></button>${this.objCollapsed ? (next ? `<div class="obj-next">${next.text}</div>` : "") : `<ol>${items}</ol>`}${done === OBJECTIVES.length ? `<div class="obj-done">Marco concluído! Agora expanda a fazenda: compre terras, máquinas e contrate mais operadores.</div>` : ""}`;
+    this.objEl.classList.remove("hidden");
+    if (!next) {
+      this.objEl.innerHTML = `<div class="obj-head"><b>Primeiro marco concluído!</b><span>${done}/${OBJECTIVES.length}</span></div><div class="obj-done">Agora expanda a fazenda: arrende ou compre terras, contrate operadores e acompanhe os preços no mercado.</div><div class="obj-foot"><button data-act="tut:close">Fechar</button></div>`;
+      return;
+    }
+    const idx = OBJECTIVES.indexOf(next) + 1;
+    const dots = OBJECTIVES.map((o) => `<i class="${w.flags[`obj_${o.id}`] ? "ok" : o === next ? "now" : ""}"></i>`).join("");
+    this.objEl.innerHTML = `<button class="obj-head" data-act="obj:toggle"><span class="step">${idx}</span><b>${next.title}</b><span class="chev">${this.objCollapsed ? "▾" : "▴"}</span></button>
+      <div class="obj-hint">${guide?.hint ?? ""}</div>
+      ${this.objCollapsed ? "" : `<div class="obj-why">${next.why}</div><div class="obj-dots">${dots}</div><div class="obj-foot"><span>Passo ${idx} de ${OBJECTIVES.length}</span><button data-act="tut:skip">Pular tutorial</button></div>`}`;
+  }
+
+  /** Faz piscar os botões que o passo atual do tutorial pede. */
+  private updateHighlights(): void {
+    const ids = new Set(this.game.guide?.highlight ?? []);
+    this.root.querySelectorAll(".pulse").forEach((e) => {
+      const act = (e as HTMLElement).dataset.act ?? "";
+      if (!ids.has(act.replace(/^action:/, "")) && !ids.has(act)) e.classList.remove("pulse");
+    });
+    for (const id of ids) {
+      this.root.querySelectorAll(`[data-act="action:${id}"], [data-act="${id}"]`).forEach((e) => e.classList.add("pulse"));
+    }
+  }
+
+  private showIntro(): void {
+    const w = this.game.world;
+    if (w.flags.introSeen || this.introEl) return;
+    const touch = document.body.classList.contains("touch");
+    const el = document.createElement("div");
+    el.className = "intro";
+    el.innerHTML = `<div class="intro-card"><h2>Bem-vindo ao Sítio Boa Vista</h2>
+      <p>Você tem um trator usado, um cultivador, uma plantadeira, uma carreta e <b>R$ 32 mil</b>. O Campo 2 tem trigo quase maduro; o Campo 1 precisa ser preparado.</p>
+      <ul>${
+        touch
+          ? "<li><b>Joystick</b>: toque e arraste na metade esquerda da tela para andar e dirigir.</li><li><b>Botões à direita</b>: as ações possíveis naquele momento.</li><li><b>Pinça</b> ou <b>+ −</b> para zoom.</li>"
+          : "<li><b>WASD / setas</b> para andar e dirigir · <b>Espaço</b> freia · <b>Shift</b> corre.</li><li>As teclas das ações aparecem nos botões à direita (E, Q, V, G…).</li><li><b>Roda do mouse</b> ou <b>+ −</b> para zoom · <b>M</b> abre o mapa.</li>"
+      }</ul>
+      <p>O tutorial mostra cada passo com uma seta amarela até o objetivo.</p>
+      <div class="btns"><button class="primary" data-act="intro:start">Começar</button><button data-act="intro:skip">Jogar sem tutorial</button></div></div>`;
+    this.root.appendChild(el);
+    this.introEl = el;
   }
 }
 

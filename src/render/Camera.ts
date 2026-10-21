@@ -9,7 +9,7 @@ export class Camera {
   w = 800;
   h = 600;
   minZoom = 0.55;
-  maxZoom = 26;
+  maxZoom = 34;
   private shakeT = 0;
 
   follow(tx: number, ty: number, vx: number, vy: number, dt: number): void {

@@ -59,8 +59,8 @@ export class Ground {
     private map: GameMap,
     mobile: boolean,
   ) {
-    this.res = mobile ? 4 : 6;
-    this.maxChunks = mobile ? 60 : 130;
+    this.res = mobile ? 6 : 7;
+    this.maxChunks = mobile ? 50 : 100;
   }
 
   setSeason(s: number): void {
@@ -81,11 +81,13 @@ export class Ground {
     let r = base[0] + (168 - base[0]) * dry + (66 - base[0]) * lush;
     let g = base[1] + (154 - base[1]) * dry + (118 - base[1]) * lush;
     let b = base[2] + (84 - base[2]) * dry + (46 - base[2]) * lush;
-    const shade = 0.86 + n2 * 0.24 + (h - 0.5) * 0.14;
+    // tufos de capim: ruído fino somado ao pontilhado por pixel
+    const tuft = valueNoise(wx * 3.1, wy * 3.1, seed + 505) - 0.5;
+    const shade = 0.86 + n2 * 0.22 + tuft * 0.16 + (h - 0.5) * 0.09;
     r *= shade;
     g *= shade;
     b *= shade;
-    if (h > 0.9965) {
+    if (h > 0.9988) {
       const f = hash2(px, py, seed + 404);
       if (this.season < 2) {
         r = f > 0.5 ? 240 : 236;
@@ -119,7 +121,7 @@ export class Ground {
       for (let px = 0; px < W; px++) {
         const wx = x0 + (px + 0.5) / res;
         const o = (py * W + px) * 4;
-        this.grassPixel(wx, wy, Math.floor(wx * 4), Math.floor(wy * 4), d, o);
+        this.grassPixel(wx, wy, Math.floor(wx * res), Math.floor(wy * res), d, o);
         // bordadura de capim mais alto ao redor dos campos
         for (const f of nearFields) {
           if (wx < f.minX || wx > f.maxX || wy < f.minY || wy > f.maxY) continue;

@@ -25,7 +25,7 @@ export class FieldRenderer {
     private seed: number,
     mobile: boolean,
   ) {
-    this.px = mobile ? 4 : 6;
+    this.px = mobile ? 5 : 7;
   }
 
   private ensure(f: FieldGrid): FieldTex {
