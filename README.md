@@ -1,56 +1,72 @@
-# Farol da Última Costa
+# Última Linha
 
-Tower defense incremental para navegador. Um farol numa ilha escura é cercado
-por criaturas que sobem do mar. Só a luz as mantém longe.
+Defesa de fileiras sci-fi com progressão incremental, no espírito de
+*Plants vs. Zombies* + *Outliers: Incrementum*.
 
-Feito com **TypeScript + Vite + Canvas 2D**. Mar, ilha, farol, criaturas,
-torres, luz, chuva e relâmpagos são **desenhados por código**, sem nenhuma
-imagem.
+Alienígenas atravessam cinco fileiras em direção à base. Você **posiciona
+unidades** nas casas (geradores, blasters, barreiras, minas…) e também **corta os
+alienígenas com o dedo** (ou com o mouse pressionado). Ganhando ou perdendo, leva
+**sucata** para a **árvore de habilidades** e volta mais forte.
+
+Tudo é desenhado por código em Canvas 2D — sem imagens.
 
 ## Como executar
 
 ```bash
 npm install
 npm run dev     # http://localhost:5180
-npm test        # testes de lógica e de ritmo de progressão
+npm test        # regras do jogo + curva de dificuldade
 npm run build
 ```
 
-A Vercel publica o branch `main` (configuração em `vercel.json`). O progresso
-fica salvo no navegador.
+A Vercel publica o branch `main` (`vercel.json`). O progresso fica salvo no
+navegador. No celular, jogue com o aparelho deitado.
 
 ## Como se joga
 
-- **O feixe** gira sozinho e fere tudo que ilumina. **Arraste no mar** (ou use
-  ← →) para apontar; solte e ele volta a girar.
-- **Escuridão de verdade:** fora da luz as criaturas são só olhos brilhando.
-- **Pedras da ilha:** toque numa para construir ou melhorar torres:
-  - **Lanterna**: ilumina e queima o que chega perto (fere águas-vivas).
-  - **Arpão**: longo alcance, dano dobrado em alvo iluminado.
-  - **Rede**: prende grupos e deixa lentos.
-  - **Sino de névoa**: empurra tudo de volta ao mar.
-  Torres dentro do feixe trabalham 60% mais rápido.
-- **Lentes:** clara (atravessa carapaça), âmbar (incendeia), azul (desacelera)
-  e prisma (três feixes, por talento).
-- **Criaturas:** enguias rápidas, caranguejos com carapaça, águas-vivas que só
-  sentem luz, sereias que curam as outras e o Kraken a cada 10 ondas.
-- **Incremental:** produtores (barco baleeiro, destilaria, vagalumes, farol
-  vizinho, frota) rendem óleo sempre, inclusive com o jogo fechado (50% por até
-  8 h). Compras ×1, ×10 ou Máx.
-- **Sem game over:** se o farol apagar, você recua 3 ondas e mantém tudo.
-- **Reconstruir (prestígio):** a partir da onda 20, recomece numa ilha nova
-  com memórias. Cada memória dá +4% de dano e óleo para sempre, e elas compram
-  talentos (mira automática, prisma, partida rápida, torres veteranas…).
+- **Energia:** geradores e o céu soltam células amarelas. Toque nelas (ou passe o
+  dedo por cima) para coletar.
+- **Cartas:** toque numa carta e depois numa casa. Cada carta tem custo e tempo de
+  recarga. *Remover* libera uma casa. Atalhos no teclado: 1–8.
+- **Corte:** arraste sobre os alienígenas. Cada golpe aquece a lâmina; se
+  superaquecer, ela para até esfriar.
+- **Drones:** cada fileira tem um drone que varre tudo uma vez quando um
+  alienígena chega à base. Depois disso, a invasão tira integridade.
+- **Missão:** 8 ondas, com um Colosso na última. "Chamar onda" adianta a próxima.
+
+### Unidades
+Gerador · Blaster · Barreira · Mina · Criotorre (desacelera) · Blaster Duplo ·
+Canhão Laser (atravessa a fileira) · Bobina Tesla (raio em cadeia) · Lança-mísseis
+(área 3×3).
+
+### Alienígenas
+Rastejante · Corredor · Blindado (carapaça) · Enxame · Saltador (pula a primeira
+defesa) · Cuspidor (ataca de longe) · Colosso (chefe).
+
+### Progressão
+- **Setores:** cada vitória libera um setor novo, com alienígenas mais fortes e
+  tipos novos.
+- **Árvore** com três ramos:
+  - **Lâmina:** dano, largura, resfriamento, crítico, ímã de energia, arco
+    voltaico, queimadura.
+  - **Engenharia:** dano e vida das unidades, geradores, recarga, custo e as
+    cartas novas.
+  - **Comando:** sucata, energia inicial, baias extras no arsenal, integridade
+    da base, energia por abate, drones que voltam.
+- **Arsenal:** escolha quais cartas levar (4 baias no começo).
 
 ## Estrutura
 
 ```
-src/data/content.ts   inimigos, torres, melhorias, produtores, lentes, talentos e ilhas
-src/game/             estado, economia, simulação (ondas, luz, torres), ações e save
-src/render/           mar, ilha por pixel, farol, criaturas, torres, luz e clima
-src/ui/hud.ts         barra superior, painel com abas, dicas e avisos
-tests/                lógica (feixe, dano, economia, ondas, prestígio, save) e ritmo
+src/data/content.ts    unidades, alienígenas, setores e árvore (declarativos)
+src/game/run.ts        simulação da missão: ondas, unidades, projéteis, drones, corte
+src/game/profile.ts    progresso permanente, atributos da árvore, arsenal, save
+src/render/sprites.ts  unidades, alienígenas, células e drones desenhados por código
+src/render/board.ts    campo de batalha, efeitos, rastro do corte
+src/ui/runhud.ts       bandeja de cartas, ondas, calor da lâmina, resultado
+src/ui/hub.ts          base: missões, árvore de habilidades, arsenal
+tests/                 regras e curva de dificuldade
 ```
 
-O teste de ritmo joga 20 minutos com um robô que sempre compra a opção mais
-barata e exige que ele passe da onda 15, para o balanceamento não travar.
+O teste de curva simula um jogador simples. O setor 1 é vencível só
+posicionando unidades; o setor 3 exige o corte; o setor 5 exige evoluir na árvore.

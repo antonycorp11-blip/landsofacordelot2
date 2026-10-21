@@ -1,170 +1,275 @@
 import "./styles.css";
-import { fmt, fmtTime } from "./core/format";
-import { TAU } from "./core/math";
-import { beamStats } from "./data/content";
-import { earn, offlineEarnings } from "./game/economy";
-import { islandShape } from "./game/island";
-import { load, save, SAVE_KEY } from "./game/save";
-import { step } from "./game/sim";
-import { newRuntime, newState, type GameState, type Runtime } from "./game/state";
-import { Renderer } from "./render/renderer";
-import { Hud, type HudHost } from "./ui/hud";
+import { RUN, type UnitId } from "./data/content";
+import { computeStats, loadProfile, newProfile, saveProfile, SAVE_KEY, type Profile } from "./game/profile";
+import { callWaveNow, canPlace, collectAt, finalScrap, newRun, place, removeUnit, slash, step, type RunState } from "./game/run";
+import { BoardRenderer } from "./render/board";
+import { Hub } from "./ui/hub";
+import { RunHud, type RunHudHost } from "./ui/runhud";
 
-const canvas = document.getElementById("game") as HTMLCanvasElement;
-const hudRoot = document.getElementById("hud")!;
-const renderer = new Renderer(canvas);
-
-let state: GameState = load() ?? newState();
-let runtime: Runtime = newRuntime();
-runtime.beamAngle = -Math.PI / 2;
-
-const host: HudHost = {
-  get state() {
-    return state;
-  },
-  get runtime() {
-    return runtime;
-  },
-  selectedSlot: null,
-  selectSlot(i) {
-    host.selectedSlot = i;
-    renderer.selectedSlot = i;
-    if (i !== null) hud.tab = "towers";
-  },
-  replaceState(s, rt) {
-    state = s;
-    runtime = rt;
-    runtime.spawnRadius = renderer.spawnRadius();
-    host.selectSlot(null);
-    save(state);
-  },
-  save() {
-    save(state);
-  },
-  reset() {
-    resetting = true;
-    localStorage.removeItem(SAVE_KEY);
-    location.reload();
-  },
-};
-
-const hud = new Hud(host, hudRoot);
+const canvas = document.getElementById("board") as HTMLCanvasElement;
+const ui = document.getElementById("ui")!;
+const board = new BoardRenderer(canvas);
+let profile: Profile = loadProfile();
+let hub: Hub | null = null;
+let run: RunState | null = null;
+let runHud: RunHud | null = null;
 let resetting = false;
-const persist = () => {
-  if (!resetting) save(state);
+
+const save = () => {
+  if (!resetting) saveProfile(profile);
 };
 
-/** O mar ocupa a área livre: ao lado do painel (paisagem) ou acima dele (retrato). */
+// ---------------------------------------------------------------------------
+// Base (entre missões)
+// ---------------------------------------------------------------------------
+
+function showHub(tab?: "missions" | "tree" | "arsenal"): void {
+  runHud?.destroy();
+  runHud = null;
+  run = null;
+  document.body.classList.remove("in-run");
+  hub?.destroy();
+  hub = new Hub(
+    {
+      profile,
+      start: (sector) => startRun(sector),
+      save,
+      reset: () => {
+        resetting = true;
+        localStorage.removeItem(SAVE_KEY);
+        profile = newProfile();
+        location.reload();
+      },
+    },
+    ui,
+  );
+  if (tab) {
+    hub.tab = tab;
+    hub.render();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Missão
+// ---------------------------------------------------------------------------
+
+const input = {
+  selected: null as UnitId | "shovel" | null,
+  hover: null as { row: number; col: number } | null,
+  trail: [] as { x: number; y: number; t: number }[],
+  slashing: false,
+  last: null as { x: number; y: number } | null,
+  speed: 1,
+  paused: false,
+  ended: false,
+};
+
+function startRun(sector: number): void {
+  hub?.destroy();
+  hub = null;
+  const st = computeStats(profile);
+  run = newRun(sector, st, profile.loadout);
+  input.selected = null;
+  input.paused = false;
+  input.ended = false;
+  input.trail = [];
+  document.body.classList.add("in-run");
+  const host: RunHudHost = {
+    get run() {
+      return run!;
+    },
+    get selected() {
+      return input.selected;
+    },
+    select(s) {
+      input.selected = s;
+    },
+    get speed() {
+      return input.speed;
+    },
+    setSpeed(n) {
+      input.speed = n;
+    },
+    get paused() {
+      return input.paused;
+    },
+    setPaused(p) {
+      input.paused = p;
+    },
+    callWave() {
+      if (run) callWaveNow(run);
+    },
+    abandon() {
+      if (run) {
+        run.status = "lost";
+        input.paused = false;
+      }
+    },
+    finish(action) {
+      const sector = run?.sector ?? 1;
+      if (action === "hub") showHub("tree");
+      else if (action === "retry") startRun(sector);
+      else startRun(sector + 1);
+    },
+  };
+  runHud = new RunHud(host, ui);
+  layout();
+}
+
+function endRun(r: RunState): void {
+  if (input.ended) return;
+  input.ended = true;
+  const won = r.status === "won";
+  const first = won && !profile.cleared[r.sector];
+  const loot = finalScrap(r, first);
+  const prevBest = profile.bestWave[r.sector] ?? 0;
+  profile.scrap += loot.total;
+  profile.scrapTotal += loot.total;
+  profile.kills += r.kills;
+  profile.runs++;
+  profile.bestWave[r.sector] = Math.max(prevBest, r.wavesCleared);
+  let unlockedNext = false;
+  if (won) {
+    profile.cleared[r.sector] = true;
+    if (profile.sectorUnlocked === r.sector) {
+      profile.sectorUnlocked = r.sector + 1;
+      unlockedNext = true;
+    } else unlockedNext = profile.sectorUnlocked > r.sector;
+  }
+  save();
+  runHud?.showResult(won, loot, unlockedNext, r.wavesCleared > prevBest);
+}
+
 function layout(): void {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const portrait = h > w;
-  document.body.classList.toggle("portrait", portrait);
-  const r = hud.panel.getBoundingClientRect();
-  const top = 56;
-  const view = portrait ? { x: 0, y: top, w, h: Math.max(200, r.top - top) } : { x: 0, y: top, w: Math.max(200, r.left), h: h - top };
-  renderer.resize(view);
-  runtime.spawnRadius = renderer.spawnRadius();
+  const top = runHud ? runHud.trayHeight() : 0;
+  board.resize(top, 6);
 }
-window.addEventListener("resize", layout);
-layout();
+window.addEventListener("resize", () => {
+  layout();
+  hub?.render();
+});
 
-// ganhos enquanto o jogo esteve fechado
-{
-  const off = offlineEarnings(state, Date.now());
-  if (off.seconds > 60 && off.oil > 0) {
-    earn(state, off.oil);
-    hud.modal(`<h2>O farol seguiu aceso</h2><p>Você ficou fora por <b>${fmtTime(off.seconds)}</b>. Seus produtores juntaram</p><p class="big-num"><i class="drop"></i>${fmt(off.oil)} de óleo</p><button class="big" data-act="close">Continuar</button>`);
-  } else if (!state.flags.welcomed) {
-    hud.modal(`<h2>Farol da Última Costa</h2><p>Quando a noite cai, criaturas sobem do mar em direção à ilha. Só a luz as mantém longe.</p><ul><li><b>Arraste no mar</b> para apontar o feixe. Solte e ele volta a girar.</li><li><b>Toque nas pedras</b> com “+” para construir torres.</li><li>Gaste óleo para fortalecer a luz e comprar produtores que rendem até com o jogo fechado.</li><li>Se o farol apagar, você recua algumas ondas — nunca perde o que construiu.</li></ul><button class="big" data-act="close">Acender o farol</button>`);
-    state.flags.welcomed = true;
-  }
-}
-
-// entrada: arrastar mira o feixe; tocar numa pedra seleciona
-let dragging = false;
-function worldAt(e: PointerEvent) {
-  return renderer.screenToWorld(e.clientX, e.clientY);
-}
+// entrada: tocar carta e casa para posicionar; arrastar sobre alienígenas corta
 canvas.addEventListener("pointerdown", (e) => {
-  const p = worldAt(e);
-  const slots = islandShape(state.seed + state.island).slots;
-  const hit = slots.findIndex((sl) => Math.hypot(sl.x - p.x, sl.y - p.y) < 17);
-  if (hit >= 0) {
-    host.selectSlot(host.selectedSlot === hit ? null : hit);
-    hud.update();
-    return;
-  }
-  dragging = true;
+  if (!run || input.paused || run.status !== "playing") return;
   canvas.setPointerCapture(e.pointerId);
-  runtime.aim = Math.atan2(p.y, p.x);
-  state.flags.aimed = true;
+  const w = board.toWorld(e.clientX, e.clientY);
+  if (input.selected) {
+    const tile = board.tileAt(w.x, w.y);
+    if (tile) {
+      if (input.selected === "shovel") {
+        if (removeUnit(run, tile.row, tile.col)) input.selected = null;
+      } else {
+        const idx = run.cards.findIndex((c) => c.id === input.selected);
+        if (canPlace(run, idx, tile.row, tile.col)) {
+          place(run, idx, tile.row, tile.col);
+          profile.flags.placed = true;
+          input.selected = null;
+        }
+      }
+      return;
+    }
+    input.selected = null;
+  }
+  collectAt(run, w.x, w.y, 44);
+  input.slashing = true;
+  input.last = w;
+  input.trail = [{ ...w, t: board.time }];
 });
 canvas.addEventListener("pointermove", (e) => {
-  if (!dragging) return;
-  const p = worldAt(e);
-  runtime.aim = Math.atan2(p.y, p.x);
+  if (!run) return;
+  const w = board.toWorld(e.clientX, e.clientY);
+  input.hover = input.selected ? board.tileAt(w.x, w.y) : null;
+  if (!input.slashing || !input.last || input.paused) return;
+  const hits = slash(run, input.last.x, input.last.y, w.x, w.y);
+  if (hits) profile.flags.slashed = true;
+  input.last = w;
+  input.trail.push({ ...w, t: board.time });
+  if (input.trail.length > 24) input.trail.shift();
 });
-const release = () => {
-  dragging = false;
-  runtime.aim = null;
+const endSlash = () => {
+  input.slashing = false;
+  input.last = null;
 };
-canvas.addEventListener("pointerup", release);
-canvas.addEventListener("pointercancel", release);
-const keys = new Set<string>();
+canvas.addEventListener("pointerup", endSlash);
+canvas.addEventListener("pointercancel", endSlash);
 window.addEventListener("keydown", (e) => {
-  keys.add(e.key);
-  if (e.key === "Escape") host.selectSlot(null);
+  if (!run || !runHud) return;
+  const n = Number(e.key);
+  if (n >= 1 && n <= run.cards.length) input.selected = input.selected === run.cards[n - 1].id ? null : run.cards[n - 1].id;
+  if (e.key === "Escape") input.selected = null;
+  if (e.key === " ") callWaveNow(run);
 });
-window.addEventListener("keyup", (e) => keys.delete(e.key));
 
-// laço: simulação em passo fixo, renderização a cada quadro
+/** Dicas de primeira missão. */
+function tip(r: RunState): string {
+  if (profile.runs > 0 && profile.flags.slashed) return "";
+  const placedGen = r.grid.some((row) => row.some((u) => u?.def.id === "generator"));
+  const placedShooter = r.grid.some((row) => row.some((u) => u && u.def.damage > 0));
+  if (!placedGen) return input.selected === "generator" ? "Agora toque numa casa do chão (de preferência nas colunas da esquerda)." : "Toque na carta Gerador e depois numa casa do chão.";
+  if (r.energy < 100 && !placedShooter && r.orbs.length) return "Toque nas células de energia amarelas para coletá-las.";
+  if (!placedShooter) return "Coloque um Blaster: ele atira em tudo que vier pela fileira dele.";
+  if (r.aliens.length && !profile.flags.slashed) return "Passe o dedo sobre os alienígenas para cortá-los! Se a lâmina superaquecer, espere esfriar.";
+  if (r.prep > 0) return "Monte mais geradores e defesas antes da primeira onda, ou toque em “Chamar onda”.";
+  return "";
+}
+
+// laço principal
 const DT = 1 / 60;
 let acc = 0;
 let last = performance.now();
 let hudT = 0;
-let saveT = 0;
 function frame(now: number): void {
   let dt = (now - last) / 1000;
   last = now;
   if (dt > 0.25) dt = 0.25;
-  acc += dt;
-  const left = keys.has("ArrowLeft") || keys.has("a");
-  const right = keys.has("ArrowRight") || keys.has("d");
-  if (left || right) {
-    runtime.aim = runtime.beamAngle + (right ? 0.6 : -0.6);
-    state.flags.aimed = true;
-  } else if (!dragging && runtime.aim !== null) runtime.aim = null;
-  let n = 0;
-  while (acc >= DT && n < 10) {
-    step(state, runtime, DT);
-    acc -= DT;
-    n++;
-  }
-  if (n === 10) acc = 0;
-  for (const ev of runtime.events) {
-    if (ev.type === "wave" && ev.boss) hud.toast(`Onda ${ev.wave}: um Kraken se aproxima!`, "warn");
-    if (ev.type === "retreat") hud.toast(`O farol quase apagou. Recuando para a onda ${ev.wave}.`, "warn");
-  }
-  renderer.consume(runtime, state);
-  renderer.render(state, runtime, dt);
-  hudT += dt;
-  if (hudT > 0.2) {
-    hudT = 0;
-    hud.update();
-  }
-  saveT += dt;
-  if (saveT > 15) {
-    saveT = 0;
-    persist();
+  if (run) {
+    if (!input.paused) {
+      acc += dt * input.speed;
+      let n = 0;
+      while (acc >= DT && n < 12) {
+        step(run, DT);
+        acc -= DT;
+        n++;
+      }
+      if (n === 12) acc = 0;
+    }
+    board.consume(run);
+    board.render(run, { selected: input.selected, hover: input.hover, trail: input.trail, energyTarget: runHud!.energyTarget() }, input.paused ? 0 : dt);
+    hudT += dt;
+    if (hudT > 0.08 && runHud) {
+      hudT = 0;
+      runHud.update();
+      runHud.setTip(run.status === "playing" ? tip(run) : "");
+    }
+    if (run.status !== "playing") endRun(run);
   }
   requestAnimationFrame(frame);
 }
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) persist();
-  else last = performance.now();
+  if (document.hidden) {
+    save();
+    if (run && run.status === "playing" && runHud) {
+      input.paused = true;
+      runHud.root.querySelector<HTMLElement>(".pause")?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    }
+  } else last = performance.now();
 });
-window.addEventListener("beforeunload", persist);
-hud.update();
+window.addEventListener("beforeunload", save);
+
+showHub();
 requestAnimationFrame(frame);
-(window as unknown as { __farol: unknown }).__farol = { get state() { return state; }, get runtime() { return runtime; }, step, renderer, hud, TAU, beamStats };
+(window as unknown as { __game: unknown }).__game = {
+  get run() {
+    return run;
+  },
+  get profile() {
+    return profile;
+  },
+  startRun,
+  showHub,
+  board,
+  input,
+  step,
+  RUN,
+};
