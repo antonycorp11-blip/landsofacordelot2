@@ -1,113 +1,170 @@
 import "./styles.css";
-import { Game } from "./game/Game";
-import { newWorld } from "./game/NewGame";
-import { MachineRenderer } from "./render/Machines";
-import { deserialize, loadFromStorage } from "./save/SaveSystem";
-import { VEHICLES } from "./data/machines";
-import { createVehicle } from "./world/entities";
-import type { World } from "./world/World";
+import { fmt, fmtTime } from "./core/format";
+import { TAU } from "./core/math";
+import { beamStats } from "./data/content";
+import { earn, offlineEarnings } from "./game/economy";
+import { islandShape } from "./game/island";
+import { load, save, SAVE_KEY } from "./game/save";
+import { step } from "./game/sim";
+import { newRuntime, newState, type GameState, type Runtime } from "./game/state";
+import { Renderer } from "./render/renderer";
+import { Hud, type HudHost } from "./ui/hud";
 
-const mobile = matchMedia("(pointer: coarse)").matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
-if (mobile) document.body.classList.add("touch");
+const canvas = document.getElementById("game") as HTMLCanvasElement;
+const hudRoot = document.getElementById("hud")!;
+const renderer = new Renderer(canvas);
 
-const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
-const title = $<HTMLDivElement>("#title");
-let game: Game | null = null;
+let state: GameState = load() ?? newState();
+let runtime: Runtime = newRuntime();
+runtime.beamAngle = -Math.PI / 2;
 
-/** Fundo da tela de título: fileiras de lavoura e uma colheitadeira desenhadas em canvas. */
-function titleArt(c: HTMLCanvasElement): () => void {
-  const ctx = c.getContext("2d")!;
-  const mr = new MachineRenderer();
-  const combine = createVehicle(0, "cb-ceifa-6", "player", 0, 0, 0);
-  const tractor = createVehicle(0, "tr-campeiro-75", "player", 0, 0, 0);
-  combine.lowered = true;
-  let raf = 0;
-  let t = 14;
-  const draw = () => {
-    const w = (c.width = c.clientWidth * devicePixelRatio);
-    const h = (c.height = c.clientHeight * devicePixelRatio);
-    t += 1 / 60;
-    const s = Math.max(w, h) / 90;
-    ctx.setTransform(s, 0, 0, s, 0, 0);
-    const W = w / s;
-    const H = h / s;
-    const cut = ((t * 2.4) % (W + 30)) - 15;
-    for (let y = 0; y < H; y += 0.7) {
-      const ripe = y < H * 0.55;
-      ctx.fillStyle = ripe ? (Math.floor(y / 0.7) % 2 ? "#d8b65c" : "#c9a54a") : Math.floor(y / 0.7) % 2 ? "#5d4630" : "#6e5338";
-      ctx.fillRect(0, y, W, 0.7);
-    }
-    ctx.fillStyle = "#cdb88a";
-    ctx.fillRect(0, H * 0.3, cut, H * 0.12);
-    combine.x = cut + 4;
-    combine.y = H * 0.36;
-    combine.reel = t * 5;
-    combine.wheelDist = t * 2.4;
-    mr.drawVehicle(ctx, combine, t, false);
-    tractor.x = ((t * 3.2) % (W + 20)) - 10;
-    tractor.y = H * 0.78;
-    tractor.wheelDist = t * 3.2;
-    mr.drawVehicle(ctx, tractor, t, false);
-    raf = requestAnimationFrame(draw);
-  };
-  draw();
-  return () => cancelAnimationFrame(raf);
+const host: HudHost = {
+  get state() {
+    return state;
+  },
+  get runtime() {
+    return runtime;
+  },
+  selectedSlot: null,
+  selectSlot(i) {
+    host.selectedSlot = i;
+    renderer.selectedSlot = i;
+    if (i !== null) hud.tab = "towers";
+  },
+  replaceState(s, rt) {
+    state = s;
+    runtime = rt;
+    runtime.spawnRadius = renderer.spawnRadius();
+    host.selectSlot(null);
+    save(state);
+  },
+  save() {
+    save(state);
+  },
+  reset() {
+    resetting = true;
+    localStorage.removeItem(SAVE_KEY);
+    location.reload();
+  },
+};
+
+const hud = new Hud(host, hudRoot);
+let resetting = false;
+const persist = () => {
+  if (!resetting) save(state);
+};
+
+/** O mar ocupa a área livre: ao lado do painel (paisagem) ou acima dele (retrato). */
+function layout(): void {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const portrait = h > w;
+  document.body.classList.toggle("portrait", portrait);
+  const r = hud.panel.getBoundingClientRect();
+  const top = 56;
+  const view = portrait ? { x: 0, y: top, w, h: Math.max(200, r.top - top) } : { x: 0, y: top, w: Math.max(200, r.left), h: h - top };
+  renderer.resize(view);
+  runtime.spawnRadius = renderer.spawnRadius();
 }
+window.addEventListener("resize", layout);
+layout();
 
-function showTitle(): void {
-  const save = loadFromStorage();
-  title.classList.remove("hidden");
-  title.innerHTML = `<canvas class="title-bg"></canvas><div class="title-card">
-    <h1>TERRA FIRME</h1>
-    <p class="tag">Simulação agrícola · operação de máquinas, logística e expansão</p>
-    <div class="btns">
-      ${save ? `<button class="primary" data-go="continue">Continuar <small>${new Date(save.savedAt).toLocaleString("pt-BR")}</small></button>` : ""}
-      <button class="${save ? "" : "primary"}" data-go="new">Novo jogo</button>
-    </div>
-    <label class="seed">Semente do mundo <input id="seed" type="number" value="20251" /></label>
-    <p class="small">Todos os gráficos são desenhados por código. Funciona offline após carregar.</p>
-  </div>`;
-  const stopArt = titleArt(title.querySelector(".title-bg")!);
-  title.querySelectorAll<HTMLButtonElement>("[data-go]").forEach((b) =>
-    b.addEventListener("click", () => {
-      const seed = Number(($<HTMLInputElement>("#seed")).value) || 20251;
-      stopArt();
-      void boot(b.dataset.go === "continue" && save ? () => deserialize(save) : () => newWorld(seed));
-    }),
-  );
-}
-
-async function boot(make: () => World): Promise<void> {
-  title.innerHTML = `<div class="title-card"><h1>TERRA FIRME</h1><p class="tag">Gerando terreno e lavouras…</p><div class="progress"><i></i></div></div>`;
-  const bar = title.querySelector<HTMLElement>(".progress i")!;
-  await new Promise((r) => setTimeout(r, 30));
-  let world: World;
-  try {
-    world = make();
-  } catch (e) {
-    console.error(e);
-    world = newWorld(20251);
+// ganhos enquanto o jogo esteve fechado
+{
+  const off = offlineEarnings(state, Date.now());
+  if (off.seconds > 60 && off.oil > 0) {
+    earn(state, off.oil);
+    hud.modal(`<h2>O farol seguiu aceso</h2><p>Você ficou fora por <b>${fmtTime(off.seconds)}</b>. Seus produtores juntaram</p><p class="big-num"><i class="drop"></i>${fmt(off.oil)} de óleo</p><button class="big" data-act="close">Continuar</button>`);
+  } else if (!state.flags.welcomed) {
+    hud.modal(`<h2>Farol da Última Costa</h2><p>Quando a noite cai, criaturas sobem do mar em direção à ilha. Só a luz as mantém longe.</p><ul><li><b>Arraste no mar</b> para apontar o feixe. Solte e ele volta a girar.</li><li><b>Toque nas pedras</b> com “+” para construir torres.</li><li>Gaste óleo para fortalecer a luz e comprar produtores que rendem até com o jogo fechado.</li><li>Se o farol apagar, você recua algumas ondas — nunca perde o que construiu.</li></ul><button class="big" data-act="close">Acender o farol</button>`);
+    state.flags.welcomed = true;
   }
-  game = new Game(world, { canvas: $("#game"), hud: $("#hud"), joyBase: $(".joy-base"), joyKnob: $(".joy-knob") }, mobile, () => {
-    game = null;
-    showTitle();
-  });
-  (window as unknown as { __game: Game }).__game = game;
-  const total = world.fields.reduce((a, f) => a + f.n, 0);
-  await new Promise<void>((resolve) => {
-    const tick = () => {
-      const done = game!.renderer.warmup(24);
-      const left = world.fields.reduce((a, f) => a + (f.dirty ? (f.dirty.y1 - f.dirty.y0 + 1) * f.w : 0), 0);
-      bar.style.width = `${Math.round((1 - left / total) * 100)}%`;
-      if (done) resolve();
-      else requestAnimationFrame(tick);
-    };
-    tick();
-  });
-  title.classList.add("hidden");
-  title.innerHTML = "";
-  game.start();
-  void VEHICLES;
 }
 
-showTitle();
+// entrada: arrastar mira o feixe; tocar numa pedra seleciona
+let dragging = false;
+function worldAt(e: PointerEvent) {
+  return renderer.screenToWorld(e.clientX, e.clientY);
+}
+canvas.addEventListener("pointerdown", (e) => {
+  const p = worldAt(e);
+  const slots = islandShape(state.seed + state.island).slots;
+  const hit = slots.findIndex((sl) => Math.hypot(sl.x - p.x, sl.y - p.y) < 17);
+  if (hit >= 0) {
+    host.selectSlot(host.selectedSlot === hit ? null : hit);
+    hud.update();
+    return;
+  }
+  dragging = true;
+  canvas.setPointerCapture(e.pointerId);
+  runtime.aim = Math.atan2(p.y, p.x);
+  state.flags.aimed = true;
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!dragging) return;
+  const p = worldAt(e);
+  runtime.aim = Math.atan2(p.y, p.x);
+});
+const release = () => {
+  dragging = false;
+  runtime.aim = null;
+};
+canvas.addEventListener("pointerup", release);
+canvas.addEventListener("pointercancel", release);
+const keys = new Set<string>();
+window.addEventListener("keydown", (e) => {
+  keys.add(e.key);
+  if (e.key === "Escape") host.selectSlot(null);
+});
+window.addEventListener("keyup", (e) => keys.delete(e.key));
+
+// laço: simulação em passo fixo, renderização a cada quadro
+const DT = 1 / 60;
+let acc = 0;
+let last = performance.now();
+let hudT = 0;
+let saveT = 0;
+function frame(now: number): void {
+  let dt = (now - last) / 1000;
+  last = now;
+  if (dt > 0.25) dt = 0.25;
+  acc += dt;
+  const left = keys.has("ArrowLeft") || keys.has("a");
+  const right = keys.has("ArrowRight") || keys.has("d");
+  if (left || right) {
+    runtime.aim = runtime.beamAngle + (right ? 0.6 : -0.6);
+    state.flags.aimed = true;
+  } else if (!dragging && runtime.aim !== null) runtime.aim = null;
+  let n = 0;
+  while (acc >= DT && n < 10) {
+    step(state, runtime, DT);
+    acc -= DT;
+    n++;
+  }
+  if (n === 10) acc = 0;
+  for (const ev of runtime.events) {
+    if (ev.type === "wave" && ev.boss) hud.toast(`Onda ${ev.wave}: um Kraken se aproxima!`, "warn");
+    if (ev.type === "retreat") hud.toast(`O farol quase apagou. Recuando para a onda ${ev.wave}.`, "warn");
+  }
+  renderer.consume(runtime, state);
+  renderer.render(state, runtime, dt);
+  hudT += dt;
+  if (hudT > 0.2) {
+    hudT = 0;
+    hud.update();
+  }
+  saveT += dt;
+  if (saveT > 15) {
+    saveT = 0;
+    persist();
+  }
+  requestAnimationFrame(frame);
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) persist();
+  else last = performance.now();
+});
+window.addEventListener("beforeunload", persist);
+hud.update();
+requestAnimationFrame(frame);
+(window as unknown as { __farol: unknown }).__farol = { get state() { return state; }, get runtime() { return runtime; }, step, renderer, hud, TAU, beamStats };
