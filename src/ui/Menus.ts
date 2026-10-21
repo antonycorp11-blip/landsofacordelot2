@@ -58,8 +58,9 @@ export class Menus {
     if (opts.fieldId) this.mapState.selected = opts.fieldId;
     if (tab === "map") {
       const w = this.game.world;
-      this.mapState.cx = w.player.x;
-      this.mapState.cy = w.player.y;
+      this.mapState.cx = w.map.width / 2;
+      this.mapState.cy = w.map.height / 2;
+      this.mapState.scale = 0;
     }
     this.root.innerHTML = `<div class="menu-panel"><nav>${MENU_TABS.map(([id, label]) => `<button data-act="tab:${id}" class="${id === tab ? "on" : ""}">${label}</button>`).join("")}<button class="close" data-act="close:">✕</button></nav><section class="menu-body"></section></div>`;
     this.body = this.root.querySelector(".menu-body")!;
@@ -343,6 +344,10 @@ export class Menus {
     const r = c.getBoundingClientRect();
     c.width = Math.max(200, Math.round(r.width));
     c.height = Math.max(200, Math.round(r.height));
+    if (!this.mapState.scale) {
+      const w = this.game.world;
+      this.mapState.scale = Math.max(w.map.width / c.width, w.map.height / c.height) * 1.02;
+    }
     let drag: { x: number; y: number; cx: number; cy: number; moved: boolean } | null = null;
     c.onpointerdown = (e) => {
       drag = { x: e.clientX, y: e.clientY, cx: this.mapState.cx, cy: this.mapState.cy, moved: false };
@@ -485,7 +490,7 @@ export class Menus {
         ${op === "plant" ? `<label>Cultura<select data-form="crop">${CROP_LIST.map((c) => `<option value="${c.id}" ${c.id === this.form.crop ? "selected" : ""}>${c.name}</option>`).join("")}</select></label>` : ""}
         <p class="muted">A máquina precisa estar equipada com o implemento da operação. O operador vai até ela a pé, segue pelas estradas, trabalha em faixas e busca sementes/diesel na sede quando faltar.</p>
         <div class="btns"><button class="primary" data-act="assign:">Adicionar à fila</button></div></div>`
-      : "";
+      : `<div class="card"><h3>Nenhum funcionário</h3><p class="muted">Contrate um dos candidatos abaixo para atribuir tarefas a máquinas e campos.</p></div>`;
     const cands = w.candidates
       .map((c, i) => `<div class="card"><h3>${c.name}</h3><p>Especialidade: ${OP_LABEL[c.specialty]}<br>Eficiência ${Math.round(c.skill * 100)}% · ${money(c.salary)}/h</p><div class="btns"><button class="primary" data-act="hire:${i}">Contratar</button></div></div>`)
       .join("");

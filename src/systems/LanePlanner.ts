@@ -24,6 +24,8 @@ export interface LaneOptions {
   overlap?: number;
   /** Começa pelo lado oposto do campo. */
   fromEnd?: boolean;
+  /** Inverte o sentido da primeira faixa (e, por consequência, de todas). */
+  invert?: boolean;
 }
 
 /** Direção da maior aresta do polígono: as faixas seguem o lado mais comprido. */
@@ -71,7 +73,7 @@ export function planLanes(poly: readonly Vec2[], opt: LaneOptions): LanePlan {
       }
     }
     if (!isFinite(x0)) continue;
-    const forward = lanes.length % 2 === 0;
+    const forward = (lanes.length % 2 === 0) !== !!opt.invert;
     const eS = forward ? x0 : x1;
     const eE = forward ? x1 : x0;
     const dir = forward ? 1 : -1;

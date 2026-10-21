@@ -1,5 +1,5 @@
 import { BALANCE } from "../config/balance";
-import { clamp, closestPointOnSegment, localToWorld, pointInPolygon, worldToLocal, type Vec2 } from "../core/math";
+import { clamp, closestPointOnSegment, distToPolygonEdge, localToWorld, pointInPolygon, worldToLocal, type Vec2 } from "../core/math";
 import { Rng } from "../core/rng";
 import { CROPS, type CropId } from "../data/crops";
 import { OP_LABEL, kmh, ms, type WorkOp } from "../data/machines";
@@ -22,10 +22,14 @@ const SPECIALTIES: WorkOp[] = ["cultivate", "plant", "harvest", "spray", "plow"]
 export function generateCandidates(seed: number, day: number, count = BALANCE.candidatesPerDay): Candidate[] {
   const r = new Rng(seed ^ (day * 7919 + 13));
   const out: Candidate[] = [];
+  const used = new Set<string>();
   for (let i = 0; i < count; i++) {
     const skill = Math.round(r.range(0.82, 1.18) * 100) / 100;
+    let name = `${r.pick(FIRST)} ${r.pick(LAST)}`;
+    while (used.has(name)) name = `${r.pick(FIRST)} ${r.pick(LAST)}`;
+    used.add(name);
     out.push({
-      name: `${r.pick(FIRST)} ${r.pick(LAST)}`,
+      name,
       skill,
       specialty: r.pick(SPECIALTIES),
       salary: Math.round(28 + (skill - 0.8) * 70 + r.range(-3, 3)),
@@ -154,7 +158,7 @@ function insideField(world: World, p: Vec2): FieldGrid | undefined {
 function travelLegs(world: World, v: Vehicle, to: Vec2, goalNode?: number, toField?: FieldGrid): Leg[] {
   const from = { x: v.x, y: v.y };
   const here = insideField(world, from);
-  const nearGoalField = toField && (pointInPolygon(from.x, from.y, toField.poly) || Math.hypot(from.x - toField.gate.x, from.y - toField.gate.y) < 35);
+  const nearGoalField = toField && (pointInPolygon(from.x, from.y, toField.poly) || distToPolygonEdge(from.x, from.y, toField.poly) < 25 || Math.hypot(from.x - toField.gate.x, from.y - toField.gate.y) < 35);
   if (nearGoalField) return [{ kind: "approach", pts: [from, to], speedKmh: 12 }];
   const startNode = here && here.gateNode >= 0 ? here.gateNode : undefined;
   const legs: Leg[] = [];
@@ -194,20 +198,42 @@ function planWork(world: World, w: Worker, v: Vehicle, t: WorkerTask): boolean {
     failTask(world, w, t, "Máquina sem implemento adequado");
     return false;
   }
-  const best = (fromEnd: boolean) => {
-    const plan = planLanes(f.poly, { width: geo.width, workOffset: geo.offset, fromEnd });
-    const lanes = plan.lanes.filter((l) => laneNeedsWork(f, l, geo.width, t.op));
-    return { lanes, d: lanes.length ? Math.hypot(lanes[0].start.x - v.x, lanes[0].start.y - v.y) : Infinity };
-  };
-  const a = best(false);
-  const b = best(true);
-  const { lanes } = a.d <= b.d ? a : b;
+  // avalia começar por cada lado e em cada sentido; prefere continuar a faixa em que já está
+  let bestPlan: { lanes: Lane[]; cost: number; resume: Vec2 | null } = { lanes: [], cost: Infinity, resume: null };
+  for (const fromEnd of [false, true]) {
+    for (const invert of [false, true]) {
+      const plan = planLanes(f.poly, { width: geo.width, workOffset: geo.offset, fromEnd, invert });
+      const lanes = plan.lanes.filter((l) => laneNeedsWork(f, l, geo.width, t.op));
+      if (!lanes.length) continue;
+      const L = lanes[0];
+      const hx = Math.cos(L.heading);
+      const hy = Math.sin(L.heading);
+      const back = { x: L.start.x - hx * 9, y: L.start.y - hy * 9 };
+      const align = Math.cos(v.heading - L.heading);
+      let cost = Math.hypot(back.x - v.x, back.y - v.y) + (1 - align) * 12;
+      // já sobre a faixa, alinhado: segue dali mesmo
+      const len = Math.hypot(L.end.x - L.start.x, L.end.y - L.start.y) || 1;
+      const along = ((v.x - L.start.x) * hx + (v.y - L.start.y) * hy) / len;
+      const perp = Math.abs(-(v.x - L.start.x) * hy + (v.y - L.start.y) * hx);
+      let resume: Vec2 | null = null;
+      if (align > 0.85 && perp < geo.width * 0.6 && along > 0 && along < 0.95) {
+        resume = { x: v.x, y: v.y };
+        cost = -1000;
+      }
+      if (cost < bestPlan.cost) bestPlan = { lanes, cost, resume };
+    }
+  }
+  const { lanes, resume } = bestPlan;
   if (!lanes.length) return false;
   const legs: Leg[] = [];
   const first = lanes[0];
-  const back = { x: first.start.x - Math.cos(first.heading) * 9, y: first.start.y - Math.sin(first.heading) * 9 };
-  legs.push(...travelLegs(world, v, back, undefined, f));
-  legs.push({ kind: "approach", pts: [back, first.start], speedKmh: 8 });
+  if (resume) {
+    first.start = resume;
+  } else {
+    const back = { x: first.start.x - Math.cos(first.heading) * 9, y: first.start.y - Math.sin(first.heading) * 9 };
+    legs.push(...travelLegs(world, v, back, undefined, f));
+    legs.push({ kind: "approach", pts: [back, first.start], speedKmh: 8 });
+  }
   const im = world.implement(v.implementId);
   const workKmh = (v.def.combine ? v.def.combine.harvestKmh : im ? im.def.workSpeedKmh : 10) * w.skill * (w.specialty === t.op ? 1.06 : 1);
   const r = turnRadius(world, v);
@@ -458,6 +484,8 @@ function pursue(world: World, w: Worker, v: Vehicle, leg: Leg, dt: number, isLas
   const steerAngle = Math.atan2(2 * v.def.wheelbase * Math.sin(alpha), Ld);
   const maxSteer = (v.def.maxSteerDeg * Math.PI) / 180;
   v.ctrl.steer = clamp(steerAngle / maxSteer, -1, 1);
+  // alvo atrás do veículo: esterça tudo para fazer a volta (evita a singularidade da perseguição pura)
+  if (Math.abs(alpha) > 1.75) v.ctrl.steer = local.y >= 0 ? 1 : -1;
   // velocidade alvo
   let vt = ms(leg.speedKmh);
   if (leg.kind === "road") {
