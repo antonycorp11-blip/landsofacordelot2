@@ -346,7 +346,7 @@ export class Hub {
         <button class="npc" data-act="talk"><canvas width="60" height="60"></canvas><span><b>Dona Fermata</b><small>conversar</small></span></button>
       </div>
       <div class="stage"></div>
-      <div class="bottom">${this.tab === "habilidades" ? `<span class="avail">${avail ? `${avail} lição${avail > 1 ? "ões" : ""} disponíve${avail > 1 ? "is" : "l"}` : ""}</span>` : ""}<button class="enter" data-act="enter">COMEÇAR O ENSAIO ▶</button></div>
+      <div class="bottom">${this.tab === "habilidades" ? `<span class="avail">${avail ? `${avail} ${avail > 1 ? "lições" : "lição"} disponíve${avail > 1 ? "is" : "l"}` : ""}</span>` : ""}<button class="enter" data-act="enter">COMEÇAR O ENSAIO ▶</button></div>
       ${this.menuOpen ? `<div class="dropdown"><button data-act="mute">Som: ${this.host.muted() ? "desligado" : "ligado"}</button><button data-act="reset" class="red">${this.confirmReset ? "Confirmar: apagar tudo" : "Apagar progresso"}</button></div>` : ""}`;
     const npc = this.root.querySelector(".npc canvas") as HTMLCanvasElement;
     const ng = npc.getContext("2d")!;
