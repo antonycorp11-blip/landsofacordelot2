@@ -90,3 +90,10 @@ npm run dev
 npm test
 npm run build
 ```
+
+## ATHG — trava da plataforma
+
+Este jogo só roda dentro da ATHG (https://athg.antonycorp11.workers.dev). **Não remova:**
+
+- o `<script>` no topo do `index.html`: aberto fora de um iframe (link direto), redireciona para o player da ATHG (localhost/rede local continuam livres para testes);
+- o `Content-Security-Policy: frame-ancestors` (em `public/_headers` e na config do host): só a ATHG pode exibir o jogo em iframe.
