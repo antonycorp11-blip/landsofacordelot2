@@ -1,38 +1,39 @@
 # Dissonância
 
-Roguelike incremental com tema de teoria musical. Você é a **batuta do maestro**. Notas-monstro desafinadas avançam de todos os lados no ritmo da música para calar a **Lyra**, a cantora no centro do palco. Corte as notas passando o mouse ou arrastando o dedo por cima delas.
+Roguelike incremental em pixel art, visto de cima em isométrico, com tema de teoria musical. A jogabilidade segue a do *Outliers: Incrementum*.
 
-## Como jogar
+**Você é o cursor**, a batuta do maestro. O seu irmão **Tito** segue pela masmorra tocando tambor, e os monstros desafinados querem calá-lo. Corte os monstros passando o mouse rápido ou arrastando o dedo por cima deles.
 
-- **Cortar:** passe o mouse ou arraste o dedo sobre as notas. Cada corte toca a nota do monstro e gasta **fôlego**.
-- **No tempo:** golpes na batida do metrônomo causam mais dano. A batida aparece no anel dourado e nos pontos da HUD.
-- **Acordes:** corte as 3 notas de um acorde num traço só (por exemplo Dó, Mi e Sol para o acorde I) e solte uma explosão harmônica.
-- **Escala:** 3 notas seguidas em ordem (Dó, Ré, Mi…) devolvem fôlego.
-- **Concerto:** são 5 movimentos. O último traz o chefe **Trítono**.
-- **Motivos:** cortar notas enche a inspiração. A cada nível você escolhe 1 de 3 motivos, melhorias que valem só para aquele concerto.
-- **Evolução:** as notas ♪ ficam com você para a árvore, que tem 6 ramos: Melodia, Fôlego, Ritmo, Harmonia, Lyra e Partitura. A árvore libera novos acordes (ii, vi, iii, V7) e coloca novos motivos no sorteio.
-- **Ciclo das quintas:** vencer um concerto libera a próxima tonalidade (Dó → Sol → Ré…). Cada uma é mais difícil e mais rica. Os chefes dão **partituras**, que pagam os nós especiais da árvore.
+## Na masmorra
 
-### Inimigos
+- **Corte:** cada acerto gasta **vigor**, o orbe amarelo. Sem vigor, a batuta não corta.
+- **Combos:** acertar vários monstros no mesmo traço mostra **N Acertos!**.
+- **Armadura:** monstros com armadura precisam ser **quebrados** antes de perder vida. Com a melhoria certa, monstros quase mortos são **executados**.
+- **Marcados ◆:** dão cristais e vigor.
+- **Teoria musical:**
+  - Cada monstro carrega uma nota.
+  - Cortar as 3 notas de um **acorde** num traço só (por exemplo Dó, Mi e Sol) causa uma explosão.
+  - Cortar no ritmo do tambor do Tito causa dano extra (**No tempo!**).
+  - Três notas seguidas em ordem formam uma **escala**.
+- **Salas:** são várias salas em sequência. A câmera segue o Tito de uma sala para a outra, e o minimapa mostra o caminho. No fim fica o chefe **Maestro Trítono**.
 
-- **Semínima**, **Colcheia**, **Mínima** e **Semibreve:** as figuras musicais.
-- **Pausa:** só pode ser cortada entre os tempos.
-- **Sustenido:** nota fora da tonalidade, que não forma acordes.
-- **Bemol:** fica longe e atira notas desafinadas na Lyra.
-- **Trítono:** o chefe.
+## Entre as masmorras
 
-Todo o visual é desenhado por código e todo o som é sintetizado na hora com WebAudio, sem imagens nem arquivos de áudio.
+- **HABILIDADES:** uma árvore que vai se revelando. Os nós `?` aparecem quando você compra um vizinho. Ela é paga com notas ♪, cristais ◆ e partituras ▤. Dá para liberar acordes menores, o V7, o golpe **Ciclo das Quintas** (desenhar um círculo em volta dos monstros), execução, Estado de Fluxo e outros.
+- **MAPA:** vencer o chefe libera o próximo lugar, numa tonalidade nova do ciclo das quintas:
+  - Porão do Teatro (Dó)
+  - Conservatório (Sol)
+  - Catedral do Órgão (Ré)
+  - Ópera em Ruínas (Lá)
+  - Coliseu dos Ecos (Mi)
+
+Todo o visual é desenhado por código (sprites em texto) e todo o som é sintetizado em WebAudio: cada corte toca a nota do monstro.
 
 ## Desenvolvimento
 
 ```bash
 npm install
-npm run dev        # http://localhost:5180
-npm test           # regras, teoria, perfil e bot de equilíbrio
+npm run dev
+npm test
 npm run build
 ```
-
-- `src/game/sim.ts`: simulação em passo fixo, sem DOM.
-- `src/audio/synth.ts`: sintetizador.
-- `src/render/scene.ts`: desenho.
-- `src/ui/`: HUD, tutorial, motivos e camarim (menu).

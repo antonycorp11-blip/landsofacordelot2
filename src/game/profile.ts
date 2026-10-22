@@ -1,27 +1,28 @@
-import { CHORDS, KEYS, MOTIFS, TREE, type ChordDef, type MotifId } from "../data/content";
+import { CHORDS, DUNGEONS, TREE, type ChordDef, type Currency } from "../data/content";
 
 export interface Profile {
   version: number;
-  notes: number;
-  notesTotal: number;
-  scores: number;
+  notas: number;
+  cristais: number;
+  partituras: number;
+  exp: number;
   nodes: Record<string, number>;
-  /** maior índice de tonalidade liberado */
-  keyUnlocked: number;
-  /** melhor movimento alcançado por tonalidade */
-  best: Record<string, number>;
-  wins: number;
-  runs: number;
+  /** maior masmorra liberada */
+  unlocked: number;
+  cleared: Record<string, boolean>;
+  /** "dia": número de ensaios (partidas) */
+  day: number;
   kills: number;
   chords: number;
-  tutorialDone: boolean;
+  seen: Record<string, boolean>;
+  introDone: boolean;
   muted: boolean;
 }
 
-export const SAVE_KEY = "dissonancia-v1";
+export const SAVE_KEY = "dissonancia-v2";
 
 export function newProfile(): Profile {
-  return { version: 1, notes: 0, notesTotal: 0, scores: 0, nodes: {}, keyUnlocked: 0, best: {}, wins: 0, runs: 0, kills: 0, chords: 0, tutorialDone: false, muted: false };
+  return { version: 2, notas: 0, cristais: 0, partituras: 0, exp: 0, nodes: { corte: 1 }, unlocked: 0, cleared: {}, day: 0, kills: 0, chords: 0, seen: {}, introDone: false, muted: false };
 }
 
 export function loadProfile(raw: string | null): Profile {
@@ -29,14 +30,14 @@ export function loadProfile(raw: string | null): Profile {
   if (!raw) return base;
   try {
     const d = JSON.parse(raw) as Partial<Profile>;
-    const p: Profile = { ...base, ...d, nodes: { ...(d.nodes ?? {}) }, best: { ...(d.best ?? {}) } };
+    const p: Profile = { ...base, ...d, nodes: { ...base.nodes, ...(d.nodes ?? {}) }, cleared: { ...(d.cleared ?? {}) }, seen: { ...(d.seen ?? {}) } };
     for (const k of Object.keys(p.nodes)) {
       const n = TREE.find((t) => t.id === k);
       if (!n) delete p.nodes[k];
       else p.nodes[k] = Math.max(0, Math.min(n.max, Math.floor(Number(p.nodes[k]) || 0)));
     }
-    for (const f of ["notes", "notesTotal", "scores"] as const) if (!isFinite(p[f]) || p[f] < 0) p[f] = 0;
-    p.keyUnlocked = Math.max(0, Math.min(KEYS.length - 1, Math.floor(p.keyUnlocked || 0)));
+    for (const f of ["notas", "cristais", "partituras", "exp"] as const) if (!isFinite(p[f]) || p[f] < 0) p[f] = 0;
+    p.unlocked = Math.max(0, Math.min(DUNGEONS.length - 1, Math.floor(p.unlocked || 0)));
     return p;
   } catch {
     return base;
@@ -45,105 +46,106 @@ export function loadProfile(raw: string | null): Profile {
 
 export const lvl = (p: Profile, id: string): number => p.nodes[id] ?? 0;
 
-export function nodeCost(id: string, level: number): number {
-  const n = TREE.find((t) => t.id === id)!;
-  return Math.ceil(n.cost * Math.pow(n.growth, level));
+/** nível da conta pela EXP: 50, 120, 210… */
+export function level(exp: number): { lvl: number; cur: number; next: number } {
+  let l = 1;
+  let need = 50;
+  let e = exp;
+  while (e >= need) {
+    e -= need;
+    l++;
+    need = Math.round(50 + (l - 1) * 70 * Math.pow(1.08, l));
+  }
+  return { lvl: l, cur: e, next: need };
 }
 
-export function nodeLockedByKey(p: Profile, id: string): boolean {
+export function nodeCost(id: string, l: number): number {
   const n = TREE.find((t) => t.id === id)!;
-  return (n.key ?? 0) > p.keyUnlocked;
+  return Math.ceil(n.cost * Math.pow(n.growth, l));
 }
 
-export function nodeAvailable(p: Profile, id: string): boolean {
+/** visível = comprado ou vizinho de um comprado (o resto aparece como "?") */
+export function nodeVisible(p: Profile, id: string): boolean {
   const n = TREE.find((t) => t.id === id)!;
-  if (nodeLockedByKey(p, id)) return false;
-  return n.requires.length === 0 || n.requires.some((r) => lvl(p, r) > 0);
+  return lvl(p, id) > 0 || !n.from || lvl(p, n.from) > 0;
 }
 
 export function canBuy(p: Profile, id: string): boolean {
   const n = TREE.find((t) => t.id === id);
-  if (!n) return false;
+  if (!n || !nodeVisible(p, id)) return false;
   const l = lvl(p, id);
-  if (l >= n.max || !nodeAvailable(p, id)) return false;
-  const c = nodeCost(id, l);
-  return n.score ? p.scores >= c : p.notes >= c;
+  return l < n.max && p[n.cur] >= nodeCost(id, l);
 }
 
 export function buyNode(p: Profile, id: string): boolean {
   if (!canBuy(p, id)) return false;
   const n = TREE.find((t) => t.id === id)!;
   const l = lvl(p, id);
-  const c = nodeCost(id, l);
-  if (n.score) p.scores -= c;
-  else p.notes -= c;
+  p[n.cur] -= nodeCost(id, l);
   p.nodes[id] = l + 1;
   return true;
 }
 
+export const CUR_NAME: Record<Currency, string> = { notas: "notas", cristais: "cristais", partituras: "partituras" };
+
 export interface Stats {
   dmg: number;
-  width: number;
-  crit: number;
-  critMul: number;
-  speedBonus: number;
-  stamina: number;
-  staminaRegen: number;
+  multiHit: number;
+  armorDmg: number;
+  execute: number;
+  markChance: number;
+  flow: boolean;
+  gliss: number;
+  vigor: number;
+  vigorRegen: number;
   hitCost: number;
-  killStamina: number;
+  killVigor: number;
+  circle: boolean;
+  circleDmg: number;
+  circleCd: number;
   beatMul: number;
   beatWindow: number;
-  enemySpeed: number;
-  bpmDelta: number;
-  chordDmg: number;
-  chordRadius: number;
-  arpeggio: boolean;
-  lyraHp: number;
-  lyraRegen: number;
-  lyraShield: number;
-  lyraCry: boolean;
-  notesMul: number;
-  xpMul: number;
+  chordMul: number;
+  scales: boolean;
+  titoHp: number;
+  batuque: boolean;
+  titoRegen: number;
+  notasMul: number;
+  cristaisMul: number;
+  expMul: number;
   spawnMul: number;
-  rerolls: number;
-  startMotifs: number;
-  choices: number;
   chords: ChordDef[];
-  motifPool: MotifId[];
 }
 
 export function computeStats(p: Profile): Stats {
   const L = (id: string) => lvl(p, id);
-  const chords = CHORDS.filter((c) => !c.node || L(c.node) > 0);
-  const motifPool = (Object.keys(MOTIFS) as MotifId[]).filter((m) => !MOTIFS[m].node || L(MOTIFS[m].node!) > 0);
+  const acct = level(p.exp).lvl;
   return {
-    dmg: (1 + 0.2 * L("root")) * (1 + 0.15 * L("m_dmg")) * (1 + 0.4 * L("m_dmg2")),
-    width: 1 + 0.12 * L("m_width"),
-    crit: 0.04 * L("m_crit"),
-    critMul: 2 + 0.3 * L("m_critd"),
-    speedBonus: 0.3 + 0.1 * L("m_speed"),
-    stamina: 100 + 15 * L("f_max") + 40 * L("f_max2"),
-    staminaRegen: 1 + 0.12 * L("f_regen"),
-    hitCost: Math.pow(0.94, L("f_cost")),
-    killStamina: 2 * L("f_second"),
-    beatMul: 1.5 + 0.25 * L("r_mul") + 0.6 * L("r_mul2"),
-    beatWindow: 1 + 0.15 * L("r_window"),
-    enemySpeed: Math.pow(0.96, L("r_march")),
-    bpmDelta: -4 * L("r_metro"),
-    chordDmg: 1 + 0.2 * L("h_dmg"),
-    chordRadius: 1 + 0.12 * L("h_radius"),
-    arpeggio: L("h_arp") > 0,
-    lyraHp: 100 * (1 + 0.2 * L("l_hp")) * (1 + 0.5 * L("l_hp2")),
-    lyraRegen: 0.5 * L("l_regen"),
-    lyraShield: 15 * L("l_shield"),
-    lyraCry: L("l_cry") > 0,
-    notesMul: 1 + 0.12 * L("p_notes"),
-    xpMul: 1 + 0.12 * L("p_xp"),
-    spawnMul: 1 + 0.12 * L("p_spawn"),
-    rerolls: L("p_reroll"),
-    startMotifs: L("p_start"),
-    choices: L("p_choice") ? 4 : 3,
-    chords,
-    motifPool,
+    dmg: (1 + 0.2 * L("corte")) * (1 + 0.15 * L("fio")) * (1 + 0.02 * (acct - 1)),
+    multiHit: 0.08 * L("acertos"),
+    armorDmg: 1 + 0.3 * L("quebra"),
+    execute: L("execucao") ? 0.05 + 0.03 * L("execucao") : 0,
+    markChance: 0.06 + 0.05 * L("marcados"),
+    flow: L("fluxo") > 0,
+    gliss: 0.4 * L("gliss"),
+    vigor: 100 + 15 * L("vigor"),
+    vigorRegen: 1 + 0.15 * L("folego"),
+    hitCost: Math.pow(0.93, L("leveza")),
+    killVigor: 2 * L("segundo"),
+    circle: L("ciclo") > 0,
+    circleDmg: 1 + 0.4 * L("ciclo2"),
+    circleCd: 8 - L("ciclo2"),
+    beatMul: 1.25 + 0.2 * L("tempo"),
+    beatWindow: 1 + 0.2 * L("ouvido"),
+    chordMul: 1 + 0.25 * L("acorde"),
+    scales: L("escala") > 0,
+    titoHp: 100 * (1 + 0.2 * L("tambor")),
+    batuque: L("batuque") > 0,
+    titoRegen: 0.6 * L("cura"),
+    notasMul: 1 + 0.12 * L("gorjeta"),
+    cristaisMul: 1 + 0.2 * L("afinacao"),
+    expMul: 1 + 0.15 * L("estudo"),
+    spawnMul: 1 + 0.15 * L("plateia"),
+    chords: CHORDS.filter((c) => !c.node || L(c.node) > 0),
   };
 }

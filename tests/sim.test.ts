@@ -1,162 +1,167 @@
 import { describe, expect, it } from "vitest";
-import { CHORDS, KEYS, chordName, degreeMidi, degreeNote } from "../src/data/content";
-import { buyNode, computeStats, loadProfile, newProfile, nodeCost } from "../src/game/profile";
-import { Run, segDist } from "../src/game/sim";
+import { KEYS, chordName, degreeNote } from "../src/data/content";
+import { buyNode, computeStats, level, loadProfile, newProfile, nodeVisible } from "../src/game/profile";
+import { Run, groundX, groundY, inPoly, isoU, isoV } from "../src/game/sim";
 
-const mk = (tut = true, p = newProfile()) => {
-  const r = new Run(computeStats(p), 0, 42, tut);
-  r.setView(480, 300);
-  return r;
-};
-const steps = (r: Run, sec: number) => {
-  for (let i = 0; i < Math.round(sec * 60); i++) r.step(1 / 60);
-};
-/** arrasta a batuta de (x1,y1) até (x2,y2) em n passos */
-const swipe = (r: Run, x1: number, y1: number, x2: number, y2: number, n = 6) => {
-  r.setCursor(x1, y1, true);
+const mk = (p = newProfile()) => new Run(computeStats(p), 0, 7);
+/** arrasta o cursor rápido de (u1,v1) até (u2,v2) */
+const swipe = (r: Run, u1: number, v1: number, u2: number, v2: number, n = 6) => {
+  r.setCursor(u1, v1, true);
   r.step(1 / 60);
   for (let i = 1; i <= n; i++) {
-    r.setCursor(x1 + ((x2 - x1) * i) / n, y1 + ((y2 - y1) * i) / n, true);
+    r.setCursor(u1 + ((u2 - u1) * i) / n, v1 + ((v2 - v1) * i) / n, true);
     r.step(1 / 60);
   }
-  r.setCursor(x2, y2, false);
+  r.setCursor(u2, v2, false);
+  r.step(1 / 60);
 };
+const at = (r: Run, x: number, y: number) => ({ u: isoU(x, y), v: isoV(x, y) - 6 });
 
-describe("teoria", () => {
-  it("nomes e alturas das notas", () => {
-    expect(degreeNote(KEYS[0], 0)).toBe("Dó");
-    expect(degreeNote(KEYS[0], 4)).toBe("Sol");
-    expect(degreeNote(KEYS[1], 6)).toBe("Fá♯");
-    expect(degreeMidi(KEYS[0], 2)).toBe(64);
-    expect(chordName(KEYS[0], CHORDS[2])).toBe("Sol maior");
-    expect(chordName(KEYS[0], CHORDS.find((c) => c.id === "vi")!)).toBe("Lá menor");
+describe("projeção e teoria", () => {
+  it("iso ida e volta", () => {
+    const u = isoU(40, 70);
+    const v = isoV(40, 70);
+    expect(groundX(u, v)).toBeCloseTo(40);
+    expect(groundY(u, v)).toBeCloseTo(70);
   });
-  it("distância ponto-segmento", () => {
-    expect(segDist(0, 5, -10, 0, 10, 0)).toBeCloseTo(5);
-    expect(segDist(20, 0, -10, 0, 10, 0)).toBeCloseTo(10);
+  it("notas e acordes", () => {
+    expect(degreeNote(KEYS[0], 4)).toBe("Sol");
+    expect(chordName(KEYS[1], { id: "I", roman: "I", degs: [0, 2, 4], quality: "maior" })).toBe("Sol maior");
+  });
+  it("ponto dentro de polígono", () => {
+    const sq: [number, number][] = [
+      [0, 0],
+      [10, 0],
+      [10, 10],
+      [0, 10],
+    ];
+    expect(inPoly(5, 5, sq)).toBe(true);
+    expect(inPoly(15, 5, sq)).toBe(false);
   });
 });
 
-describe("batuta", () => {
-  it("corta inimigos no caminho e gasta fôlego", () => {
+describe("corte", () => {
+  it("passar rápido corta e gasta vigor; devagar não corta", () => {
     const r = mk();
-    const e = r.spawn("seminima", 0, 100, 0);
-    const before = r.stamina;
-    swipe(r, 100, -60, 100, 60);
-    expect(e.hp).toBeLessThan(e.maxHp);
-    expect(r.stamina).toBeLessThan(before);
+    const m = r.spawnAt("desafinado", 0, r.tito.x + 60, r.tito.y);
+    m.age = 1;
+    const p = at(r, m.x, m.y);
+    const v0 = r.vigor;
+    // devagar
+    r.setCursor(p.u - 20, p.v, true);
+    for (let i = 0; i < 40; i++) {
+      r.setCursor(p.u - 20 + i, p.v, true);
+      r.step(1 / 60);
+    }
+    expect(m.hp).toBe(m.maxHp);
+    swipe(r, p.u - 40, p.v, p.u + 40, p.v);
+    expect(m.hp).toBeLessThan(m.maxHp);
+    expect(r.vigor).toBeLessThan(v0);
   });
-  it("sem fôlego não corta", () => {
+  it("armadura quebra antes da vida", () => {
     const r = mk();
-    const e = r.spawn("semibreve", 0, 150, 0);
-    r.stamina = 1;
-    swipe(r, 150, -60, 150, 60);
-    expect(e.hp).toBe(e.maxHp);
-    expect(r.tired).toBe(true);
+    const m = r.spawnAt("cavaleiro", 0, r.tito.x + 60, r.tito.y);
+    let broke = false;
+    for (let k = 0; k < 30 && !broke; k++) {
+      const p = at(r, m.x, m.y);
+      swipe(r, p.u - 40, p.v - 4, p.u + 40, p.v - 4);
+      r.step(0.35);
+      broke = m.broken;
+      if (!broke) expect(m.hp).toBe(m.maxHp);
+    }
+    expect(broke).toBe(true);
   });
-  it("cortar Dó, Mi e Sol num traço forma o acorde I", () => {
+  it("um traço por três notas do acorde I dispara o acorde", () => {
     const r = mk();
-    for (const [i, d] of [0, 2, 4].entries()) r.spawn("semibreve", d, 100 + i * 40, 100);
-    swipe(r, 60, 100, 220, 100, 8);
+    const ms = [0, 2, 4].map((d, i) => r.spawnAt("cavaleiro", d, r.tito.x + 40 + i * 14, r.tito.y - 40 - i * 14));
+    const a = at(r, ms[0].x, ms[0].y);
+    const b = at(r, ms[2].x, ms[2].y);
+    swipe(r, a.u - 20, a.v - 4, b.u + 20, b.v - 4, 10);
     expect(r.chords).toBe(1);
   });
-  it("notas espalhadas em traços separados não formam acorde", () => {
+  it("acertos múltiplos geram o evento", () => {
     const r = mk();
-    r.spawn("semibreve", 0, 100, 100);
-    r.spawn("semibreve", 2, -100, -100);
-    swipe(r, 60, 100, 140, 100);
-    steps(r, 1);
-    swipe(r, -140, -100, -60, -100);
-    expect(r.chords).toBe(0);
+    const ms = [1, 3].map((d, i) => r.spawnAt("cavaleiro", d, r.tito.x + 50 + i * 16, r.tito.y - 50 - i * 16));
+    const a = at(r, ms[0].x, ms[0].y);
+    const b = at(r, ms[1].x, ms[1].y);
+    swipe(r, a.u - 20, a.v - 4, b.u + 20, b.v - 4, 10);
+    expect(r.events.some((e) => e.k === "acertos" && e.n === 2)).toBe(true);
   });
-  it("a pausa só pode ser cortada entre os tempos", () => {
+  it("sem vigor não corta", () => {
     const r = mk();
-    const e = r.spawn("pausa", 0, 150, 0);
-    r.beatT = 0.01;
-    expect(r.intangible(e)).toBe(true);
-    r.beatT = r.period * 0.7;
-    expect(r.intangible(e)).toBe(false);
+    const m = r.spawnAt("desafinado", 0, r.tito.x + 60, r.tito.y);
+    r.vigor = 1;
+    const p = at(r, m.x, m.y);
+    swipe(r, p.u - 40, p.v, p.u + 40, p.v);
+    expect(m.hp).toBe(m.maxHp);
+    expect(r.tired).toBe(true);
   });
 });
 
-describe("partida", () => {
-  it("inimigos chegam à Lyra e causam dano no ritmo", () => {
-    const r = mk(false);
+describe("masmorra", () => {
+  it("salas em sequência; limpar uma faz o Tito andar até a próxima", () => {
+    const r = mk();
+    expect(r.rooms.length).toBe(6);
+    expect(r.rooms[5].boss).toBe(true);
+    r.spawnLeft = 0;
+    r.monsters = [];
+    r.step(1 / 60);
+    expect(r.phase).toBe("walk");
+    for (let i = 0; i < 60 * 8 && r.phase === "walk"; i++) r.step(1 / 60);
+    expect(r.roomI).toBe(1);
+    expect(r.exp).toBeGreaterThan(0);
+  });
+  it("monstros batem no Tito no ritmo", () => {
+    const r = mk();
+    r.spawnAt("desafinado", 0, r.tito.x + 8, r.tito.y);
+    for (let i = 0; i < 60 * 3; i++) r.step(1 / 60);
+    expect(r.tito.hp).toBeLessThan(r.tito.maxHp);
+  });
+  it("vencer o maestro termina a masmorra", () => {
+    const r = mk();
+    r.roomI = 5;
+    r.tito.x = r.rooms[5].x0 + 130;
+    r.tito.y = r.rooms[5].y0 + 130;
     r.phase = "fight";
-    r.spawnQ = [];
-    r.spawn("seminima", 0, 40, 0);
-    steps(r, 4);
-    expect(r.lyra.hp).toBeLessThan(r.lyra.maxHp);
-  });
-  it("movimento acaba quando todos morrem e o próximo começa", () => {
-    const r = mk(false);
-    for (let i = 0; i < 60 * 80 && r.room === 1; i++) {
-      r.enemies.forEach((e) => (e.hp = 0.0001));
-      r.stamina = r.staminaMax;
-      for (const e of [...r.enemies]) swipe(r, e.x, e.y - 40, e.x, e.y + 40, 2);
-      r.step(1 / 60);
-      r.lyra.hp = r.lyra.maxHp;
-    }
-    expect(r.room).toBe(2);
-    expect(r.notes).toBeGreaterThan(0);
-  });
-  it("subir de nível oferece motivos e aplica a escolha", () => {
-    const r = mk(false);
-    r.gainXp(r.xpNext);
-    expect(r.pendingLevels).toBe(1);
-    const o = r.openOffer();
-    expect(o.length).toBe(3);
-    r.choose(o[0]);
-    expect(r.pendingLevels).toBe(0);
-    expect(r.m(o[0])).toBe(1);
-  });
-  it("motivos de repertório só aparecem depois de liberados", () => {
-    const st = computeStats(newProfile());
-    expect(st.motifPool).not.toContain("staccato");
-    const p = newProfile();
-    p.nodes = { root: 1, r_mul: 1, r_window: 1, r_stacc: 1 };
-    expect(computeStats(p).motifPool).toContain("staccato");
-  });
-  it("matar o trítono vence o concerto", () => {
-    const r = mk(false);
-    r.room = 5;
-    r.phase = "fight";
-    r.spawnQ = [];
-    const b = r.spawn("tritono", -1, 200, 0);
-    r.spawn("seminima", 1, -200, 0);
-    b.hp = 1;
-    swipe(r, 200, -80, 200, 80, 4);
-    steps(r, 0.1);
-    expect(r.phase).toBe("won");
-    expect(r.scores).toBeGreaterThan(0);
+    r.spawnLeft = 0;
+    r.monsters = [];
+    const b = r.spawnAt("maestro", -1, r.tito.x + 50, r.tito.y);
+    b.armor = 0;
+    b.hp = 0.5;
+    const p = { u: isoU(b.x, b.y), v: isoV(b.x, b.y) - 12 };
+    swipe(r, p.u - 40, p.v, p.u + 40, p.v);
+    r.step(1 / 60);
+    expect(r.partituras).toBeGreaterThan(0);
   });
 });
 
 describe("perfil", () => {
-  it("compra nós em ordem e cobra notas", () => {
+  it("árvore se revela a partir dos nós comprados", () => {
     const p = newProfile();
-    p.notes = 1000;
-    expect(buyNode(p, "m_dmg")).toBe(false);
-    expect(buyNode(p, "root")).toBe(true);
-    expect(buyNode(p, "m_dmg")).toBe(true);
-    expect(p.notes).toBe(1000 - nodeCost("root", 0) - nodeCost("m_dmg", 0));
+    expect(nodeVisible(p, "fio")).toBe(true);
+    expect(nodeVisible(p, "acertos")).toBe(false);
+    p.notas = 100;
+    expect(buyNode(p, "fio")).toBe(true);
+    expect(nodeVisible(p, "acertos")).toBe(true);
   });
-  it("nós de partitura e de tonalidade", () => {
+  it("custo em cristais", () => {
     const p = newProfile();
-    p.notes = 9999;
-    p.nodes = { root: 1, h_dmg: 1, h_radius: 1, h_coral: 1 };
-    expect(buyNode(p, "h_v7")).toBe(false); // exige Sol maior
-    p.keyUnlocked = 1;
-    expect(buyNode(p, "h_v7")).toBe(false); // exige partituras
-    p.scores = 5;
-    expect(buyNode(p, "h_v7")).toBe(true);
-    expect(computeStats(p).chords.some((c) => c.id === "V7")).toBe(true);
+    p.nodes = { corte: 1, fio: 1, quebra: 1 };
+    p.notas = 999;
+    expect(buyNode(p, "execucao")).toBe(false);
+    p.cristais = 1;
+    expect(buyNode(p, "execucao")).toBe(true);
+    expect(computeStats(p).execute).toBeGreaterThan(0);
   });
-  it("carrega saves inválidos", () => {
-    expect(loadProfile("{lixo").notes).toBe(0);
-    const p = loadProfile(JSON.stringify({ notes: 30, nodes: { root: 9, nada: 1 }, keyUnlocked: 99 }));
-    expect(p.nodes.root).toBe(1);
-    expect(p.nodes.nada).toBeUndefined();
-    expect(p.keyUnlocked).toBe(KEYS.length - 1);
+  it("níveis por EXP", () => {
+    expect(level(0).lvl).toBe(1);
+    expect(level(50).lvl).toBe(2);
+  });
+  it("save inválido", () => {
+    expect(loadProfile("{").nodes.corte).toBe(1);
+    const p = loadProfile(JSON.stringify({ notas: 5, nodes: { fio: 99, xx: 1 }, unlocked: 50 }));
+    expect(p.nodes.fio).toBe(20);
+    expect(p.nodes.xx).toBeUndefined();
+    expect(p.unlocked).toBe(4);
   });
 });

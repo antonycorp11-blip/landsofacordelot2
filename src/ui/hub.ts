@@ -1,61 +1,289 @@
 import { fmt } from "../core/format";
 import { TAU } from "../core/math";
-import { BRANCHES, CHORDS, DEGREE_COLORS, DEGREE_ROMAN, ENEMIES, KEYS, MAJOR, ROOMS_PER_CONCERT, TREE, chordName, degreeNote, type TreeNode } from "../data/content";
-import { buyNode, canBuy, lvl, nodeAvailable, nodeCost, nodeLockedByKey, type Profile } from "../game/profile";
-import { keyHp } from "../game/sim";
+import { DUNGEONS, KEYS, MAJOR, TREE, type Currency, type TreeNode } from "../data/content";
+import { buyNode, canBuy, level, lvl, nodeCost, nodeVisible, type Profile } from "../game/profile";
 
-export type HubTab = "concert" | "tree" | "theory";
+export type HubTab = "mapa" | "habilidades";
 
 export interface HubHost {
   profile: Profile;
   touch: boolean;
-  start(keyIdx: number, tutorial: boolean): void;
+  enter(dIdx: number): void;
   save(): void;
   reset(): void;
-  preview(midi: number[]): void;
+  toggleMute(): void;
+  muted(): boolean;
+  sound(midi: number[]): void;
 }
 
-const ROOT_COLOR = "#ffffff";
-const colorOf = (n: TreeNode) => (n.branch === "root" ? ROOT_COLOR : BRANCHES[n.branch].color);
+const CUR_ICON: Record<Currency, string> = { notas: '<i class="cn n">♪</i>', cristais: '<i class="cn c">◆</i>', partituras: '<i class="cn p">▤</i>' };
 
-/** Camarim: escolher a tonalidade, evoluir e ler um pouco de teoria. */
+/** desenha um ícone simples em pixel art para os nós da árvore */
+export function drawIcon(g: CanvasRenderingContext2D, name: string, x: number, y: number, s: number, col: string): void {
+  g.save();
+  g.translate(x, y);
+  g.fillStyle = col;
+  g.strokeStyle = col;
+  g.lineWidth = Math.max(1.5, s * 0.12);
+  g.lineCap = "round";
+  const r = s * 0.42;
+  const P = (f: () => void) => {
+    g.beginPath();
+    f();
+  };
+  switch (name) {
+    case "lua":
+      P(() => g.arc(0, 0, r, 0, TAU));
+      g.fill();
+      g.globalCompositeOperation = "destination-out";
+      P(() => g.arc(r * 0.45, -r * 0.3, r * 0.85, 0, TAU));
+      g.fill();
+      break;
+    case "lamina":
+      P(() => {
+        g.moveTo(-r, r);
+        g.lineTo(r, -r);
+      });
+      g.stroke();
+      P(() => {
+        g.moveTo(-r * 0.6, r * 0.2);
+        g.lineTo(-r * 0.2, r * 0.6);
+      });
+      g.stroke();
+      break;
+    case "multi":
+      for (const o of [-0.5, 0, 0.5])
+        P(() => {
+          g.moveTo(-r + o * r, r);
+          g.lineTo(r + o * r, -r);
+        }),
+          g.stroke();
+      break;
+    case "escudo":
+      P(() => {
+        g.moveTo(0, -r);
+        g.lineTo(r, -r * 0.6);
+        g.lineTo(r * 0.7, r * 0.5);
+        g.lineTo(0, r);
+        g.lineTo(-r * 0.7, r * 0.5);
+        g.lineTo(-r, -r * 0.6);
+        g.closePath();
+      });
+      g.stroke();
+      P(() => {
+        g.moveTo(-r * 0.4, -r * 0.4);
+        g.lineTo(r * 0.4, r * 0.4);
+      });
+      g.stroke();
+      break;
+    case "caveira":
+      P(() => g.arc(0, -r * 0.15, r * 0.75, 0, TAU));
+      g.fill();
+      g.fillRect(-r * 0.45, r * 0.35, r * 0.9, r * 0.5);
+      g.fillStyle = "#120c18";
+      P(() => g.arc(-r * 0.3, -r * 0.2, r * 0.2, 0, TAU));
+      g.fill();
+      P(() => g.arc(r * 0.3, -r * 0.2, r * 0.2, 0, TAU));
+      g.fill();
+      break;
+    case "marca":
+      P(() => {
+        g.moveTo(0, -r);
+        g.lineTo(r * 0.7, 0);
+        g.lineTo(0, r);
+        g.lineTo(-r * 0.7, 0);
+        g.closePath();
+      });
+      g.fill();
+      break;
+    case "fluxo":
+      P(() => g.arc(0, 0, r * 0.85, 0.3, TAU - 0.3));
+      g.stroke();
+      P(() => g.arc(r * 0.1, r * 0.1, r * 0.4, 0, TAU));
+      g.fill();
+      break;
+    case "gliss":
+      P(() => {
+        g.moveTo(-r, r * 0.5);
+        g.bezierCurveTo(-r * 0.3, -r * 0.8, r * 0.3, r * 0.8, r, -r * 0.5);
+      });
+      g.stroke();
+      break;
+    case "orbe":
+      P(() => g.arc(0, 0, r, 0, TAU));
+      g.stroke();
+      g.fillRect(-r * 0.7, 0, r * 1.4, r * 0.65);
+      break;
+    case "vento":
+      for (const k of [-0.5, 0, 0.5])
+        P(() => {
+          g.moveTo(-r, k * r);
+          g.quadraticCurveTo(r * 0.6, k * r - r * 0.5, r * 0.4, k * r + r * 0.1);
+        }),
+          g.stroke();
+      break;
+    case "pena":
+      P(() => g.ellipse(0, 0, r * 0.35, r, 0.6, 0, TAU));
+      g.fill();
+      break;
+    case "coracao":
+      P(() => {
+        g.moveTo(0, r);
+        g.bezierCurveTo(-r * 1.4, -r * 0.2, -r * 0.4, -r * 1.2, 0, -r * 0.4);
+        g.bezierCurveTo(r * 0.4, -r * 1.2, r * 1.4, -r * 0.2, 0, r);
+      });
+      g.fill();
+      break;
+    case "circulo":
+      P(() => g.arc(0, 0, r * 0.85, 0, TAU * 0.9));
+      g.stroke();
+      P(() => {
+        g.moveTo(r * 0.85, -r * 0.5);
+        g.lineTo(r * 0.85, 0);
+        g.lineTo(r * 0.4, -r * 0.1);
+      });
+      g.stroke();
+      break;
+    case "nota":
+    case "acorde": {
+      const heads = name === "acorde" ? [-0.4, 0, 0.4] : [0];
+      heads.forEach((h, i) => {
+        P(() => g.ellipse(-r * 0.25 + i * r * 0.05, r * 0.55 - i * r * 0.45, r * 0.35, r * 0.25, -0.4, 0, TAU));
+        g.fill();
+        void h;
+      });
+      P(() => {
+        g.moveTo(r * 0.12, r * 0.5);
+        g.lineTo(r * 0.12, -r);
+        g.lineTo(r * 0.7, -r * 0.6);
+      });
+      g.stroke();
+      break;
+    }
+    case "ouvido":
+      P(() => g.arc(0, -r * 0.1, r * 0.7, Math.PI, Math.PI * 2.4));
+      g.stroke();
+      P(() => g.arc(0, -r * 0.1, r * 0.3, Math.PI, TAU));
+      g.stroke();
+      break;
+    case "escada":
+      for (let i = 0; i < 3; i++) g.fillRect(-r + i * r * 0.7, r * 0.6 - i * r * 0.6, r * 0.6, r * 0.35);
+      break;
+    case "tambor":
+      P(() => g.ellipse(0, -r * 0.4, r, r * 0.35, 0, 0, TAU));
+      g.stroke();
+      g.strokeRect(-r, -r * 0.4, r * 2, r * 1.1);
+      P(() => {
+        g.moveTo(-r * 0.4, -r * 1.2);
+        g.lineTo(r * 0.2, -r * 0.5);
+      });
+      g.stroke();
+      break;
+    case "onda":
+      for (const k of [0.4, 0.75, 1.05])
+        P(() => g.arc(0, 0, r * k, -0.8, 0.8)),
+          g.stroke(),
+          P(() => g.arc(0, 0, r * k, Math.PI - 0.8, Math.PI + 0.8)),
+          g.stroke();
+      break;
+    case "cura":
+      g.fillRect(-r * 0.25, -r, r * 0.5, r * 2);
+      g.fillRect(-r, -r * 0.25, r * 2, r * 0.5);
+      break;
+    case "moeda":
+      P(() => g.arc(0, 0, r * 0.85, 0, TAU));
+      g.stroke();
+      g.font = `bold ${Math.round(r * 1.3)}px serif`;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillText("♪", 0, r * 0.05);
+      break;
+    case "cristal":
+      P(() => {
+        g.moveTo(0, -r);
+        g.lineTo(r * 0.7, -r * 0.2);
+        g.lineTo(0, r);
+        g.lineTo(-r * 0.7, -r * 0.2);
+        g.closePath();
+      });
+      g.fill();
+      break;
+    case "livro":
+      g.strokeRect(-r * 0.8, -r * 0.7, r * 1.6, r * 1.4);
+      P(() => {
+        g.moveTo(0, -r * 0.7);
+        g.lineTo(0, r * 0.7);
+      });
+      g.stroke();
+      break;
+    case "plateia":
+      for (const k of [-0.55, 0, 0.55]) {
+        P(() => g.arc(k * r, -r * 0.2, r * 0.25, 0, TAU));
+        g.fill();
+        P(() => g.arc(k * r, r * 0.55, r * 0.35, Math.PI, TAU));
+        g.fill();
+      }
+      break;
+    default:
+      g.font = `${Math.round(r * 1.5)}px serif`;
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillText("?", 0, 0);
+  }
+  g.restore();
+}
+
+/** Tela entre masmorras: MAPA e HABILIDADES, como no original. */
 export class Hub {
   readonly root: HTMLElement;
   tab: HubTab;
-  private keySel: number;
-  private treeCanvas: HTMLCanvasElement | null = null;
-  private selNode = "root";
+  private dSel: number;
+  private sel = "corte";
+  private hover: string | null = null;
   private pan = { x: 0, y: 0 };
   private zoom = 1;
+  private cv: HTMLCanvasElement | null = null;
+  private menuOpen = false;
   private confirmReset = false;
 
   constructor(
     private host: HubHost,
     parent: HTMLElement,
-    tab: HubTab = "concert",
+    tab: HubTab = "habilidades",
   ) {
     const el = document.createElement("div");
     el.className = "hub";
     parent.appendChild(el);
     this.root = el;
     this.tab = tab;
-    this.keySel = host.profile.keyUnlocked;
-    const buyable = TREE.find((n) => canBuy(host.profile, n.id));
-    if (buyable) this.selNode = buyable.id;
+    this.dSel = host.profile.unlocked;
+    const b = TREE.find((n) => canBuy(host.profile, n.id));
+    if (b) this.sel = b.id;
     el.addEventListener("click", (e) => {
       const t = (e.target as HTMLElement).closest("[data-act]") as HTMLElement | null;
       if (t) this.act(t.dataset.act!);
     });
+    this.onKey = this.onKey.bind(this);
+    window.addEventListener("keydown", this.onKey);
     this.onResize = this.onResize.bind(this);
     window.addEventListener("resize", this.onResize);
     this.render();
   }
 
   private onResize(): void {
-    if (this.tab === "tree") this.drawTree();
+    this.draw();
+  }
+
+  private onKey(e: KeyboardEvent): void {
+    if (this.tab !== "habilidades") return;
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      this.act(`buy:${this.sel}`);
+    }
   }
 
   destroy(): void {
+    window.removeEventListener("keydown", this.onKey);
     window.removeEventListener("resize", this.onResize);
     this.root.remove();
   }
@@ -67,29 +295,29 @@ export class Hub {
       case "tab":
         this.tab = arg as HubTab;
         break;
-      case "key":
-        if (Number(arg) <= p.keyUnlocked) {
-          this.keySel = Number(arg);
-          const key = KEYS[this.keySel];
-          this.host.preview([0, 2, 4].map((d) => key.root + MAJOR[d]));
+      case "enter":
+        this.host.enter(this.dSel);
+        return;
+      case "dungeon":
+        if (Number(arg) <= p.unlocked) {
+          this.dSel = Number(arg);
+          const key = KEYS[DUNGEONS[this.dSel].key];
+          this.host.sound([0, 4, 7].map((m) => key.root + m));
         }
         break;
-      case "start":
-        this.host.start(this.keySel, arg === "tut" || !p.tutorialDone);
-        return;
       case "buy":
         if (buyNode(p, arg)) {
           this.host.save();
-          this.host.preview([72 + (TREE.findIndex((n) => n.id === arg) % 7) * 2]);
+          this.host.sound([72 + (TREE.findIndex((n) => n.id === arg) % 7) * 2, 79]);
         }
         break;
-      case "hear": {
-        const key = KEYS[this.keySel];
-        const c = CHORDS.find((c) => c.id === arg);
-        if (c) this.host.preview(c.degs.map((d) => key.root + MAJOR[d] + (d < c.degs[0] ? 12 : 0)));
-        else this.host.preview(MAJOR.map((m) => key.root + m).concat([key.root + 12]));
-        return;
-      }
+      case "menu":
+        this.menuOpen = !this.menuOpen;
+        this.confirmReset = false;
+        break;
+      case "mute":
+        this.host.toggleMute();
+        break;
       case "reset":
         if (!this.confirmReset) this.confirmReset = true;
         else this.host.reset();
@@ -100,124 +328,64 @@ export class Hub {
 
   render(): void {
     const p = this.host.profile;
+    const lv = level(p.exp);
     const avail = TREE.filter((n) => canBuy(p, n.id)).length;
     this.root.innerHTML = `
-      <header><h1><span class="logo">♪</span><span>DISSO<b>NÂNCIA</b></span></h1>
-        <div class="wallet"><span class="notes"><i class="nt">♪</i><b>${fmt(Math.floor(p.notes))}</b><small>notas</small></span>${p.scores || p.wins ? `<span class="scores"><i class="sc"></i><b>${p.scores}</b><small>partituras</small></span>` : ""}</div></header>
-      <nav>
-        <button class="${this.tab === "concert" ? "on" : ""}" data-act="tab:concert">Concerto</button>
-        <button class="${this.tab === "tree" ? "on" : ""}" data-act="tab:tree">Evolução${avail ? `<em>${avail}</em>` : ""}</button>
-        <button class="${this.tab === "theory" ? "on" : ""}" data-act="tab:theory">Teoria</button>
-      </nav>
-      <section class="body tab-${this.tab}"></section>`;
-    const body = this.root.querySelector(".body") as HTMLElement;
-    if (this.tab === "concert") body.innerHTML = this.concert();
-    else if (this.tab === "theory") body.innerHTML = this.theory();
-    else this.tree(body);
+      <div class="top"><div class="tabs"><button class="${this.tab === "mapa" ? "on" : ""}" data-act="tab:mapa">MAPA</button><button class="${this.tab === "habilidades" ? "on" : ""}" data-act="tab:habilidades">HABILIDADES</button></div>
+        <button class="menu" data-act="menu"><i></i><i></i><i></i></button></div>
+      <div class="left">
+        <div class="lvl"><span><em>${lv.lvl}</em></span><div class="xb"><i style="width:${(lv.cur / lv.next) * 100}%"></i></div></div>
+        <small class="xp">${fmt(lv.cur)} / ${fmt(lv.next)} EXP</small>
+        <ul class="wal"><li>${CUR_ICON.notas}<b>${fmt(Math.floor(p.notas))}</b></li><li>${CUR_ICON.cristais}<b>${fmt(p.cristais)}</b></li><li>${CUR_ICON.partituras}<b>${fmt(p.partituras)}</b></li></ul>
+        <small class="day">Ensaio ${p.day}</small>
+      </div>
+      <div class="stage"></div>
+      <div class="bottom">${this.tab === "habilidades" ? `<span class="avail">${avail ? `${avail} melhoria${avail > 1 ? "s" : ""} disponíve${avail > 1 ? "is" : "l"}` : ""}</span>` : ""}<button class="enter" data-act="enter">ENTRAR NA MASMORRA</button></div>
+      ${this.menuOpen ? `<div class="dropdown"><button data-act="mute">Som: ${this.host.muted() ? "desligado" : "ligado"}</button><button data-act="reset" class="red">${this.confirmReset ? "Confirmar: apagar tudo" : "Apagar progresso"}</button></div>` : ""}`;
+    const stage = this.root.querySelector(".stage") as HTMLElement;
+    if (this.tab === "habilidades") this.tree(stage);
+    else this.map(stage);
   }
 
-  // ------------------------------------------------------------ concerto
-  private concert(): string {
+  // ------------------------------------------------------------ mapa
+  private map(stage: HTMLElement): void {
     const p = this.host.profile;
-    const key = KEYS[this.keySel];
-    const first = !p.tutorialDone;
-    // ciclo das quintas: as 12 tonalidades em volta; as 8 primeiras são jogáveis
-    const circle = ["Dó", "Sol", "Ré", "Lá", "Mi", "Si", "Fá♯", "Dó♯", "Lá♭", "Mi♭", "Si♭", "Fá"];
-    const R = 41;
-    const dots = circle
-      .map((name, i) => {
-        const a = (i / 12) * TAU - Math.PI / 2;
-        const x = 50 + Math.cos(a) * R;
-        const y = 50 + Math.sin(a) * R;
-        const playable = i < KEYS.length;
-        const open = playable && i <= p.keyUnlocked;
-        const cls = `${open ? "open" : ""} ${i === this.keySel ? "on" : ""} ${playable ? "" : "soon"}`;
-        const done = (p.best[KEYS[i]?.id] ?? 0) > ROOMS_PER_CONCERT;
-        return `<button class="kdot ${cls}" style="left:${x}%;top:${y}%" ${open ? `data-act="key:${i}"` : "disabled"}>${name}${done ? "<i>✓</i>" : ""}</button>`;
-      })
-      .join("");
-    const best = p.best[key.id] ?? 0;
-    const scale = MAJOR.map((_, d) => `<i style="--c:${DEGREE_COLORS[d]}">${degreeNote(key, d)}</i>`).join("");
-    const threats = Object.values(ENEMIES)
-      .filter((e) => e.fromKey <= this.keySel)
-      .map((e) => `<span class="chip" title="${e.desc}">${e.name}</span>`)
-      .join("");
-    return `<div class="concert">
-      <div class="wheel"><div class="ring"></div>${dots}<div class="center"><small>ciclo das quintas</small><b>${key.name}</b><span>${key.sharps ? `${key.sharps} sustenido${key.sharps > 1 ? "s" : ""}` : "sem acidentes"}</span></div></div>
-      <div class="side">
-        <p class="lead">Você é a <b>batuta</b>. Corte as notas desafinadas que querem calar a <b>Lyra</b>, forme <b>acordes</b> e golpeie <b>no tempo</b>.</p>
-        <div class="keycard">
-          <div class="scale">${scale}</div>
-          <div class="kstats"><span>Força <b>×${fmt(keyHp(this.keySel))}</b></span><span>Recompensa <b>×${fmt(Math.pow(1.8, this.keySel))}</b></span><span>Recorde <b>${best > ROOMS_PER_CONCERT ? "vencido" : best ? `mov. ${best}` : "—"}</b></span></div>
-          <div class="chips">${threats}</div>
-        </div>
-        <button class="go" data-act="start">${first ? "Primeiro ensaio (tutorial)" : `Reger em ${key.name}`}</button>
-        ${first ? "" : '<button class="link" data-act="start:tut">rever tutorial</button>'}
-        <p class="note small">${p.runs} concertos · ${p.wins} vitórias · ${fmt(p.kills)} notas cortadas · ${fmt(p.chords)} acordes · <button class="link" data-act="reset">${this.confirmReset ? "confirmar: apagar tudo" : "apagar progresso"}</button></p>
-      </div></div>`;
-  }
-
-  // ------------------------------------------------------------ teoria
-  private theory(): string {
-    const key = KEYS[this.keySel];
-    const scale = MAJOR.map((_, d) => `<i style="--c:${DEGREE_COLORS[d]}"><small>${DEGREE_ROMAN[d]}</small>${degreeNote(key, d)}</i>`).join("");
-    const chords = CHORDS.map((c) => {
-      const has = !c.node || lvl(this.host.profile, c.node) > 0;
-      return `<button class="tchord ${has ? "" : "locked"}" data-act="hear:${c.id}"><b>${c.roman}</b><span>${chordName(key, c)}</span><span class="nn">${c.degs.map((d) => `<i style="--c:${DEGREE_COLORS[d]}">${degreeNote(key, d)}</i>`).join("")}</span>${has ? "" : "<small>libere na Evolução</small>"}</button>`;
-    }).join("");
-    return `<div class="theory">
-      <article><h3>A escala maior <button class="link" data-act="hear:scale">▶ ouvir</button></h3>
-        <p>Sete notas com o padrão <b>tom, tom, semitom, tom, tom, tom, semitom</b>. Em ${key.name}:</p>
-        <div class="scale big">${scale}</div>
-        <p>Cada <b>grau</b> (I a VII) tem uma cor no jogo. As notas-monstro carregam essa cor e o nome da nota.</p></article>
-      <article><h3>Tríades e acordes</h3>
-        <p>Uma tríade empilha três notas pulando uma: 1ª, 3ª e 5ª. Corte as três num único traço para formar o acorde. Toque para ouvir:</p>
-        <div class="tchords">${chords}</div>
-        <p><b>I, IV e V</b> são maiores e sustentam quase toda música popular. <b>ii, iii e vi</b> são menores, mais melancólicas. O <b>V7</b> tem quatro notas e cria a tensão que pede para voltar ao I.</p></article>
-      <article><h3>Ritmo e tempo</h3>
-        <p><b>BPM</b> é quantas batidas por minuto. Um compasso de 4 tempos tem 4 batidas, e a 1ª é a mais forte. Golpes que caem na batida são mais fortes. A <b>Pausa</b> é silêncio, então ela só pode ser cortada entre os tempos.</p></article>
-      <article><h3>Ciclo das quintas</h3>
-        <p>Subindo uma quinta (Dó → Sol → Ré…), cada tonalidade nova ganha um <b>sustenido</b>. No jogo, cada passo no ciclo é um concerto mais difícil e mais rico.</p></article>
-      <article><h3>Trítono</h3>
-        <p>O intervalo de três tons inteiros (ex.: Fá–Si), apelidado de <i>diabolus in musica</i> por soar instável. É o chefe de cada concerto.</p></article>
+    const d = DUNGEONS[this.dSel];
+    const key = KEYS[d.key];
+    const pts = DUNGEONS.map((_, i) => [36 + i * 13, 44 - (i % 2) * 18]);
+    stage.innerHTML = `<div class="mapa">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="${pts.map(([x, y]) => `${x},${y}`).join(" ")}" /></svg>
+      ${DUNGEONS.map((dd, i) => {
+        const open = i <= p.unlocked;
+        return `<button class="loc ${open ? "open" : ""} ${i === this.dSel ? "on" : ""} ${p.cleared[dd.id] ? "done" : ""}" style="left:${pts[i][0]}%;top:${pts[i][1]}%" ${open ? `data-act="dungeon:${i}"` : "disabled"}><i></i><span>${open ? dd.name : "???"}</span></button>`;
+      }).join("")}
+      <div class="info"><h3>${d.name}</h3>
+        <p>Tonalidade: <b>${key.name}</b> · ${MAJOR.map((m) => ["Dó", "Dó♯", "Ré", "Ré♯", "Mi", "Fá", "Fá♯", "Sol", "Sol♯", "Lá", "Lá♯", "Si"][(key.root + m) % 12]).join(" ")}</p>
+        <p>${d.rooms} salas + chefe · força ×${fmt(Math.pow(2.2, this.dSel))}${p.cleared[d.id] ? " · <b class='ok'>afinada</b>" : ""}</p>
+        <p class="hint">Vença o Maestro Trítono no fim para abrir o próximo lugar.</p></div>
     </div>`;
   }
 
   // ------------------------------------------------------------ árvore
-  private nodePos(n: TreeNode): { x: number; y: number } {
-    if (n.branch === "root") return { x: 0, y: 0 };
-    const a = (BRANCHES[n.branch].angle * Math.PI) / 180;
-    const d = n.depth * 1.05 + 0.25;
-    const px = -Math.sin(a);
-    const py = Math.cos(a);
-    return { x: Math.cos(a) * d + px * n.lat * 0.55, y: Math.sin(a) * d + py * n.lat * 0.55 };
-  }
-
-  private tree(body: HTMLElement): void {
+  private tree(stage: HTMLElement): void {
     const p = this.host.profile;
-    const n = TREE.find((x) => x.id === this.selNode) ?? TREE[0];
+    const n = TREE.find((x) => x.id === this.sel)!;
     const l = lvl(p, n.id);
+    const vis = nodeVisible(p, n.id);
     const maxed = l >= n.max;
-    const lockedKey = nodeLockedByKey(p, n.id);
-    const avail = nodeAvailable(p, n.id);
     const cost = nodeCost(n.id, l);
-    const can = canBuy(p, n.id);
-    const cur = n.score ? `<i class="sc"></i>${cost}` : `<i class="nt">♪</i>${fmt(cost)}`;
-    const branch = n.branch === "root" ? "Origem" : BRANCHES[n.branch].name;
-    body.innerHTML = `<div class="treewrap"><canvas class="treecv"></canvas>
-      <div class="detail" style="--bc:${colorOf(n)}">
-        <div class="dh"><b>${n.name}</b><span>${l}/${n.max}</span></div>
-        <small class="br">${branch}</small>
-        <p>${n.desc}</p>
-        ${lockedKey ? `<p class="req">Vença o concerto em ${KEYS[(n.key ?? 1) - 1].name} para liberar.</p>` : !avail ? `<p class="req">Requer: ${n.requires.map((r) => TREE.find((x) => x.id === r)!.name).join(" ou ")}</p>` : ""}
-        ${maxed ? '<button class="buy done" disabled>Completo</button>' : `<button class="buy ${can ? "" : "poor"}" data-act="buy:${n.id}" ${can ? "" : "disabled"}>${l ? "Melhorar" : "Aprender"} · ${cur}</button>`}
-      </div>
-      <div class="legend">${Object.values(BRANCHES)
-        .map((b) => `<span style="--c:${b.color}">${b.name}</span>`)
-        .join("")}</div></div>`;
-    const cv = body.querySelector(".treecv") as HTMLCanvasElement;
-    this.treeCanvas = cv;
-    requestAnimationFrame(() => this.drawTree());
+    const have = p[n.cur];
+    stage.innerHTML = `<canvas class="treecv"></canvas>
+      <div class="hints"><span><i class="k">${this.host.touch ? "toque" : "clique"}</i>Comprar</span><span><i class="k">${this.host.touch ? "pinça" : "roda"}</i>Zoom</span><span><i class="k">arraste</i>Mover</span></div>
+      <div class="tip">${
+        vis
+          ? `<h4>${n.name.toUpperCase()}</h4><small>NVL. ${l} / ${n.max}</small><p>${n.desc}</p>
+        ${maxed ? '<div class="cost done">COMPLETO</div>' : `<button class="cost ${have >= cost ? "ok" : ""}" data-act="buy:${n.id}">${CUR_ICON[n.cur]} ${fmt(Math.floor(have))} / ${fmt(cost)}</button>`}`
+          : `<h4>???</h4><p>Compre uma habilidade vizinha para revelar.</p>`
+      }</div>`;
+    const cv = stage.querySelector(".treecv") as HTMLCanvasElement;
+    this.cv = cv;
+    requestAnimationFrame(() => this.draw());
     const pts = new Map<number, { x: number; y: number }>();
     let drag: { x: number; y: number; px: number; py: number; moved: boolean } | null = null;
     let pinch = 0;
@@ -232,14 +400,23 @@ export class Hub {
       }
     };
     cv.onpointermove = (e) => {
-      if (!pts.has(e.pointerId)) return;
+      if (!pts.has(e.pointerId)) {
+        const h = this.nodeAt(e.clientX, e.clientY);
+        const id = h?.id ?? null;
+        if (id !== this.hover) {
+          this.hover = id;
+          cv.style.cursor = id ? "pointer" : "grab";
+          this.draw();
+        }
+        return;
+      }
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pts.size >= 2) {
         const [a, b] = [...pts.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (pinch > 0) this.zoom = Math.max(0.6, Math.min(2.4, this.zoom * (d / pinch)));
+        if (pinch > 0) this.zoom = Math.max(0.5, Math.min(2.5, this.zoom * (d / pinch)));
         pinch = d;
-        this.drawTree();
+        this.draw();
         return;
       }
       if (!drag) return;
@@ -249,15 +426,18 @@ export class Hub {
       if (!drag.moved) return;
       this.pan.x = drag.px + dx;
       this.pan.y = drag.py + dy;
-      this.drawTree();
+      this.draw();
     };
     const up = (e: PointerEvent) => {
       pts.delete(e.pointerId);
       if (drag && !drag.moved && pts.size === 0) {
         const hit = this.nodeAt(e.clientX, e.clientY);
         if (hit) {
-          this.selNode = hit.id;
-          this.render();
+          if (hit.id === this.sel && nodeVisible(p, hit.id)) this.act(`buy:${hit.id}`);
+          else {
+            this.sel = hit.id;
+            this.render();
+          }
           return;
         }
       }
@@ -267,133 +447,95 @@ export class Hub {
     cv.onpointercancel = up;
     cv.onwheel = (e) => {
       e.preventDefault();
-      this.zoom = Math.max(0.6, Math.min(2.4, this.zoom * (e.deltaY < 0 ? 1.1 : 0.9)));
-      this.drawTree();
+      this.zoom = Math.max(0.5, Math.min(2.5, this.zoom * (e.deltaY < 0 ? 1.1 : 0.9)));
+      this.draw();
     };
   }
 
-  private layout(cv: HTMLCanvasElement) {
-    const r = cv.getBoundingClientRect();
-    const P = TREE.map((n) => this.nodePos(n));
-    const ext = Math.max(...P.map((p) => Math.max(Math.abs(p.x), Math.abs(p.y)))) + 0.7;
-    const wide = r.width > 700;
-    const usableW = wide ? r.width - Math.min(330, r.width * 0.36) : r.width;
-    const usableH = wide ? r.height : r.height - 130;
-    const step = Math.max(26, Math.min(usableW, usableH - 30) / (ext * 2)) * this.zoom;
-    const cx = usableW / 2 + this.pan.x;
-    const cy = (usableH - 30) / 2 + 6 + this.pan.y;
-    return { r, step, cx, cy, rad: Math.max(12, Math.min(26, step * 0.36)) };
+  private layout() {
+    const r = this.cv!.getBoundingClientRect();
+    const step = Math.min(r.width, r.height) / 9.5 * this.zoom;
+    return { r, step, cx: r.width * 0.42 + this.pan.x, cy: r.height * 0.42 + this.pan.y, rad: Math.max(14, Math.min(30, step * 0.38)) };
   }
 
   private nodeAt(sx: number, sy: number): TreeNode | undefined {
-    const cv = this.treeCanvas;
-    if (!cv) return;
-    const L = this.layout(cv);
+    if (!this.cv) return;
+    const L = this.layout();
     const x = sx - L.r.left;
     const y = sy - L.r.top;
-    let best: TreeNode | undefined;
-    let bd = L.rad + 10;
-    for (const n of TREE) {
-      const p = this.nodePos(n);
-      const d = Math.hypot(L.cx + p.x * L.step - x, L.cy + p.y * L.step - y);
-      if (d < bd) {
-        bd = d;
-        best = n;
-      }
-    }
-    return best;
+    const p = this.host.profile;
+    return TREE.find((n) => (nodeVisible(p, n.id) || (n.from && lvl(p, n.from) === 0 && nodeVisible(p, n.from))) && Math.hypot(L.cx + n.x * L.step - x, L.cy + n.y * L.step - y) < L.rad + 8);
   }
 
-  private drawTree(): void {
-    const cv = this.treeCanvas;
+  private draw(): void {
+    const cv = this.cv;
     if (!cv || !cv.isConnected) return;
     const p = this.host.profile;
-    const L = this.layout(cv);
+    const L = this.layout();
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     cv.width = Math.round(L.r.width * dpr);
     cv.height = Math.round(L.r.height * dpr);
     const g = cv.getContext("2d")!;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.clearRect(0, 0, L.r.width, L.r.height);
-    const pos = (n: TreeNode) => {
-      const q = this.nodePos(n);
-      return { x: L.cx + q.x * L.step, y: L.cy + q.y * L.step };
-    };
-    // pauta circular decorativa
-    g.strokeStyle = "rgba(230,190,120,0.07)";
-    for (let k = 0; k < 5; k++) {
-      g.beginPath();
-      g.arc(L.cx, L.cy, L.step * (2.6 + k * 0.18), 0, TAU);
-      g.stroke();
-    }
-    for (const n of TREE)
-      for (const rq of n.requires) {
-        const a = pos(TREE.find((x) => x.id === rq)!);
-        const b = pos(n);
-        const own = lvl(p, n.id) > 0;
-        const lit = lvl(p, rq) > 0;
-        g.strokeStyle = own ? colorOf(n) : lit ? "rgba(220,210,255,0.4)" : "rgba(130,120,170,0.15)";
-        g.lineWidth = own ? 3.5 : 2.2;
-        g.beginPath();
-        g.moveTo(a.x, a.y);
-        g.lineTo(b.x, b.y);
-        g.stroke();
-      }
+    const pos = (n: TreeNode) => ({ x: L.cx + n.x * L.step, y: L.cy + n.y * L.step });
+    // só aparecem os comprados, os vizinhos (visíveis) e os "?" um passo adiante
+    const shown = (n: TreeNode) => nodeVisible(p, n.id) || (n.from !== null && nodeVisible(p, n.from));
     for (const n of TREE) {
-      const { x, y } = pos(n);
-      const l = lvl(p, n.id);
-      const avail = nodeAvailable(p, n.id);
-      const col = colorOf(n);
-      const afford = canBuy(p, n.id);
-      const keyLock = nodeLockedByKey(p, n.id);
-      g.save();
-      g.globalAlpha = avail || l ? 1 : 0.32;
-      if (afford) {
-        g.shadowColor = col;
-        g.shadowBlur = 18;
-      }
-      const big = n.max === 1 || n.branch === "root";
+      if (!n.from || !shown(n)) continue;
+      const a = pos(TREE.find((x) => x.id === n.from)!);
+      const b = pos(n);
+      const own = lvl(p, n.id) > 0;
+      const vis = nodeVisible(p, n.id);
+      g.strokeStyle = own ? "#6ad86a" : vis ? "rgba(200,200,210,0.55)" : "rgba(140,140,150,0.25)";
+      g.lineWidth = own ? 2.5 : 1.5;
+      g.setLineDash(vis ? [] : [3, 4]);
+      const mx = (a.x + b.x) / 2 + (b.y - a.y) * 0.18;
+      const my = (a.y + b.y) / 2 - (b.x - a.x) * 0.18;
       g.beginPath();
-      if (big) {
-        for (let k = 0; k < 6; k++) {
-          const a = (k / 6) * TAU + Math.PI / 6;
-          const rr = L.rad * 1.08;
-          if (k) g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-          else g.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-        }
-        g.closePath();
-      } else g.arc(x, y, L.rad, 0, TAU);
-      g.fillStyle = l ? "#211836" : "#0d0a18";
-      g.fill();
-      g.lineWidth = n.id === this.selNode ? 3.5 : 2.2;
-      g.strokeStyle = n.id === this.selNode ? "#fff" : l || afford ? col : "rgba(160,150,200,0.45)";
+      g.moveTo(a.x, a.y);
+      g.quadraticCurveTo(mx, my, b.x, b.y);
       g.stroke();
+      g.setLineDash([]);
+    }
+    for (const n of TREE) {
+      if (!shown(n)) continue;
+      const { x, y } = pos(n);
+      const vis = nodeVisible(p, n.id);
+      const l = lvl(p, n.id);
+      const R = L.rad;
+      if (!vis) {
+        g.fillStyle = "rgba(170,170,180,0.45)";
+        g.font = `bold ${Math.round(R * 1.3)}px "VT323", monospace`;
+        g.textAlign = "center";
+        g.textBaseline = "middle";
+        g.fillText("?", x, y);
+        continue;
+      }
+      const afford = canBuy(p, n.id);
+      const square = n.max === 1;
+      g.save();
+      if (afford) {
+        g.shadowColor = "#ffb45a";
+        g.shadowBlur = 16;
+      }
+      g.fillStyle = l ? "#1c2420" : "#141218";
+      g.beginPath();
+      if (square) g.rect(x - R, y - R, R * 2, R * 2);
+      else g.arc(x, y, R, 0, TAU);
+      g.fill();
       g.shadowBlur = 0;
+      g.lineWidth = n.id === this.sel ? 3 : 2;
+      g.strokeStyle = n.id === this.sel ? "#ffffff" : l >= n.max ? "#6ad86a" : l ? "#4aa86a" : afford ? "#e8a050" : "#6a6470";
+      g.stroke();
+      g.restore();
       if (n.max > 1 && l > 0) {
-        g.strokeStyle = col;
+        g.strokeStyle = "#6ad86a";
         g.lineWidth = 3;
         g.beginPath();
-        g.arc(x, y, L.rad + 4.5, -Math.PI / 2, -Math.PI / 2 + (TAU * l) / n.max);
+        g.arc(x, y, R + 4, -Math.PI / 2, -Math.PI / 2 + (TAU * l) / n.max);
         g.stroke();
       }
-      g.fillStyle = l ? col : "rgba(220,215,240,0.85)";
-      const gl = keyLock ? "🔒" : n.glyph;
-      g.font = `800 ${Math.round(L.rad * (gl.length > 1 ? 0.62 : 0.9))}px Georgia, serif`;
-      g.textAlign = "center";
-      g.textBaseline = "middle";
-      g.fillText(gl, x, y + 1);
-      if (L.step > 46 && n.max > 1) {
-        g.font = "700 10px system-ui, sans-serif";
-        g.fillStyle = "#c8c0e0";
-        g.fillText(`${l}/${n.max}`, x, y + L.rad + 12);
-      }
-      if (n.score && !l) {
-        g.font = "700 9px system-ui, sans-serif";
-        g.fillStyle = "#ffd27a";
-        g.fillText("partitura", x, y - L.rad - 8);
-      }
-      g.restore();
+      drawIcon(g, n.icon, x, y, R * 1.6, l ? "#f0ead8" : n.id === this.hover ? "#ffffff" : "#b8b0c0");
     }
   }
 }
-
