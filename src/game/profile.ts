@@ -1,148 +1,124 @@
-import { BASE_SLOTS, RUN, STARTER_UNITS, TREE, type StatKey, type UnitId } from "../data/content";
+import { BAL, STARTING_SATS, TREE, type SatId } from "../data/content";
 
-/** Progresso permanente entre missões. */
 export interface Profile {
   version: number;
-  scrap: number;
-  scrapTotal: number;
+  matter: number;
+  matterTotal: number;
   nodes: Record<string, number>;
-  sectorUnlocked: number;
-  bestWave: Record<number, number>;
-  cleared: Record<number, boolean>;
-  loadout: UnitId[];
+  bestWave: number;
   runs: number;
   kills: number;
-  flags: Record<string, boolean>;
+  tutorialDone: boolean;
 }
+
+export const SAVE_KEY = "poco-gravitacional-v1";
 
 export function newProfile(): Profile {
-  return {
-    version: 1,
-    scrap: 0,
-    scrapTotal: 0,
-    nodes: { core: 1 },
-    sectorUnlocked: 1,
-    bestWave: {},
-    cleared: {},
-    loadout: ["generator", "blaster", "wall"],
-    runs: 0,
-    kills: 0,
-    flags: {},
-  };
+  return { version: 1, matter: 0, matterTotal: 0, nodes: {}, bestWave: 0, runs: 0, kills: 0, tutorialDone: false };
 }
 
-export interface Stats {
-  bladeDmg: number;
-  bladeHeat: number;
-  bladeWidth: number;
-  bladeCrit: number;
-  bladeMagnet: boolean;
-  bladeChain: number;
-  bladeBurn: number;
-  unitDmg: number;
-  unitHp: number;
-  startEnergy: number;
-  genSpeed: number;
-  recharge: number;
-  costMul: number;
-  scrapMul: number;
-  baseHp: number;
-  slots: number;
-  killEnergy: number;
-  droneRedeploy: boolean;
-  unlocked: UnitId[];
+export function loadProfile(raw: string | null): Profile {
+  const base = newProfile();
+  if (!raw) return base;
+  try {
+    const d = JSON.parse(raw) as Partial<Profile>;
+    const p: Profile = { ...base, ...d, nodes: { ...(d.nodes ?? {}) } };
+    for (const k of Object.keys(p.nodes)) {
+      const n = TREE.find((t) => t.id === k);
+      if (!n) delete p.nodes[k];
+      else p.nodes[k] = Math.max(0, Math.min(n.max, Math.floor(p.nodes[k])));
+    }
+    if (!isFinite(p.matter) || p.matter < 0) p.matter = 0;
+    return p;
+  } catch {
+    return base;
+  }
 }
 
-/** Converte os níveis da árvore em modificadores de jogo. */
-export function computeStats(p: Profile): Stats {
-  const sum = (k: StatKey) => TREE.filter((n) => n.stat === k).reduce((a, n) => a + (p.nodes[n.id] ?? 0) * n.value, 0);
-  const unlocked: UnitId[] = [...STARTER_UNITS];
-  for (const n of TREE) if (n.stat === "unlock" && n.unit && p.nodes[n.id]) unlocked.push(n.unit);
-  return {
-    bladeDmg: 1 + sum("bladeDmg"),
-    bladeHeat: Math.max(0.2, 1 - sum("bladeCool")),
-    bladeWidth: 1 + sum("bladeWidth"),
-    bladeCrit: sum("bladeCrit"),
-    bladeMagnet: sum("bladeMagnet") > 0,
-    bladeChain: Math.round(sum("bladeChain")),
-    bladeBurn: sum("bladeBurn"),
-    unitDmg: 1 + sum("unitDmg"),
-    unitHp: 1 + sum("unitHp"),
-    startEnergy: RUN.startEnergy + sum("startEnergy"),
-    genSpeed: 1 + sum("genBoost"),
-    recharge: Math.max(0.3, 1 - sum("recharge")),
-    costMul: Math.max(0.5, 1 - sum("costCut")),
-    scrapMul: 1 + sum("scrap"),
-    baseHp: RUN.baseHp + sum("baseHp"),
-    slots: BASE_SLOTS + sum("slots"),
-    killEnergy: sum("killEnergy"),
-    droneRedeploy: sum("drones") > 0,
-    unlocked,
-  };
+export function lvl(p: Profile, id: string): number {
+  return p.nodes[id] ?? 0;
 }
 
 export function nodeCost(id: string, level: number): number {
-  const n = TREE.find((x) => x.id === id)!;
+  const n = TREE.find((t) => t.id === id)!;
   return Math.ceil(n.baseCost * Math.pow(n.growth, level));
 }
 
 export function nodeAvailable(p: Profile, id: string): boolean {
-  const n = TREE.find((x) => x.id === id)!;
-  return n.requires.every((r) => (p.nodes[r] ?? 0) > 0);
+  const n = TREE.find((t) => t.id === id)!;
+  return n.requires.every((r) => lvl(p, r) > 0);
+}
+
+export function canBuy(p: Profile, id: string): boolean {
+  const n = TREE.find((t) => t.id === id);
+  if (!n) return false;
+  const l = lvl(p, id);
+  return l < n.max && nodeAvailable(p, id) && p.matter >= nodeCost(id, l);
 }
 
 export function buyNode(p: Profile, id: string): boolean {
-  const n = TREE.find((x) => x.id === id);
-  if (!n) return false;
-  const lvl = p.nodes[id] ?? 0;
-  if (lvl >= n.max || !nodeAvailable(p, id)) return false;
-  const c = nodeCost(id, lvl);
-  if (p.scrap < c) return false;
-  p.scrap -= c;
-  p.nodes[id] = lvl + 1;
-  // carta recém-liberada entra no arsenal se houver espaço
-  if (n.unit && !p.loadout.includes(n.unit) && p.loadout.length < computeStats(p).slots) p.loadout.push(n.unit);
+  if (!canBuy(p, id)) return false;
+  const l = lvl(p, id);
+  p.matter -= nodeCost(id, l);
+  p.nodes[id] = l + 1;
   return true;
 }
 
-export function toggleLoadout(p: Profile, id: UnitId): boolean {
-  const st = computeStats(p);
-  if (!st.unlocked.includes(id)) return false;
-  const i = p.loadout.indexOf(id);
-  if (i >= 0) {
-    if (p.loadout.length <= 1) return false;
-    p.loadout.splice(i, 1);
-    return true;
-  }
-  if (p.loadout.length >= st.slots) return false;
-  p.loadout.push(id);
-  return true;
+export interface Stats {
+  grav: number;
+  horizon: number;
+  horizonDps: number;
+  energyMax: number;
+  energyRegen: number;
+  pulseForce: number;
+  pulseCd: number;
+  impact: number;
+  comboWindow: number;
+  reach: number;
+  satDmg: number;
+  satRate: number;
+  satCost: number;
+  startFrags: number;
+  rings: number;
+  extraSlots: number;
+  coreHp: number;
+  coreRegen: number;
+  shield: boolean;
+  fragVal: number;
+  matterMul: number;
+  asteroids: number;
+  startWave: number;
+  unlocked: SatId[];
 }
 
-export const SAVE_KEY = "ultimalinha.save";
-
-export interface Store {
-  getItem(k: string): string | null;
-  setItem(k: string, v: string): void;
-  removeItem(k: string): void;
-}
-
-export function saveProfile(p: Profile, store: Store = localStorage): void {
-  try {
-    store.setItem(SAVE_KEY, JSON.stringify(p));
-  } catch {
-    /* armazenamento indisponível */
-  }
-}
-
-export function loadProfile(store: Store = localStorage): Profile {
-  try {
-    const raw = store.getItem(SAVE_KEY);
-    if (!raw) return newProfile();
-    const d = JSON.parse(raw) as Partial<Profile>;
-    const base = newProfile();
-    return { ...base, ...d, nodes: { ...base.nodes, ...(d.nodes ?? {}) }, bestWave: { ...(d.bestWave ?? {}) }, cleared: { ...(d.cleared ?? {}) }, flags: { ...(d.flags ?? {}) }, loadout: d.loadout?.length ? d.loadout : base.loadout };
-  } catch {
-    return newProfile();
-  }
+export function computeStats(p: Profile): Stats {
+  const L = (id: string) => lvl(p, id);
+  const unlocked: SatId[] = [...STARTING_SATS];
+  for (const n of TREE) if (n.sat && L(n.id) > 0) unlocked.push(n.sat);
+  return {
+    grav: (1 + 0.1 * L("root")) * (1 + 0.12 * L("mass")),
+    horizon: 1 + 0.08 * L("horizon"),
+    horizonDps: 1 + 0.25 * L("hdmg"),
+    energyMax: BAL.energyMax + 20 * L("energy"),
+    energyRegen: 1 + 0.15 * L("regen"),
+    pulseForce: 1 + 0.2 * L("pulse"),
+    pulseCd: BAL.pulseCd * Math.pow(0.92, L("pulse")),
+    impact: 1 + 0.15 * L("impact"),
+    comboWindow: BAL.comboWindow + 0.5 * L("combo"),
+    reach: 1 + 0.2 * L("reach"),
+    satDmg: 1 + 0.12 * L("satDmg"),
+    satRate: 1 + 0.08 * L("satRate"),
+    satCost: Math.pow(0.94, L("discount")),
+    startFrags: BAL.startFrags + 25 * L("startFrag") + 40 * L("headstart"),
+    rings: L("ring3") ? 3 : 2,
+    extraSlots: L("slots"),
+    coreHp: BAL.coreHp * (1 + 0.2 * L("hp")),
+    coreRegen: 0.4 * L("coreRegen"),
+    shield: L("shield") > 0,
+    fragVal: 1 + 0.1 * L("fragVal"),
+    matterMul: 1 + 0.1 * L("matter"),
+    asteroids: BAL.asteroids + L("belt"),
+    startWave: 1 + 2 * L("headstart"),
+    unlocked,
+  };
 }

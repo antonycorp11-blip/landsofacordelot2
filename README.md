@@ -1,72 +1,56 @@
-# Última Linha
+# Poço Gravitacional
 
-Defesa de fileiras sci-fi com progressão incremental, no espírito de
-*Plants vs. Zombies* + *Outliers: Incrementum*.
+Tower defense incremental em que **você é um buraco negro**. O buraco segue o mouse (ou o dedo) e puxa as naves inimigas com a gravidade. O objetivo é arremessá-las umas contra as outras, contra asteroides e contra os satélites que orbitam o planeta-núcleo.
 
-Alienígenas atravessam cinco fileiras em direção à base. Você **posiciona
-unidades** nas casas (geradores, blasters, barreiras, minas…) e também **corta os
-alienígenas com o dedo** (ou com o mouse pressionado). Ganhando ou perdendo, leva
-**sucata** para a **árvore de habilidades** e volta mais forte.
+## Como jogar
 
-Tudo é desenhado por código em Canvas 2D — sem imagens.
+| Ação | Computador | Celular |
+| --- | --- | --- |
+| Mover o buraco negro | mover o mouse | arrastar o dedo em qualquer lugar |
+| Gravidade forte (gasta energia) | segurar o clique / Shift | segurar **Gravidade** ou encostar um 2º dedo |
+| Pulso de repulsão | clique direito / Espaço | botão **Pulso** |
+| Modo construção (para o tempo) | B ou **Construir** | **Construir** |
+| Girar o anel escolhido | Q / E (1, 2, 3 escolhem o anel) | ⟲ ⟳ |
+| Pausa | Esc / P | ❚❚ |
 
-## Como executar
+### Dano e recompensas
+
+- **Impactos:** colisões em alta velocidade causam dano proporcional à velocidade e à massa do outro corpo. Inimigos esmagados valem 1,5× fragmentos.
+- **Horizonte de eventos:** inimigos dentro dele se desfazem aos poucos.
+- **Fragmentos ◆** compram e melhoram satélites durante a partida. Abates em sequência formam combo, até ×5.
+- **Matéria escura** fica de uma partida para a outra e é gasta na árvore de **Evolução**, que tem três ramos: Singularidade, Órbita e Núcleo.
+
+### Satélites
+
+- **Laser:** dispara um raio contínuo.
+- **Mina orbital:** explode quando algo passa perto e se rearma sozinha.
+- **Canhão de massa:** os projéteis fazem curva na gravidade do buraco.
+- **Defletor:** rebate inimigos e causa dano de impacto.
+- **Estase:** deixa os inimigos lentos.
+- **Coletor:** gera fragmentos.
+
+### Inimigos
+
+- Errante
+- Enxame
+- Couraçado (pesado)
+- Cometa (rápido)
+- Fissor (se divide)
+- Antimatéria (é repelida pelo buraco)
+- Leviatã (chefe a cada 10 ondas)
+
+## Desenvolvimento
 
 ```bash
 npm install
-npm run dev     # http://localhost:5180
-npm test        # regras do jogo + curva de dificuldade
-npm run build
+npm run dev        # http://localhost:5180
+npm test           # física, economia, perfil e bot de equilíbrio
+npm run typecheck
+npm run build      # gera dist/
 ```
 
-A Vercel publica o branch `main` (`vercel.json`). O progresso fica salvo no
-navegador. No celular, jogue com o aparelho deitado.
+O projeto usa TypeScript, Vite e Canvas 2D, sem nenhuma imagem: todo o visual é gerado por código. Isso inclui a nebulosa, a lente gravitacional, a grade do espaço-tempo, o planeta projetado numa esfera, os asteroides e o disco de acreção.
 
-## Como se joga
-
-- **Energia:** geradores e o céu soltam células amarelas. Toque nelas (ou passe o
-  dedo por cima) para coletar.
-- **Cartas:** toque numa carta e depois numa casa. Cada carta tem custo e tempo de
-  recarga. *Remover* libera uma casa. Atalhos no teclado: 1–8.
-- **Corte:** arraste sobre os alienígenas. Cada golpe aquece a lâmina; se
-  superaquecer, ela para até esfriar.
-- **Drones:** cada fileira tem um drone que varre tudo uma vez quando um
-  alienígena chega à base. Depois disso, a invasão tira integridade.
-- **Missão:** 8 ondas, com um Colosso na última. "Chamar onda" adianta a próxima.
-
-### Unidades
-Gerador · Blaster · Barreira · Mina · Criotorre (desacelera) · Blaster Duplo ·
-Canhão Laser (atravessa a fileira) · Bobina Tesla (raio em cadeia) · Lança-mísseis
-(área 3×3).
-
-### Alienígenas
-Rastejante · Corredor · Blindado (carapaça) · Enxame · Saltador (pula a primeira
-defesa) · Cuspidor (ataca de longe) · Colosso (chefe).
-
-### Progressão
-- **Setores:** cada vitória libera um setor novo, com alienígenas mais fortes e
-  tipos novos.
-- **Árvore** com três ramos:
-  - **Lâmina:** dano, largura, resfriamento, crítico, ímã de energia, arco
-    voltaico, queimadura.
-  - **Engenharia:** dano e vida das unidades, geradores, recarga, custo e as
-    cartas novas.
-  - **Comando:** sucata, energia inicial, baias extras no arsenal, integridade
-    da base, energia por abate, drones que voltam.
-- **Arsenal:** escolha quais cartas levar (4 baias no começo).
-
-## Estrutura
-
-```
-src/data/content.ts    unidades, alienígenas, setores e árvore (declarativos)
-src/game/run.ts        simulação da missão: ondas, unidades, projéteis, drones, corte
-src/game/profile.ts    progresso permanente, atributos da árvore, arsenal, save
-src/render/sprites.ts  unidades, alienígenas, células e drones desenhados por código
-src/render/board.ts    campo de batalha, efeitos, rastro do corte
-src/ui/runhud.ts       bandeja de cartas, ondas, calor da lâmina, resultado
-src/ui/hub.ts          base: missões, árvore de habilidades, arsenal
-tests/                 regras e curva de dificuldade
-```
-
-O teste de curva simula um jogador simples. O setor 1 é vencível só
-posicionando unidades; o setor 3 exige o corte; o setor 5 exige evoluir na árvore.
+- `src/game/sim.ts`: simulação em passo fixo, sem DOM.
+- `src/render/`: desenho da partida.
+- `src/ui/`: HUD, tutorial e menu.

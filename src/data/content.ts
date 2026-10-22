@@ -1,177 +1,156 @@
-/** Dados declarativos: unidades, alienígenas, setores e a árvore de habilidades. */
+/** Dados do jogo: inimigos, satélites, constantes de equilíbrio e árvore de habilidades. */
 
-export const BOARD = { cols: 9, rows: 5, tile: 100, left: 150, top: 120 };
+export type EnemyId = "wanderer" | "drone" | "armored" | "comet" | "splitter" | "shard" | "antimatter" | "leviathan";
 
-export type UnitId = "generator" | "blaster" | "wall" | "mine" | "cryo" | "double" | "laser" | "tesla" | "mortar";
-
-export interface UnitDef {
-  id: UnitId;
+export interface EnemyDef {
+  id: EnemyId;
   name: string;
   desc: string;
-  cost: number;
   hp: number;
-  /** recarga da carta (s) */
-  recharge: number;
-  damage: number;
-  /** intervalo entre ataques (s) */
-  rate: number;
-  /** cor de destaque */
+  r: number;
+  mass: number;
+  /** quanto a gravidade do buraco afeta (1 = normal; negativo = repelido) */
+  gres: number;
+  speed: number;
+  steer: number;
+  dmg: number;
+  frag: number;
+  matter: number;
+  cost: number;
+  fromWave: number;
+  weight: number;
   color: string;
 }
 
-export const UNITS: Record<UnitId, UnitDef> = {
-  generator: { id: "generator", name: "Gerador", desc: "Produz células de energia. A base da economia.", cost: 50, hp: 300, recharge: 6, damage: 0, rate: 9, color: "#ffd84a" },
-  blaster: { id: "blaster", name: "Blaster", desc: "Dispara projéteis de plasma pela fileira.", cost: 100, hp: 300, recharge: 6, damage: 20, rate: 1.4, color: "#4ae0ff" },
-  wall: { id: "wall", name: "Barreira", desc: "Escudo de energia que segura os alienígenas.", cost: 50, hp: 4000, recharge: 25, damage: 0, rate: 0, color: "#7c9cff" },
-  mine: { id: "mine", name: "Mina", desc: "Arma em 10 s e explode o primeiro que pisar.", cost: 25, hp: 300, recharge: 22, damage: 1800, rate: 10, color: "#ff8a3a" },
-  cryo: { id: "cryo", name: "Criotorre", desc: "Projéteis gelados: deixam o alvo 50% mais lento.", cost: 175, hp: 300, recharge: 7, damage: 20, rate: 1.4, color: "#a8f0ff" },
-  double: { id: "double", name: "Blaster Duplo", desc: "Dois disparos por ciclo.", cost: 200, hp: 300, recharge: 7, damage: 20, rate: 1.4, color: "#3affb0" },
-  laser: { id: "laser", name: "Canhão Laser", desc: "Raio que atravessa a fileira inteira.", cost: 225, hp: 300, recharge: 9, damage: 45, rate: 2.4, color: "#ff4a8a" },
-  tesla: { id: "tesla", name: "Bobina Tesla", desc: "Raio em cadeia que salta entre alienígenas de fileiras vizinhas.", cost: 250, hp: 350, recharge: 10, damage: 32, rate: 1.8, color: "#c08aff" },
-  mortar: { id: "mortar", name: "Lança-mísseis", desc: "Míssil no alienígena mais avançado, dano em área 3×3.", cost: 325, hp: 300, recharge: 12, damage: 90, rate: 3.2, color: "#ffb020" },
+export const ENEMIES: Record<EnemyId, EnemyDef> = {
+  wanderer: { id: "wanderer", name: "Errante", desc: "Nave básica. Vai direto ao núcleo.", hp: 20, r: 8, mass: 1, gres: 1, speed: 34, steer: 1.4, dmg: 8, frag: 2, matter: 1, cost: 1, fromWave: 1, weight: 10, color: "#4ae0ff" },
+  drone: { id: "drone", name: "Enxame", desc: "Leves e rápidos, chegam em grupos. Muito fáceis de arrastar.", hp: 9, r: 5.5, mass: 0.6, gres: 1.3, speed: 52, steer: 1.8, dmg: 4, frag: 1, matter: 0.5, cost: 0.7, fromWave: 2, weight: 7, color: "#7aff9a" },
+  armored: { id: "armored", name: "Couraçado", desc: "Pesado e blindado. A gravidade quase não o move — use-o como projétil.", hp: 80, r: 13, mass: 3.2, gres: 0.38, speed: 22, steer: 1.2, dmg: 20, frag: 5, matter: 3, cost: 3, fromWave: 4, weight: 5, color: "#ffb04a" },
+  comet: { id: "comet", name: "Cometa", desc: "Vem em linha reta, muito rápido. Desvie-o antes que chegue.", hp: 30, r: 7, mass: 1.2, gres: 0.55, speed: 105, steer: 3.2, dmg: 12, frag: 3, matter: 2, cost: 2, fromWave: 6, weight: 4, color: "#ffffff" },
+  splitter: { id: "splitter", name: "Fissor", desc: "Ao ser destruído, se parte em três estilhaços.", hp: 45, r: 11, mass: 1.6, gres: 0.8, speed: 28, steer: 1.3, dmg: 12, frag: 3, matter: 2, cost: 3, fromWave: 8, weight: 4, color: "#ff5ad0" },
+  shard: { id: "shard", name: "Estilhaço", desc: "Pedaço de Fissor.", hp: 10, r: 5, mass: 0.5, gres: 1.2, speed: 60, steer: 2, dmg: 4, frag: 1, matter: 0.3, cost: 0, fromWave: 999, weight: 0, color: "#ff9ae6" },
+  antimatter: { id: "antimatter", name: "Antimatéria", desc: "É repelida pelo buraco negro. Empurre-a contra asteroides e satélites.", hp: 40, r: 9, mass: 1, gres: -0.9, speed: 30, steer: 1.3, dmg: 15, frag: 4, matter: 3, cost: 3, fromWave: 11, weight: 3, color: "#c86bff" },
+  leviathan: { id: "leviathan", name: "Leviatã", desc: "Chefe a cada 10 ondas. Enorme, lança enxames.", hp: 900, r: 30, mass: 14, gres: 0.12, speed: 13, steer: 0.8, dmg: 60, frag: 40, matter: 50, cost: 0, fromWave: 10, weight: 0, color: "#ff4a5a" },
 };
 
-export const STARTER_UNITS: UnitId[] = ["generator", "blaster", "wall"];
+export type SatId = "laser" | "mine" | "cannon" | "deflector" | "stasis" | "collector";
 
-export type AlienId = "crawler" | "runner" | "armored" | "swarm" | "jumper" | "spitter" | "colossus";
-
-export interface AlienDef {
-  id: AlienId;
+export interface SatDef {
+  id: SatId;
   name: string;
-  hp: number;
-  /** carapaça que absorve dano antes da vida */
-  shell?: number;
-  speed: number;
-  /** dano por segundo ao morder unidades */
-  bite: number;
-  reward: number;
-  /** custo em pontos de onda */
-  points: number;
-  radius: number;
-  fromSector: number;
+  desc: string;
+  cost: number;
+  color: string;
+  glyph: string;
 }
 
-export const ALIENS: Record<AlienId, AlienDef> = {
-  crawler: { id: "crawler", name: "Rastejante", hp: 200, speed: 20, bite: 100, reward: 3, points: 1, radius: 30, fromSector: 1 },
-  runner: { id: "runner", name: "Corredor", hp: 130, speed: 48, bite: 80, reward: 3, points: 1, radius: 26, fromSector: 1 },
-  armored: { id: "armored", name: "Blindado", hp: 200, shell: 550, speed: 17, bite: 100, reward: 6, points: 3, radius: 34, fromSector: 2 },
-  swarm: { id: "swarm", name: "Enxame", hp: 55, speed: 40, bite: 50, reward: 1, points: 1, radius: 18, fromSector: 2 },
-  jumper: { id: "jumper", name: "Saltador", hp: 320, speed: 30, bite: 100, reward: 5, points: 2, radius: 30, fromSector: 3 },
-  spitter: { id: "spitter", name: "Cuspidor", hp: 280, speed: 18, bite: 60, reward: 6, points: 3, radius: 30, fromSector: 4 },
-  colossus: { id: "colossus", name: "Colosso", hp: 2600, speed: 11, bite: 500, reward: 40, points: 10, radius: 52, fromSector: 1 },
+export const SATS: Record<SatId, SatDef> = {
+  laser: { id: "laser", name: "Laser", desc: "Raio contínuo no inimigo mais próximo.", cost: 25, color: "#ff5a6a", glyph: "✶" },
+  mine: { id: "mine", name: "Mina orbital", desc: "Explode quando algo passa perto. Rearma sozinha.", cost: 20, color: "#ffd84a", glyph: "✹" },
+  cannon: { id: "cannon", name: "Canhão de massa", desc: "Dispara projéteis físicos — eles fazem curva na gravidade do buraco.", cost: 40, color: "#ff9a3a", glyph: "➤" },
+  deflector: { id: "deflector", name: "Defletor", desc: "Escudo que rebate inimigos. Arremesse-os contra ele para dano de impacto.", cost: 35, color: "#4ae0ff", glyph: "⬡" },
+  stasis: { id: "stasis", name: "Estase", desc: "Campo que deixa os inimigos lentos.", cost: 35, color: "#9a8cff", glyph: "❄" },
+  collector: { id: "collector", name: "Coletor", desc: "Gera fragmentos e puxa os que estão por perto.", cost: 45, color: "#7aff9a", glyph: "◆" },
 };
 
-export interface SectorDef {
-  name: string;
-  floor: [number, number, number];
-  glow: string;
-}
+export const SAT_MAX_LVL = 5;
 
-export const SECTORS: SectorDef[] = [
-  { name: "Posto Avançado Kepler", floor: [30, 44, 64], glow: "#3ad8ff" },
-  { name: "Cinturão de Ferro", floor: [44, 40, 52], glow: "#ffb84a" },
-  { name: "Colmeia Vermelha", floor: [56, 30, 38], glow: "#ff5a6a" },
-  { name: "Estação Abissal", floor: [20, 40, 52], glow: "#3affc0" },
-  { name: "Coroa de Titã", floor: [40, 32, 62], glow: "#c08aff" },
-];
+export const BAL = {
+  coreR: 34,
+  coreHp: 100,
+  ringR: [95, 150, 205] as const,
+  ringSlots: [4, 6, 8] as const,
+  ringSpin: [0.16, -0.11, 0.08] as const,
+  manualSpin: 1.6,
+  holeH: 15,
+  /** constante da gravidade 2D (aceleração = K / (d + soft)) */
+  gravK: 34000,
+  gravSoft: 20,
+  gravRange: 240,
+  weakMul: 0.3,
+  holeMaxSpeed: 1100,
+  holeFollow: 14,
+  energyMax: 100,
+  energyDrain: 24,
+  energyRegen: 15,
+  horizonDps: 32,
+  pulseR: 130,
+  pulseForce: 420,
+  pulseCd: 6,
+  impactMin: 55,
+  impactK: 0.26,
+  comboWindow: 2,
+  fragPull: 90,
+  fragLife: 12,
+  startFrags: 30,
+  asteroids: 3,
+  breakTime: 7,
+} as const;
 
-export function sectorDef(n: number): SectorDef {
-  return SECTORS[(n - 1) % SECTORS.length];
-}
-
-export function sectorName(n: number): string {
-  return n <= SECTORS.length ? SECTORS[n - 1].name : `${SECTORS[(n - 1) % SECTORS.length].name} ${Math.ceil(n / SECTORS.length)}`;
-}
-
-export const RUN = {
-  wavesPerSector: 8,
-  startEnergy: 100,
-  skyOrbEvery: 9,
-  orbValue: 25,
-  orbLife: 8,
-  baseHp: 3,
-  hpGrowth: 1.4,
-  rewardGrowth: 1.35,
-  heatPerHit: 9,
-  heatDecay: 18,
-  overheatResume: 25,
-  slashDamage: 22,
-  slashCooldown: 0.18,
-  slashWidth: 16,
-};
-
-// ---------------------------------------------------------------------------
-// Árvore de habilidades
-// ---------------------------------------------------------------------------
-
-export type StatKey =
-  | "bladeDmg"
-  | "bladeCool"
-  | "bladeWidth"
-  | "bladeCrit"
-  | "bladeMagnet"
-  | "bladeChain"
-  | "bladeBurn"
-  | "unitDmg"
-  | "unitHp"
-  | "startEnergy"
-  | "genBoost"
-  | "recharge"
-  | "costCut"
-  | "scrap"
-  | "baseHp"
-  | "slots"
-  | "killEnergy"
-  | "drones"
-  | "unlock";
+/** Árvore de habilidades */
+export type Branch = "root" | "sing" | "orb" | "core";
 
 export interface TreeNode {
   id: string;
   name: string;
   desc: string;
-  /** posição na grade da árvore (colunas/linhas) */
-  x: number;
-  y: number;
-  requires: string[];
+  branch: Branch;
   max: number;
   baseCost: number;
   growth: number;
-  stat: StatKey;
-  /** valor por nível (ou unidade liberada) */
-  value: number;
-  unit?: UnitId;
-  branch: "core" | "blade" | "eng" | "cmd";
+  requires: string[];
+  x: number;
+  y: number;
+  glyph: string;
+  sat?: SatId;
 }
 
+const N = (id: string, name: string, desc: string, branch: Branch, max: number, baseCost: number, requires: string[], x: number, y: number, glyph: string, extra: Partial<TreeNode> = {}): TreeNode => ({
+  id,
+  name,
+  desc,
+  branch,
+  max,
+  baseCost,
+  growth: max === 1 ? 1 : 1.42,
+  requires,
+  x,
+  y,
+  glyph,
+  ...extra,
+});
+
 export const TREE: TreeNode[] = [
-  { id: "core", name: "Comandante", desc: "O começo de tudo.", x: 0, y: 0, requires: [], max: 1, baseCost: 0, growth: 1, stat: "scrap", value: 0, branch: "core" },
-  // lâmina (cima)
-  { id: "b_dmg", name: "Fio da lâmina", desc: "+30% de dano do corte", x: 0, y: -1, requires: ["core"], max: 10, baseCost: 15, growth: 1.55, stat: "bladeDmg", value: 0.3, branch: "blade" },
-  { id: "b_cool", name: "Dissipador", desc: "A lâmina esquenta 15% menos", x: -1, y: -2, requires: ["b_dmg"], max: 6, baseCost: 30, growth: 1.7, stat: "bladeCool", value: 0.15, branch: "blade" },
-  { id: "b_width", name: "Lâmina larga", desc: "+25% de largura do corte", x: 1, y: -2, requires: ["b_dmg"], max: 5, baseCost: 40, growth: 1.7, stat: "bladeWidth", value: 0.25, branch: "blade" },
-  { id: "b_magnet", name: "Ímã de energia", desc: "Cortar coleta energia e as células vêm sozinhas até você", x: 0, y: -2, requires: ["b_dmg"], max: 1, baseCost: 60, growth: 1, stat: "bladeMagnet", value: 1, branch: "blade" },
-  { id: "b_crit", name: "Golpe preciso", desc: "+6% de chance de corte crítico (×3)", x: -1, y: -3, requires: ["b_cool"], max: 6, baseCost: 90, growth: 1.75, stat: "bladeCrit", value: 0.06, branch: "blade" },
-  { id: "b_chain", name: "Arco voltaico", desc: "Cada corte salta para mais 1 alienígena próximo", x: 1, y: -3, requires: ["b_width"], max: 3, baseCost: 150, growth: 2.2, stat: "bladeChain", value: 1, branch: "blade" },
-  { id: "b_burn", name: "Plasma residual", desc: "O corte deixa queimadura (+40% do dano em 2 s)", x: 0, y: -4, requires: ["b_crit", "b_chain"], max: 4, baseCost: 260, growth: 2, stat: "bladeBurn", value: 0.4, branch: "blade" },
-  // engenharia (direita)
-  { id: "e_dmg", name: "Calibragem", desc: "+15% de dano das unidades", x: 1, y: 0, requires: ["core"], max: 12, baseCost: 15, growth: 1.5, stat: "unitDmg", value: 0.15, branch: "eng" },
-  { id: "u_mine", name: "Mina", desc: "Libera a carta Mina", x: 2, y: -1, requires: ["e_dmg"], max: 1, baseCost: 25, growth: 1, stat: "unlock", value: 1, unit: "mine", branch: "eng" },
-  { id: "e_hp", name: "Blindagem", desc: "+20% de vida das unidades", x: 2, y: 1, requires: ["e_dmg"], max: 8, baseCost: 30, growth: 1.6, stat: "unitHp", value: 0.2, branch: "eng" },
-  { id: "u_cryo", name: "Criotorre", desc: "Libera a carta Criotorre", x: 3, y: -1, requires: ["u_mine"], max: 1, baseCost: 80, growth: 1, stat: "unlock", value: 1, unit: "cryo", branch: "eng" },
-  { id: "u_double", name: "Blaster Duplo", desc: "Libera a carta Blaster Duplo", x: 2, y: 0, requires: ["e_dmg"], max: 1, baseCost: 70, growth: 1, stat: "unlock", value: 1, unit: "double", branch: "eng" },
-  { id: "e_gen", name: "Painéis eficientes", desc: "Geradores produzem 20% mais rápido", x: 3, y: 0, requires: ["u_double"], max: 5, baseCost: 60, growth: 1.7, stat: "genBoost", value: 0.2, branch: "eng" },
-  { id: "u_laser", name: "Canhão Laser", desc: "Libera a carta Canhão Laser", x: 4, y: -1, requires: ["u_cryo"], max: 1, baseCost: 220, growth: 1, stat: "unlock", value: 1, unit: "laser", branch: "eng" },
-  { id: "e_recharge", name: "Fabricação rápida", desc: "Cartas recarregam 10% mais rápido", x: 3, y: 1, requires: ["e_hp"], max: 5, baseCost: 90, growth: 1.8, stat: "recharge", value: 0.1, branch: "eng" },
-  { id: "u_tesla", name: "Bobina Tesla", desc: "Libera a carta Bobina Tesla", x: 4, y: 0, requires: ["e_gen"], max: 1, baseCost: 380, growth: 1, stat: "unlock", value: 1, unit: "tesla", branch: "eng" },
-  { id: "e_cost", name: "Otimização", desc: "Unidades custam 6% menos energia", x: 4, y: 1, requires: ["e_recharge"], max: 5, baseCost: 200, growth: 1.9, stat: "costCut", value: 0.06, branch: "eng" },
-  { id: "u_mortar", name: "Lança-mísseis", desc: "Libera a carta Lança-mísseis", x: 5, y: 0, requires: ["u_tesla", "u_laser"], max: 1, baseCost: 700, growth: 1, stat: "unlock", value: 1, unit: "mortar", branch: "eng" },
-  // comando (esquerda/baixo)
-  { id: "c_scrap", name: "Reciclagem", desc: "+20% de sucata", x: -1, y: 0, requires: ["core"], max: 15, baseCost: 20, growth: 1.5, stat: "scrap", value: 0.2, branch: "cmd" },
-  { id: "c_energy", name: "Reserva de energia", desc: "+25 de energia inicial", x: -2, y: 0, requires: ["c_scrap"], max: 8, baseCost: 25, growth: 1.55, stat: "startEnergy", value: 25, branch: "cmd" },
-  { id: "c_slot", name: "Baia extra", desc: "+1 carta no seu arsenal por missão", x: -1, y: 1, requires: ["c_scrap"], max: 4, baseCost: 60, growth: 2.4, stat: "slots", value: 1, branch: "cmd" },
-  { id: "c_base", name: "Casco reforçado", desc: "+1 de integridade da base", x: -2, y: 1, requires: ["c_slot"], max: 3, baseCost: 120, growth: 2.2, stat: "baseHp", value: 1, branch: "cmd" },
-  { id: "c_kill", name: "Captura de energia", desc: "Cada abate dá +3 de energia", x: -3, y: 0, requires: ["c_energy"], max: 5, baseCost: 100, growth: 1.8, stat: "killEnergy", value: 3, branch: "cmd" },
-  { id: "c_drones", name: "Drones de contenção", desc: "Drones das fileiras voltam a ficar prontos 1 vez por missão", x: -3, y: 1, requires: ["c_base"], max: 1, baseCost: 400, growth: 1, stat: "drones", value: 1, branch: "cmd" },
+  N("root", "Colapso", "O começo de tudo. +10% gravidade.", "root", 1, 3, [], 0, 0, "●"),
+  // Singularidade (esquerda)
+  N("mass", "Massa", "+12% de força da gravidade por nível.", "sing", 10, 6, ["root"], -1.2, -0.6, "M"),
+  N("impact", "Impacto", "+15% de dano em colisões por nível.", "sing", 10, 8, ["root"], -1.2, 0.6, "✸"),
+  N("horizon", "Horizonte", "+8% no tamanho do horizonte de eventos.", "sing", 5, 14, ["mass"], -2.4, -1.2, "◯"),
+  N("energy", "Reservatório", "+20 de energia máxima para a gravidade forte.", "sing", 5, 10, ["mass"], -2.4, -0.2, "⚡"),
+  N("hdmg", "Espaguetificação", "+25% de dano dentro do horizonte.", "sing", 10, 12, ["horizon"], -3.6, -1.6, "≈"),
+  N("regen", "Acreção", "+15% de recarga de energia.", "sing", 5, 12, ["energy"], -3.6, -0.4, "↻"),
+  N("pulse", "Pulso", "+20% de força e −8% de recarga do pulso.", "sing", 5, 10, ["impact"], -2.4, 1.2, "◎"),
+  N("combo", "Sequência", "+0,5s na janela de combo.", "sing", 4, 16, ["impact"], -2.4, 2.2, "×"),
+  N("reach", "Alcance", "+20% no raio de atração de fragmentos e da gravidade.", "sing", 4, 14, ["pulse"], -3.6, 1.6, "↔"),
+  // Órbita (direita)
+  N("satDmg", "Calibração", "+12% de dano dos satélites.", "orb", 10, 8, ["root"], 1.2, -0.6, "⌖"),
+  N("discount", "Engenharia", "−6% no custo dos satélites.", "orb", 5, 8, ["root"], 1.2, 0.6, "%"),
+  N("u_cannon", "Canhão de massa", "Libera o Canhão de massa.", "orb", 1, 15, ["satDmg"], 2.4, -1.4, "➤", { sat: "cannon" }),
+  N("u_deflector", "Defletor", "Libera o Defletor.", "orb", 1, 15, ["satDmg"], 2.4, -0.4, "⬡", { sat: "deflector" }),
+  N("satRate", "Cadência", "+8% de velocidade de disparo.", "orb", 5, 14, ["u_cannon"], 3.6, -1.8, "»"),
+  N("u_stasis", "Estase", "Libera o satélite de Estase.", "orb", 1, 25, ["u_deflector"], 3.6, -0.6, "❄", { sat: "stasis" }),
+  N("startFrag", "Kit inicial", "+25 fragmentos no começo da partida.", "orb", 4, 10, ["discount"], 2.4, 1.0, "◆"),
+  N("u_collector", "Coletor", "Libera o Coletor.", "orb", 1, 30, ["startFrag"], 3.6, 0.6, "⊕", { sat: "collector" }),
+  N("ring3", "Terceiro anel", "Abre o anel externo com 8 encaixes.", "orb", 1, 40, ["startFrag"], 2.4, 2.1, "◌"),
+  N("slots", "Mais encaixes", "+1 encaixe em cada anel.", "orb", 2, 60, ["ring3"], 3.6, 2.4, "+"),
+  // Núcleo (baixo)
+  N("hp", "Blindagem", "+20% de vida do núcleo.", "core", 10, 6, ["root"], 0, 1.3, "♥"),
+  N("fragVal", "Refino", "+10% de valor dos fragmentos.", "core", 8, 10, ["hp"], -0.7, 2.4, "✧"),
+  N("coreRegen", "Reparo", "O núcleo regenera 0,4 de vida por segundo.", "core", 5, 12, ["hp"], 0.7, 2.4, "✚"),
+  N("matter", "Colheita escura", "+10% de matéria escura ganha.", "core", 10, 14, ["fragVal"], -0.7, 3.5, "●"),
+  N("shield", "Escudo de emergência", "Uma vez por partida, um escudo absorve 50 de dano quando o núcleo cai abaixo de 30%.", "core", 1, 35, ["coreRegen"], 0.7, 3.5, "⛨"),
+  N("belt", "Cinturão", "+1 asteroide no campo.", "core", 3, 25, ["matter"], -0.7, 4.6, "☄"),
+  N("headstart", "Salto", "Começa 2 ondas à frente (com fragmentos de bônus).", "core", 5, 30, ["shield"], 0.7, 4.6, "»"),
 ];
 
-export const BASE_SLOTS = 4;
+export const STARTING_SATS: SatId[] = ["laser", "mine"];
