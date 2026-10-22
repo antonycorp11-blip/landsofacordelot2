@@ -1,12 +1,10 @@
 import { fmt } from "../core/format";
 import { TAU, clamp } from "../core/math";
-import { hash2 } from "../core/rng";
 import { CHROMA_COLOR, DEGREE_COLORS, MONSTERS, chordName, degreeNote } from "../data/content";
-import { DOOR, ROOM, isoU, isoV, type Monster, type Room, type Run, type SimEvent } from "../game/sim";
-import { SPR, type Sprite } from "./pixels";
+import { ROOM, isoU, isoV, type Monster, type Room, type Run, type SimEvent } from "../game/sim";
+import { SPR, monsterFrames, type Sprite } from "./pixels";
+import { WALL, paintRoom, type RoomArt } from "./rooms";
 
-const WALL = 46;
-const TILE = 20;
 const FONT = '"VT323", "Courier New", monospace';
 
 interface Px {
@@ -62,7 +60,9 @@ export class Scene {
   private light: HTMLCanvasElement;
   private lc: CanvasRenderingContext2D;
   private g: CanvasRenderingContext2D;
-  private roomCache = new Map<Room, HTMLCanvasElement>();
+  private roomCache = new Map<Room, RoomArt>();
+  private bark: { text: string; life: number } | null = null;
+  private motes: { x: number; y: number; vy: number; ph: number; c: string; g: string }[] = [];
   private parts: Px[] = [];
   private texts: Txt[] = [];
   private rings: Ring[] = [];
@@ -118,6 +118,7 @@ export class Scene {
     this.texts = [];
     this.rings = [];
     this.circles = [];
+    this.bark = null;
     this.camInit = false;
   }
 
@@ -204,187 +205,16 @@ export class Scene {
     this.texts.push({ u, v, s, life: 0.9, max: 0.9, color, size, rise });
   }
 
-  // ------------------------------------------------------------ salas (pré-renderizadas)
-  private roomCanvas(run: Run, r: Room): HTMLCanvasElement {
-    let c = this.roomCache.get(r);
-    if (c) return c;
-    c = document.createElement("canvas");
-    c.width = ROOM * 2 + 4;
-    c.height = ROOM + WALL + 4;
-    const g = c.getContext("2d")!;
-    const d = run.dungeon;
-    const P = (lx: number, ly: number): [number, number] => [ROOM + 2 + (lx - ly), WALL + 2 + (lx + ly) / 2];
-    const idx = run.rooms.indexOf(r);
-    const prev = idx > 0 ? run.rooms[idx - 1] : null;
-    const doors: [number, number][] = [];
-    if (r.next) doors.push(r.next);
-    if (prev) doors.push([prev.gx - r.gx, prev.gy - r.gy]);
-    const hasDoor = (dx: number, dy: number) => doors.some(([a, b]) => a === dx && b === dy);
-    // piso
-    const n = ROOM / TILE;
-    for (let i = 0; i < n; i++)
-      for (let j = 0; j < n; j++) {
-        const h = hash2(i + r.gx * 31, j + r.gy * 17, 5);
-        const [x1, y1] = P(i * TILE, j * TILE);
-        const [x2, y2] = P((i + 1) * TILE, j * TILE);
-        const [x3, y3] = P((i + 1) * TILE, (j + 1) * TILE);
-        const [x4, y4] = P(i * TILE, (j + 1) * TILE);
-        g.fillStyle = (i + j) % 2 ? d.floor[0] : d.floor[1];
-        g.beginPath();
-        g.moveTo(x1, y1);
-        g.lineTo(x2, y2);
-        g.lineTo(x3, y3);
-        g.lineTo(x4, y4);
-        g.closePath();
-        g.fill();
-        g.strokeStyle = "rgba(0,0,0,0.25)";
-        g.lineWidth = 1;
-        g.stroke();
-        if (h < 0.12) {
-          g.strokeStyle = "rgba(0,0,0,0.35)";
-          g.beginPath();
-          g.moveTo((x1 + x3) / 2 - 6, (y1 + y3) / 2);
-          g.lineTo((x1 + x3) / 2 + 2, (y1 + y3) / 2 + 2);
-          g.lineTo((x1 + x3) / 2 + 7, (y1 + y3) / 2 - 1);
-          g.stroke();
-        } else if (h > 0.965) {
-          // folha de partitura caída no chão
-          const cx = Math.round((x1 + x3) / 2);
-          const cy = Math.round((y1 + y3) / 2);
-          g.fillStyle = "rgba(200,190,165,0.35)";
-          g.fillRect(cx - 3, cy - 1, 6, 3);
-          g.fillStyle = "rgba(60,50,40,0.5)";
-          g.fillRect(cx - 2, cy, 4, 1);
-        }
-      }
-    // paredes do fundo (com tijolos) e vãos de porta
-    const wallFace = (ax: number, ay: number, bx: number, by: number, dark: number) => {
-      g.fillStyle = d.wall;
-      g.beginPath();
-      g.moveTo(ax, ay);
-      g.lineTo(bx, by);
-      g.lineTo(bx, by - WALL);
-      g.lineTo(ax, ay - WALL);
-      g.closePath();
-      g.fill();
-      g.fillStyle = `rgba(0,0,0,${dark})`;
-      g.fill();
-      g.strokeStyle = "rgba(0,0,0,0.35)";
-      for (let k = 6; k < WALL; k += 7) {
-        g.beginPath();
-        g.moveTo(ax, ay - k);
-        g.lineTo(bx, by - k);
-        g.stroke();
-      }
-      const len = Math.hypot(bx - ax, by - ay);
-      for (let s = 0; s < len; s += 12) {
-        const t = s / len;
-        const x = ax + (bx - ax) * t;
-        const y = ay + (by - ay) * t;
-        for (let k = 0; k < WALL - 6; k += 14) {
-          g.beginPath();
-          g.moveTo(x + ((s / 12) % 2) * 4, y - k - 6);
-          g.lineTo(x + ((s / 12) % 2) * 4, y - k - 13);
-          g.stroke();
-        }
-      }
-      g.fillStyle = "rgba(255,230,190,0.08)";
-      g.beginPath();
-      g.moveTo(ax, ay - WALL);
-      g.lineTo(bx, by - WALL);
-      g.lineTo(bx, by - WALL + 3);
-      g.lineTo(ax, ay - WALL + 3);
-      g.fill();
-    };
-    const half = (ROOM - DOOR) / 2;
-    // paredes de trás; lados colados em outra sala ficam abertos (só pilares)
-    const neighbor = (dx: number, dy: number) => run.rooms.some((o) => o.gx === r.gx + dx && o.gy === r.gy + dy);
-    const pillar = (lx: number, ly: number) => {
-      const [x, y] = P(lx, ly);
-      g.fillStyle = d.wall;
-      g.fillRect(x - 3, y - WALL, 6, WALL);
-      g.fillStyle = "rgba(0,0,0,0.3)";
-      g.fillRect(x, y - WALL, 3, WALL);
-    };
-    if (!neighbor(-1, 0)) {
-      if (hasDoor(-1, 0)) {
-        wallFace(...P(0, 0), ...P(0, half), 0.15);
-        wallFace(...P(0, half + DOOR), ...P(0, ROOM), 0.15);
-      } else wallFace(...P(0, 0), ...P(0, ROOM), 0.15);
-    } else {
-      pillar(0, half);
-      pillar(0, half + DOOR);
-    }
-    if (!neighbor(0, -1)) {
-      if (hasDoor(0, -1)) {
-        wallFace(...P(0, 0), ...P(half, 0), 0.35);
-        wallFace(...P(half + DOOR, 0), ...P(ROOM, 0), 0.35);
-      } else wallFace(...P(0, 0), ...P(ROOM, 0), 0.35);
-    } else {
-      pillar(half, 0);
-      pillar(half + DOOR, 0);
-    }
-    // soleiras das portas da frente
-    g.fillStyle = "rgba(255,210,150,0.07)";
-    if (hasDoor(1, 0)) {
-      const [ax, ay] = P(ROOM - 10, half);
-      const [bx, by] = P(ROOM, half + DOOR);
-      g.fillRect(Math.min(ax, bx), Math.min(ay, by), Math.abs(bx - ax) + 8, Math.abs(by - ay) + 4);
-    }
-    if (hasDoor(0, 1)) {
-      const [ax, ay] = P(half, ROOM - 10);
-      const [bx, by] = P(half + DOOR, ROOM);
-      g.fillRect(Math.min(ax, bx) - 4, Math.min(ay, by), Math.abs(bx - ax) + 8, Math.abs(by - ay) + 4);
-    }
-    // bordas da frente escuras
-    g.strokeStyle = "rgba(0,0,0,0.6)";
-    g.lineWidth = 3;
-    g.beginPath();
-    g.moveTo(...P(ROOM, 0));
-    g.lineTo(...P(ROOM, ROOM));
-    g.lineTo(...P(0, ROOM));
-    g.stroke();
-    // barris e caixotes nos cantos
-    for (let k = 0; k < 5; k++) {
-      const h = hash2(k, r.gx * 7 + r.gy, 9);
-      const lx = h < 0.5 ? 10 + h * 60 : 10;
-      const ly = h < 0.5 ? 10 : 10 + (h - 0.5) * 120;
-      const [x, y] = P(lx, ly);
-      if (k % 2) {
-        g.fillStyle = "#5a3e26";
-        g.fillRect(x - 5, y - 12, 10, 12);
-        g.fillStyle = "#7a5634";
-        g.fillRect(x - 5, y - 14, 10, 3);
-        g.fillStyle = "#3a2616";
-        g.fillRect(x - 5, y - 8, 10, 1);
-      } else {
-        g.fillStyle = "#6a4a2a";
-        g.fillRect(x - 6, y - 9, 12, 9);
-        g.strokeStyle = "#3a2616";
-        g.lineWidth = 1;
-        g.strokeRect(x - 5.5, y - 8.5, 11, 8);
-        g.beginPath();
-        g.moveTo(x - 5, y - 8);
-        g.lineTo(x + 5, y);
-        g.stroke();
-      }
-    }
-    this.roomCache.set(r, c);
-    return c;
+  // ------------------------------------------------------------ salas (pré-renderizadas por estilo)
+  private roomArt(run: Run, r: Room): RoomArt {
+    let a = this.roomCache.get(r);
+    if (!a) this.roomCache.set(r, (a = paintRoom(run, r)));
+    return a;
   }
 
-  /** tochas nas paredes do fundo (posição no plano isométrico) */
-  private torches(run: Run, r: Room): { u: number; v: number }[] {
-    const out: { u: number; v: number }[] = [];
-    const left = !run.rooms.some((o) => o.gx === r.gx - 1 && o.gy === r.gy);
-    const right = !run.rooms.some((o) => o.gx === r.gx && o.gy === r.gy - 1);
-    for (const t of [0.22, 0.78]) {
-      if (left) out.push({ u: isoU(r.x0, r.y0 + ROOM * t), v: isoV(r.x0, r.y0 + ROOM * t) - 28 });
-      if (right) out.push({ u: isoU(r.x0 + ROOM * t, r.y0), v: isoV(r.x0 + ROOM * t, r.y0) - 28 });
-    }
-    // sala sem paredes de trás ainda recebe luz em volta
-    if (!left && !right) out.push({ u: isoU(r.x0 + ROOM / 2, r.y0 + ROOM / 2), v: isoV(r.x0 + ROOM / 2, r.y0 + ROOM / 2) - 60 });
-    return out;
+  /** balão de fala sobre o Tito (não pausa o jogo) */
+  say(text: string): void {
+    this.bark = { text, life: 2.8 };
   }
 
   // ------------------------------------------------------------ quadro
@@ -412,25 +242,16 @@ export class Scene {
     g.fillRect(0, 0, this.LW, this.LH);
     // salas visíveis: as visitadas e a próxima
     const show = run.rooms.filter((r, i) => r.visited || i === run.roomI + 1).sort((a, b) => a.gx + a.gy - (b.gx + b.gy));
+    const lights: { u: number; v: number; r: number; a: number; color: string }[] = [];
     for (const r of show) {
-      const c = this.roomCanvas(run, r);
-      g.drawImage(c, this.lx(isoU(r.x0, r.y0)) - ROOM - 2, this.ly(isoV(r.x0, r.y0)) - WALL - 2);
-    }
-    // tochas (chama)
-    const lights: { u: number; v: number; r: number; a: number }[] = [];
-    for (const r of show) {
+      const art = this.roomArt(run, r);
+      const ox = this.lx(isoU(r.x0, r.y0)) - ROOM - 2;
+      const oy = this.ly(isoV(r.x0, r.y0)) - WALL - 36;
+      g.drawImage(art.canvas, ox, oy);
       if (!r.visited) continue;
-      for (const t of this.torches(run, r)) {
-        const f = 0.85 + 0.15 * Math.sin(this.time * 13 + t.u) * Math.sin(this.time * 7.3 + t.v);
-        const x = this.lx(t.u);
-        const y = this.ly(t.v);
-        g.fillStyle = "#3a2a1a";
-        g.fillRect(x - 1, y, 2, 5);
-        g.fillStyle = "#ff8a2a";
-        g.fillRect(x - 2, y - 3, 4, 3);
-        g.fillStyle = "#ffe07a";
-        g.fillRect(x - 1, y - 4 - Math.round(f), 2, 2);
-        lights.push({ u: t.u, v: t.v + 10, r: 70 * f, a: 0.85 });
+      for (const l of art.lights) {
+        const f = l.flicker ? 0.85 + 0.15 * Math.sin(this.time * 11 + l.x) * Math.sin(this.time * 6.7 + l.y) : 1;
+        lights.push({ u: isoU(r.x0, r.y0) + (l.x - ROOM - 2), v: isoV(r.x0, r.y0) + (l.y - WALL - 36), r: l.r * f, a: 0.8, color: l.color });
       }
     }
     // ondas do maestro
@@ -487,36 +308,60 @@ export class Scene {
       g.stroke();
     }
     this.rings = this.rings.filter((r) => r.life > 0);
-    // iluminação: escuridão com buracos de luz
-    lights.push({ u: tu, v: tv + 4, r: 115 + (T.drum > 0 ? 8 : 0), a: 1 });
-    if (cursorShown) lights.push({ u: run.cursor.u, v: run.cursor.v, r: 34, a: 0.6 });
-    for (const r of this.rings) lights.push({ u: r.u, v: r.v, r: 40, a: 0.5 });
+    // iluminação: penumbra colorida do lugar, holofote no Tito e luzes do cenário
+    lights.push({ u: tu, v: tv + 6, r: 105 + (T.drum > 0 ? 8 : 0), a: 1, color: "#fff4dc" });
+    if (cursorShown) lights.push({ u: run.cursor.u, v: run.cursor.v, r: 34, a: 0.6, color: "#c9a0ff" });
+    for (const r of this.rings) lights.push({ u: r.u, v: r.v, r: 40, a: 0.5, color: r.color });
     const L = this.lc;
+    const [dr, dg, db] = run.dungeon.dark;
     L.globalCompositeOperation = "source-over";
     L.clearRect(0, 0, this.LW, this.LH);
-    L.fillStyle = "rgba(3,2,7,0.9)";
+    L.fillStyle = `rgba(${dr},${dg},${db},0.86)`;
     L.fillRect(0, 0, this.LW, this.LH);
     L.globalCompositeOperation = "destination-out";
     for (const l of lights) {
       const x = this.lx(l.u);
       const y = this.ly(l.v);
-      const gr = L.createRadialGradient(x, y, 0, x, y, l.r);
+      const gr = L.createRadialGradient(0, 0, 0, 0, 0, l.r);
       gr.addColorStop(0, `rgba(0,0,0,${l.a})`);
       gr.addColorStop(0.55, `rgba(0,0,0,${l.a * 0.55})`);
       gr.addColorStop(1, "rgba(0,0,0,0)");
+      L.save();
+      L.translate(x, y);
+      L.scale(1, 0.72);
       L.fillStyle = gr;
-      L.fillRect(x - l.r, y - l.r, l.r * 2, l.r * 2);
+      L.fillRect(-l.r, -l.r, l.r * 2, l.r * 2);
+      L.restore();
     }
     g.drawImage(this.light, 0, 0);
-    // brilho quente das tochas
     g.globalCompositeOperation = "lighter";
-    for (const l of lights.slice(0, -1)) {
-      if (l.a < 0.8) continue;
+    // feixe do holofote vindo de cima
+    {
+      const x = this.lx(tu);
+      const y = this.ly(tv + 10);
+      const beam = g.createLinearGradient(x, 0, x, y);
+      beam.addColorStop(0, "rgba(255,240,210,0)");
+      beam.addColorStop(1, "rgba(255,240,210,0.10)");
+      g.fillStyle = beam;
+      g.beginPath();
+      g.moveTo(x - 14, 0);
+      g.lineTo(x + 14, 0);
+      g.lineTo(x + 30, y);
+      g.lineTo(x - 30, y);
+      g.closePath();
+      g.fill();
+      g.fillStyle = "rgba(255,240,210,0.07)";
+      g.beginPath();
+      g.ellipse(x, y, 30, 13, 0, 0, TAU);
+      g.fill();
+    }
+    for (const l of lights) {
+      if (l.a < 0.8 || l.color === "#fff4dc") continue;
       const x = this.lx(l.u);
       const y = this.ly(l.v);
-      const gr = g.createRadialGradient(x, y, 0, x, y, l.r * 0.6);
-      gr.addColorStop(0, rgba(run.dungeon.light, 0.18));
-      gr.addColorStop(1, rgba(run.dungeon.light, 0));
+      const gr = g.createRadialGradient(x, y, 0, x, y, l.r * 0.7);
+      gr.addColorStop(0, rgba(l.color, 0.2));
+      gr.addColorStop(1, rgba(l.color, 0));
       g.fillStyle = gr;
       g.fillRect(x - l.r, y - l.r, l.r * 2, l.r * 2);
     }
@@ -566,23 +411,23 @@ export class Scene {
     this.shadow(x, y, 6);
     const near = run.monsters[0];
     const flip = T.moving ? false : near ? isoU(near.x, near.y) < isoU(T.x, T.y) : false;
-    const frame = T.drum > 0 ? SPR.titoDrum : T.moving ? SPR.tito[Math.floor(this.time * 8) % 2] : SPR.tito[0];
+    const frame = T.drum > 0 ? SPR.titoDrum : T.moving ? SPR.tito[[0, 1, 0, 2][Math.floor(this.time * 9) % 4]] : SPR.tito[0];
     this.sprite(frame, x, y + 1, flip, T.flash > 0 && Math.floor(this.time * 30) % 2 === 0);
     // vida do Tito (barra ciano como no original, acima da cabeça)
     const w = 16;
     const hp = clamp(T.hp / T.maxHp, 0, 1);
     const g = this.lg;
     g.fillStyle = "rgba(0,0,0,0.6)";
-    g.fillRect(x - w / 2, y - 23, w, 2);
+    g.fillRect(x - w / 2, y - 27, w, 2);
     g.fillStyle = "#4adcd0";
-    g.fillRect(x - w / 2, y - 23, Math.round(w * hp), 2);
+    g.fillRect(x - w / 2, y - 27, Math.round(w * hp), 2);
   }
 
   private drawMonster(run: Run, m: Monster): void {
     const d = MONSTERS[m.type];
     const x = this.lx(isoU(m.x, m.y));
     const y = this.ly(isoV(m.x, m.y));
-    const frames = SPR[m.type];
+    const frames = monsterFrames(m.type, m.deg);
     const fr = frames[Math.floor((m.age * (m.type === "tamborim" ? 10 : 6)) % 2)];
     const ghost = run.ghost(m);
     const pop = clamp(m.age * 3, 0, 1);
@@ -641,7 +486,7 @@ export class Scene {
     g.textBaseline = "bottom";
     for (const m of run.monsters) {
       if (m.deg < 0 || m.age < 0.3) continue;
-      const fr = SPR[m.type][0];
+      const fr = monsterFrames(m.type, m.deg)[0];
       const x = this.cx(isoU(m.x, m.y));
       const y = this.cy(isoV(m.x, m.y) - fr.h - 6 - (m.armor > 0 ? 3 : 0) - (m.marked ? 6 : 0));
       g.fillStyle = "rgba(0,0,0,0.7)";
@@ -712,6 +557,52 @@ export class Scene {
       g.fill();
       g.fillStyle = "#fff";
       g.fillRect(px - 1.5, py - 1.5, 3, 3);
+    }
+    // notinhas flutuando no ar
+    if (this.motes.length < 26 && Math.random() < 0.1)
+      this.motes.push({ x: Math.random() * this.w, y: this.h + 10, vy: 12 + Math.random() * 20, ph: Math.random() * 6, c: DEGREE_COLORS[Math.floor(Math.random() * 7)], g: Math.random() < 0.5 ? "♪" : "♫" });
+    g.font = `${Math.round(14 * Math.max(1, this.scale / 2.2))}px Georgia, serif`;
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    for (const mo of this.motes) {
+      mo.y -= mo.vy * dt;
+      mo.ph += dt;
+      g.globalAlpha = 0.18 * Math.min(1, mo.y / (this.h * 0.4));
+      g.fillStyle = mo.c;
+      g.fillText(mo.g, mo.x + Math.sin(mo.ph * 1.3) * 10, mo.y);
+    }
+    g.globalAlpha = 1;
+    this.motes = this.motes.filter((mo) => mo.y > -20);
+    // balão de fala do Tito
+    if (this.bark) {
+      this.bark.life -= dt;
+      const b = this.bark;
+      const T = run.tito;
+      const x = this.cx(isoU(T.x, T.y));
+      const y = this.cy(isoV(T.x, T.y) - 34);
+      g.font = `${Math.round(Math.max(18, this.scale * 8))}px ${FONT}`;
+      const tw = g.measureText(b.text).width;
+      const pad = 8;
+      const bw = tw + pad * 2;
+      const bh = Math.max(24, this.scale * 10);
+      const bx = Math.max(6, Math.min(this.w - bw - 6, x - bw / 2));
+      g.globalAlpha = Math.min(1, b.life * 3);
+      g.fillStyle = "#f4eee4";
+      g.fillRect(bx, y - bh, bw, bh);
+      g.beginPath();
+      g.moveTo(x - 5, y);
+      g.lineTo(x + 5, y);
+      g.lineTo(x, y + 7);
+      g.fill();
+      g.strokeStyle = "#1a1420";
+      g.lineWidth = 2;
+      g.strokeRect(bx, y - bh, bw, bh);
+      g.fillStyle = "#1a1420";
+      g.textAlign = "left";
+      g.fillText(b.text, bx + pad, y - bh / 2 + 1);
+      g.textAlign = "center";
+      g.globalAlpha = 1;
+      if (b.life <= 0) this.bark = null;
     }
     // textos
     g.textAlign = "center";

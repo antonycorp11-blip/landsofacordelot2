@@ -96,22 +96,25 @@ export const MONSTERS: Record<MonsterId, MonsterDef> = {
 };
 
 // ------------------------------------------------------------------ masmorras (prestígio)
+export type Style = "teatro" | "conserv" | "catedral" | "opera" | "coliseu";
+
 export interface DungeonDef {
   id: string;
   name: string;
   key: number;
   rooms: number;
-  floor: [string, string];
-  wall: string;
+  style: Style;
+  /** cor da penumbra (cada lugar tem o seu clima) */
+  dark: [number, number, number];
   light: string;
 }
 
 export const DUNGEONS: DungeonDef[] = [
-  { id: "porao", name: "Porão do Teatro", key: 0, rooms: 5, floor: ["#2b2620", "#25211c"], wall: "#3a3128", light: "#ffb45a" },
-  { id: "conserv", name: "Conservatório Abandonado", key: 1, rooms: 6, floor: ["#1f2a26", "#1a2420"], wall: "#2c3a33", light: "#9affc8" },
-  { id: "catedral", name: "Catedral do Órgão", key: 2, rooms: 7, floor: ["#262033", "#201b2b"], wall: "#352c48", light: "#c8a0ff" },
-  { id: "opera", name: "Ópera em Ruínas", key: 3, rooms: 8, floor: ["#331f22", "#2b1a1c"], wall: "#4a2a2e", light: "#ff7a6a" },
-  { id: "coliseu", name: "Coliseu dos Ecos", key: 4, rooms: 9, floor: ["#2a2a2e", "#232327"], wall: "#3c3c44", light: "#8ad8ff" },
+  { id: "porao", name: "Porão do Teatro", key: 0, rooms: 5, style: "teatro", dark: [26, 6, 14], light: "#ffc070" },
+  { id: "conserv", name: "Conservatório Abandonado", key: 1, rooms: 6, style: "conserv", dark: [4, 10, 26], light: "#9ac8ff" },
+  { id: "catedral", name: "Catedral do Órgão", key: 2, rooms: 7, style: "catedral", dark: [14, 6, 26], light: "#d8a0ff" },
+  { id: "opera", name: "Ópera em Ruínas", key: 3, rooms: 8, style: "opera", dark: [26, 8, 6], light: "#ffb050" },
+  { id: "coliseu", name: "Coliseu dos Ecos", key: 4, rooms: 9, style: "coliseu", dark: [4, 18, 20], light: "#8affe0" },
 ];
 
 export const dungeonPower = (i: number) => Math.pow(2.2, i);
@@ -185,24 +188,3 @@ export const TREE: TreeNode[] = [
   T("plateia", "Plateia", "+15% de monstros por sala (mais perigo, mais saque).", "estudo", 0.9, 4.6, "plateia", 5, 40),
 ];
 
-// ------------------------------------------------------------------ falas do Tito
-export const LINES = {
-  intro: [
-    "Ei, mana! Você é a batuta do maestro, lembra? Só passar por cima desses bichos que eles se desfazem.",
-    "Eu marco o ritmo no tambor. Se você cortar junto com a batida, dói muito mais neles!",
-    "E se cortar Dó, Mi e Sol de uma vez… vira um acorde. Bora limpar esse porão!",
-  ],
-  start: [
-    "Bora, mana! Hoje a gente afina esse lugar inteiro.",
-    "Ouvi barulho lá embaixo… parece um coral desafinado.",
-    "Segura o tempo comigo: um, dois, três, quatro!",
-    "Dessa vez a gente chega no maestro. Eu sinto.",
-    "Cuidado com os de armadura. Corta até quebrar!",
-  ],
-  armor: ["Esse aí tá de armadura! Corta várias vezes até ela quebrar."],
-  marked: ["Viu aquele com a marca roxa? Derruba ele que vale mais!"],
-  tired: ["Calma, respira! Sem vigor a batuta não corta."],
-  boss: ["É ele… o Maestro Trítono. Desafina tudo que toca. Agora é com a gente!"],
-  win: ["A gente conseguiu! Ouviu esse silêncio bonito?"],
-  lose: ["Ai… não deu dessa vez. Bora treinar e voltar mais forte."],
-};

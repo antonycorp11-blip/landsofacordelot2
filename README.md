@@ -1,8 +1,38 @@
 # Dissonância
 
-Roguelike incremental em pixel art, visto de cima em isométrico, com tema de teoria musical. A jogabilidade segue a do *Outliers: Incrementum*.
+Roguelike incremental em pixel art, visto de cima em isométrico, com tema de teoria musical. A jogabilidade é inspirada em *Outliers: Incrementum*.
 
-**Você é o cursor**, a batuta do maestro. O seu irmão **Tito** segue pela masmorra tocando tambor, e os monstros desafinados querem calá-lo. Corte os monstros passando o mouse rápido ou arrastando o dedo por cima deles.
+## História: "A Última Nota"
+
+Na cidade de Harmonia, o **Maestro Trítono** rasgou a Partitura Primordial em cinco páginas. A música sumiu e nasceram as **Dissonâncias**. A regente **Clara** ficou presa dentro da própria batuta, e **você é ela**.
+
+O irmão mais novo dela, **Tito**, sai com o seu tambor para recuperar as páginas. A **Dona Fermata** é a velha professora que ensina os dois na oficina. A cada vitória a história avança:
+- cenas com retratos;
+- o passado do Trítono, que já foi aluno dela;
+- um final.
+
+## Cenários
+
+Cada lugar tem visual, luz e objetos próprios:
+
+| Lugar | Visual |
+| --- | --- |
+| Porão do Teatro | Cortinas de veludo, assoalho de tábuas, piano e refletores |
+| Conservatório | Piso xadrez, janelas de luar, harpa |
+| Catedral do Órgão | Tubos de órgão, vitrais nas 7 cores das notas, candelabros |
+| Ópera em Ruínas | Camarotes dourados, tapete vermelho, lustre caído |
+| Coliseu dos Ecos | Arcos de pedra, gramofone gigante |
+
+Os monstros são criaturas musicais:
+- notas vivas da cor do seu grau na escala;
+- tamborins;
+- metrônomos blindados;
+- coristas fantasmas;
+- sanfonas.
+
+## Como jogar
+
+**Você é o cursor.** Corte os monstros passando o mouse rápido ou arrastando o dedo por cima deles, e proteja o Tito.
 
 ## Na masmorra
 
@@ -17,10 +47,10 @@ Roguelike incremental em pixel art, visto de cima em isométrico, com tema de te
   - Três notas seguidas em ordem formam uma **escala**.
 - **Salas:** são várias salas em sequência. A câmera segue o Tito de uma sala para a outra, e o minimapa mostra o caminho. No fim fica o chefe **Maestro Trítono**.
 
-## Entre as masmorras
+## Na oficina
 
-- **HABILIDADES:** uma árvore que vai se revelando. Os nós `?` aparecem quando você compra um vizinho. Ela é paga com notas ♪, cristais ◆ e partituras ▤. Dá para liberar acordes menores, o V7, o golpe **Ciclo das Quintas** (desenhar um círculo em volta dos monstros), execução, Estado de Fluxo e outros.
-- **MAPA:** vencer o chefe libera o próximo lugar, numa tonalidade nova do ciclo das quintas:
+- **LIÇÕES:** uma árvore que vai se revelando. Os nós `?` aparecem quando você compra um vizinho. Ela é paga com notas ♪, cristais ◆ e partituras ▤. Dá para liberar acordes menores, o V7, o golpe **Ciclo das Quintas** (desenhar um círculo em volta dos monstros), execução, Estado de Fluxo e outros.
+- **CIDADE:** vencer o chefe libera o próximo lugar, numa tonalidade nova do ciclo das quintas:
   - Porão do Teatro (Dó)
   - Conservatório (Sol)
   - Catedral do Órgão (Ré)

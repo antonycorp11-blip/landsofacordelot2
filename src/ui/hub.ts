@@ -1,6 +1,7 @@
 import { fmt } from "../core/format";
 import { TAU } from "../core/math";
 import { DUNGEONS, KEYS, MAJOR, TREE, type Currency, type TreeNode } from "../data/content";
+import { PORTRAITS } from "../render/pixels";
 import { buyNode, canBuy, level, lvl, nodeCost, nodeVisible, type Profile } from "../game/profile";
 
 export type HubTab = "mapa" | "habilidades";
@@ -14,6 +15,7 @@ export interface HubHost {
   toggleMute(): void;
   muted(): boolean;
   sound(midi: number[]): void;
+  talk(): void;
 }
 
 const CUR_ICON: Record<Currency, string> = { notas: '<i class="cn n">♪</i>', cristais: '<i class="cn c">◆</i>', partituras: '<i class="cn p">▤</i>' };
@@ -311,6 +313,9 @@ export class Hub {
           this.host.sound([72 + (TREE.findIndex((n) => n.id === arg) % 7) * 2, 79]);
         }
         break;
+      case "talk":
+        this.host.talk();
+        return;
       case "menu":
         this.menuOpen = !this.menuOpen;
         this.confirmReset = false;
@@ -331,17 +336,24 @@ export class Hub {
     const lv = level(p.exp);
     const avail = TREE.filter((n) => canBuy(p, n.id)).length;
     this.root.innerHTML = `
-      <div class="top"><div class="tabs"><button class="${this.tab === "mapa" ? "on" : ""}" data-act="tab:mapa">MAPA</button><button class="${this.tab === "habilidades" ? "on" : ""}" data-act="tab:habilidades">HABILIDADES</button></div>
+      <div class="top"><span class="where">OFICINA DA DONA FERMATA</span><div class="tabs"><button class="${this.tab === "mapa" ? "on" : ""}" data-act="tab:mapa">CIDADE</button><button class="${this.tab === "habilidades" ? "on" : ""}" data-act="tab:habilidades">LIÇÕES</button></div>
         <button class="menu" data-act="menu"><i></i><i></i><i></i></button></div>
       <div class="left">
         <div class="lvl"><span><em>${lv.lvl}</em></span><div class="xb"><i style="width:${(lv.cur / lv.next) * 100}%"></i></div></div>
         <small class="xp">${fmt(lv.cur)} / ${fmt(lv.next)} EXP</small>
         <ul class="wal"><li>${CUR_ICON.notas}<b>${fmt(Math.floor(p.notas))}</b></li><li>${CUR_ICON.cristais}<b>${fmt(p.cristais)}</b></li><li>${CUR_ICON.partituras}<b>${fmt(p.partituras)}</b></li></ul>
         <small class="day">Ensaio ${p.day}</small>
+        <button class="npc" data-act="talk"><canvas width="60" height="60"></canvas><span><b>Dona Fermata</b><small>conversar</small></span></button>
       </div>
       <div class="stage"></div>
-      <div class="bottom">${this.tab === "habilidades" ? `<span class="avail">${avail ? `${avail} melhoria${avail > 1 ? "s" : ""} disponíve${avail > 1 ? "is" : "l"}` : ""}</span>` : ""}<button class="enter" data-act="enter">ENTRAR NA MASMORRA</button></div>
+      <div class="bottom">${this.tab === "habilidades" ? `<span class="avail">${avail ? `${avail} lição${avail > 1 ? "ões" : ""} disponíve${avail > 1 ? "is" : "l"}` : ""}</span>` : ""}<button class="enter" data-act="enter">COMEÇAR O ENSAIO ▶</button></div>
       ${this.menuOpen ? `<div class="dropdown"><button data-act="mute">Som: ${this.host.muted() ? "desligado" : "ligado"}</button><button data-act="reset" class="red">${this.confirmReset ? "Confirmar: apagar tudo" : "Apagar progresso"}</button></div>` : ""}`;
+    const npc = this.root.querySelector(".npc canvas") as HTMLCanvasElement;
+    const ng = npc.getContext("2d")!;
+    ng.imageSmoothingEnabled = false;
+    ng.fillStyle = "#1e1430";
+    ng.fillRect(0, 0, 60, 60);
+    ng.drawImage(PORTRAITS.fermata.img, 0, 60 - PORTRAITS.fermata.h * 2.7, PORTRAITS.fermata.w * 2.7, PORTRAITS.fermata.h * 2.7);
     const stage = this.root.querySelector(".stage") as HTMLElement;
     if (this.tab === "habilidades") this.tree(stage);
     else this.map(stage);

@@ -290,10 +290,12 @@ button {
   width: 26px;
   height: 26px;
 }
-.ic.lua {
-  border-radius: 50%;
-  box-shadow: inset -7px 3px 0 0 #f0ead8;
-  transform: rotate(-20deg);
+.ic.batuta {
+  width: 30px;
+  height: 4px;
+  background: linear-gradient(90deg, #f4eee4 70%, #8a6a3a 70%);
+  transform: rotate(-40deg);
+  box-shadow: 0 0 8px #c9a0ff;
 }
 .ic.circulo {
   border-radius: 50%;
@@ -353,49 +355,104 @@ button {
 .segs i.boss.done {
   background: #d84a4a;
 }
-.dialog {
+.dlglayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.dlg {
   position: absolute;
   left: 50%;
   bottom: calc(14px + var(--sb));
   transform: translateX(-50%);
-  width: min(760px, calc(100vw - 260px));
-  min-width: 320px;
-  min-height: 140px;
-  background: rgba(14, 14, 18, 0.96);
-  border: 2px solid #3c3a44;
-  padding: 18px 18px 14px 150px;
+  width: min(820px, calc(100vw - 24px));
+  min-height: 150px;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  background: linear-gradient(#1c1622, #110d16);
+  border: 2px solid #4a3e56;
+  box-shadow: 0 0 0 2px #050406, 0 14px 50px rgba(0, 0, 0, 0.7);
+  padding: 14px 18px 12px 14px;
   cursor: pointer;
-  box-shadow: 0 0 0 2px #0a0a0c, 0 10px 40px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  animation: dlgIn 0.2s ease-out;
 }
-.dialog .name {
-  position: absolute;
-  top: -30px;
-  left: 0;
-  background: rgba(14, 14, 18, 0.96);
-  border: 2px solid #3c3a44;
-  border-bottom: 0;
-  padding: 2px 12px;
-  font-size: 24px;
+@keyframes dlgIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
 }
-.dialog .face {
-  position: absolute;
-  left: 18px;
-  bottom: 10px;
-  width: 110px;
-  height: 116px;
+.dlg .pt canvas {
+  width: 120px;
+  height: 120px;
   image-rendering: pixelated;
+  border: 2px solid #4a3e56;
+  display: block;
 }
-.dialog p {
+.dlg .tx {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.dlg .nm {
+  font-size: 24px;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.dlg p {
   margin: 0;
   font-size: 26px;
-  line-height: 1.2;
-  min-height: 62px;
+  line-height: 1.18;
+  flex: 1;
 }
-.dialog small {
-  display: block;
-  margin-top: 8px;
+.dlg small {
+  align-self: flex-end;
   color: #8a7aff;
-  font-size: 22px;
+  font-size: 20px;
+  animation: blink 1.2s infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.4;
+  }
+}
+.dlg.who-tritono {
+  flex-direction: row-reverse;
+  border-color: #6a2a34;
+  background: linear-gradient(#24101a, #140810);
+}
+.dlg.who-tritono .pt canvas {
+  border-color: #8a2a3a;
+}
+.dlg.who-clara p {
+  color: #c8e8ff;
+  font-style: italic;
+}
+.dlg.who-clara .pt canvas {
+  border-color: #6a8ac8;
+  box-shadow: 0 0 18px rgba(140, 190, 255, 0.5);
+}
+.dlg.who-fermata .pt canvas {
+  border-color: #6a4a9a;
+}
+.dlg.who-narrador {
+  background: rgba(8, 6, 10, 0.94);
+  border-color: #2a2430;
+  text-align: center;
+}
+.dlg.who-narrador .pt {
+  display: none;
+}
+.dlg.who-narrador p {
+  color: #d8ccb8;
+  font-style: italic;
+  font-size: 25px;
+}
+.dlg.who-narrador .nm {
+  display: none;
 }
 .modal {
   position: absolute;
@@ -540,6 +597,46 @@ button {
 }
 .dropdown .red {
   color: #ff8a8a;
+}
+.hub .top .where {
+  position: absolute;
+  left: calc(20px + var(--sl));
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: #8a7a9a;
+}
+.npc {
+  pointer-events: auto;
+  margin: 16px 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #18121e;
+  border: 2px solid #3c3048;
+  padding: 4px 12px 4px 4px;
+  text-align: left;
+}
+.npc:hover {
+  border-color: #8a6ac8;
+}
+.npc canvas {
+  width: 60px;
+  height: 60px;
+  image-rendering: pixelated;
+}
+.npc span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.npc b {
+  font-weight: normal;
+  color: #c8a0ff;
+  font-size: 22px;
+}
+.npc small {
+  color: var(--muted);
+  font-size: 18px;
 }
 .hub .left {
   position: absolute;
@@ -835,26 +932,27 @@ button {
   .chordbox i {
     min-width: 22px;
   }
-  .dialog {
+  .dlg {
     min-height: 100px;
-    padding: 10px 12px 8px 104px;
-    width: min(640px, calc(100vw - 200px));
+    padding: 8px 12px 6px 8px;
+    gap: 10px;
   }
-  .dialog .face {
-    width: 76px;
+  .dlg .pt canvas {
+    width: 80px;
     height: 80px;
   }
-  .dialog p {
+  .dlg p {
     font-size: 20px;
-    min-height: 48px;
   }
-  .dialog small {
-    font-size: 17px;
-    margin-top: 4px;
-  }
-  .dialog .name {
+  .dlg.who-narrador p {
     font-size: 19px;
-    top: -26px;
+  }
+  .dlg .nm {
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+  .dlg small {
+    font-size: 16px;
   }
   .hub .top {
     height: 38px;
@@ -863,7 +961,47 @@ button {
     padding: 0 26px;
     font-size: 21px;
   }
-  .hub .left {
+  .hub .top .where {
+  position: absolute;
+  left: calc(20px + var(--sl));
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: #8a7a9a;
+}
+.npc {
+  pointer-events: auto;
+  margin: 16px 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #18121e;
+  border: 2px solid #3c3048;
+  padding: 4px 12px 4px 4px;
+  text-align: left;
+}
+.npc:hover {
+  border-color: #8a6ac8;
+}
+.npc canvas {
+  width: 60px;
+  height: 60px;
+  image-rendering: pixelated;
+}
+.npc span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.npc b {
+  font-weight: normal;
+  color: #c8a0ff;
+  font-size: 22px;
+}
+.npc small {
+  color: var(--muted);
+  font-size: 18px;
+}
+.hub .left {
     top: calc(56px + var(--st));
   }
   .lvl span {
@@ -919,6 +1057,16 @@ button {
   }
   .left .day {
     display: none;
+  }
+  .hub .top .where {
+    display: none;
+  }
+  .npc {
+    margin-top: 6px;
+  }
+  .npc canvas {
+    width: 40px;
+    height: 40px;
   }
   .mapa h3 {
     font-size: 24px;

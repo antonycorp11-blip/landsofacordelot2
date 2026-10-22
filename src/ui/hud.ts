@@ -3,7 +3,8 @@ import { TAU } from "../core/math";
 import { DEGREE_COLORS, degreeNote } from "../data/content";
 import { level, type Profile } from "../game/profile";
 import type { Run, SimEvent } from "../game/sim";
-import { SPR } from "../render/pixels";
+import type { Line } from "../data/story";
+import type { Dialog } from "./dialog";
 
 export interface HudHost {
   readonly run: Run;
@@ -13,6 +14,7 @@ export interface HudHost {
   toggleMute(): void;
   muted(): boolean;
   abandon(): void;
+  readonly dialog: Dialog;
 }
 
 /** HUD no estilo do original: orbe de vigor, habilidades, moedas, minimapa, barras e diálogo. */
@@ -21,10 +23,7 @@ export class Hud {
   private q = <T extends HTMLElement>(s: string) => this.root.querySelector(s) as T;
   private mini: HTMLCanvasElement;
   private orb: HTMLCanvasElement;
-  dialogOpen = false;
   modalOpen = false;
-  private dialogQueue: string[] = [];
-  private dialogDone: (() => void) | null = null;
   private feedItems: { el: HTMLElement; t: number }[] = [];
 
   constructor(
@@ -45,27 +44,22 @@ export class Hud {
       <div class="bl">
         <div class="orbwrap"><canvas class="orb" width="96" height="96"></canvas><b class="lv"></b></div>
         <div class="slots">
-          <div class="slot on" title="Corte"><i class="ic lua"></i></div>
+          <div class="slot on" title="Corte da batuta"><i class="ic batuta"></i></div>
           <div class="slot ciclo" title="Ciclo das Quintas: desenhe um círculo"><i class="ic circulo"></i><s></s></div>
           <div class="slot beat" title="Batida do tambor"><i></i><i></i><i></i><i></i></div>
         </div>
         <div class="money"><span><i class="cn n">♪</i><b class="mn"></b></span><span><i class="cn c">◆</i><b class="mc"></b></span><span class="sp"><i class="cn p">▤</i><b class="mp"></b></span></div>
       </div>
       <div class="segs"></div>
-      <div class="dialog hidden"><div class="name">TITO</div><canvas class="face" width="96" height="102"></canvas><p></p><small>${host.touch ? "Toque" : "Clique"} para continuar</small></div>
       <div class="modal hidden"></div>`;
     parent.appendChild(el);
     this.root = el;
     this.mini = this.q(".mini");
     this.orb = this.q(".orb");
-    const face = (this.q(".face") as HTMLCanvasElement).getContext("2d")!;
-    face.imageSmoothingEnabled = false;
-    face.drawImage(SPR.portrait.img, 0, 0, SPR.portrait.w * 5.5, SPR.portrait.h * 5.5);
     el.addEventListener("click", (e) => {
       const t = e.target as HTMLElement;
       const b = t.closest("[data-act]") as HTMLElement | null;
       if (b) return this.act(b.dataset.act!);
-      if (t.closest(".dialog")) this.nextLine();
     });
     const segs = this.q(".segs");
     segs.innerHTML = host.run.rooms.map((r) => `<i class="${r.boss ? "boss" : ""}"></i>`).join("");
@@ -97,35 +91,13 @@ export class Hud {
     }
   }
 
-  // ------------------------------------------------------------ diálogo
-  say(lines: string[], done?: () => void): void {
-    this.dialogQueue = [...lines];
-    this.dialogDone = done ?? null;
-    this.dialogOpen = true;
-    this.q(".dialog").classList.remove("hidden");
-    this.nextLine();
+  // ------------------------------------------------------------ diálogo (caixa compartilhada)
+  get dialogOpen(): boolean {
+    return this.host.dialog.open;
   }
 
-  nextLine(): void {
-    const l = this.dialogQueue.shift();
-    if (l === undefined) {
-      this.dialogOpen = false;
-      this.q(".dialog").classList.add("hidden");
-      const d = this.dialogDone;
-      this.dialogDone = null;
-      d?.();
-      return;
-    }
-    const p = this.q(".dialog p");
-    p.textContent = "";
-    let i = 0;
-    const type = () => {
-      if (p.dataset.line !== l) return;
-      p.textContent = l.slice(0, ++i);
-      if (i < l.length) setTimeout(type, 14);
-    };
-    p.dataset.line = l;
-    type();
+  say(lines: Line[], done?: () => void): void {
+    this.host.dialog.say(lines, done);
   }
 
   // ------------------------------------------------------------ registro à esquerda
@@ -144,7 +116,7 @@ export class Hud {
       if (e.k === "gain") {
         if (e.what === "vigor") this.feed(`+${e.n} de Vigor`, "vig");
         else if (e.what === "exp") this.feed(`+${fmt(e.n)} EXP`, "exp");
-        else if (e.what === "cristais") this.feed(`+${e.n} Cristal${e.n > 1 ? "is" : ""}`, "cri");
+        else if (e.what === "cristais") this.feed(`+${e.n} ${e.n > 1 ? "Cristais" : "Cristal"}`, "cri");
         else this.feed(`+${e.n} Partitura${e.n > 1 ? "s" : ""}`, "par");
       } else if (e.k === "roomClear") this.feed("Sala afinada!", "ok");
       else if (e.k === "beat") {
@@ -228,15 +200,12 @@ export class Hud {
     g.beginPath();
     g.ellipse(c - 14, c - 16, 9, 6, -0.5, 0, TAU);
     g.fill();
-    // lua crescente
-    g.fillStyle = "rgba(255,250,230,0.55)";
-    g.beginPath();
-    g.arc(c + 12, c - 4, 9, 0, TAU);
-    g.fill();
-    g.globalCompositeOperation = "destination-out";
-    g.beginPath();
-    g.arc(c + 16, c - 7, 8, 0, TAU);
-    g.fill();
+    // nota no centro do orbe
+    g.fillStyle = "rgba(255,250,230,0.6)";
+    g.font = "bold 34px Georgia, serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText("♫", c + 2, c + 2);
     g.restore();
     g.strokeStyle = "#5a4a40";
     g.lineWidth = 3;
@@ -294,7 +263,7 @@ export class Hud {
         <li>Corte as 3 notas de um <b>acorde</b> num traço só (ex.: Dó, Mi e Sol).</li>
         <li>Os marcados <b class="pu">◆</b> dão cristais e vigor.</li>
       </ul>
-      <div class="row"><button class="pbtn" data-act="resume">CONTINUAR</button><button class="pbtn dim" data-act="mute">SOM: ${this.host.muted() ? "DESLIGADO" : "LIGADO"}</button><button class="pbtn red" data-act="abandon">SAIR DA MASMORRA</button></div></div>`;
+      <div class="row"><button class="pbtn" data-act="resume">CONTINUAR</button><button class="pbtn dim" data-act="mute">SOM: ${this.host.muted() ? "DESLIGADO" : "LIGADO"}</button><button class="pbtn red" data-act="abandon">ENCERRAR ENSAIO</button></div></div>`;
   }
 
   closeModal(): void {
@@ -306,7 +275,7 @@ export class Hud {
     this.modalOpen = true;
     const m = this.q(".modal");
     m.classList.remove("hidden");
-    m.innerHTML = `<div class="box end"><h2>${info.won ? "MASMORRA AFINADA!" : "O TITO CAIU"}</h2>
+    m.innerHTML = `<div class="box end"><h2>${info.won ? "PÁGINA RECUPERADA!" : "O TITO CAIU"}</h2>
       ${info.unlocked ? `<p class="unl">Novo lugar no mapa: <b>${info.unlocked}</b></p>` : ""}
       <div class="loot">
         <span><i class="cn n">♪</i>+${fmt(info.notas)}</span>
