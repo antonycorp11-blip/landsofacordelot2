@@ -49,6 +49,8 @@ export interface Room {
   props: Prop[];
   chest: Chest | null;
   memory: { x: number; y: number; taken: boolean; text: string } | null;
+  /** página do diário do maestro */
+  scroll: { x: number; y: number; taken: boolean; text: string } | null;
 }
 
 export interface Monster {
@@ -85,6 +87,12 @@ export interface Shot {
   vy: number;
   dmg: number;
   life: number;
+  /** nota: tiro comum · tecla: tecla de piano · batuta: batuta arremessada · lustre: cai do teto */
+  kind: "nota" | "tecla" | "batuta" | "lustre";
+  hp: number;
+  /** altura (só o lustre) */
+  z: number;
+  hitAt: number;
 }
 
 export interface Wave {
@@ -141,6 +149,7 @@ export type SimEvent =
   | { k: "lock"; u: number; v: number; deg: number }
   | { k: "chest"; u: number; v: number }
   | { k: "memory"; text: string }
+  | { k: "scroll"; text: string }
   | { k: "skill"; id: SkillId }
   | { k: "pancada"; u: number; v: number }
   | { k: "strike"; u: number; v: number; hit: boolean }
@@ -201,6 +210,7 @@ export class Run {
     readonly dIdx: number,
     seed: number,
     readonly memories: string[] = [],
+    readonly diary: string[] = [],
   ) {
     this.rng = new Rng(seed);
     this.dungeon = DUNGEONS[dIdx];
@@ -220,7 +230,7 @@ export class Run {
   /** salões de exploração e salas de luta alternados; a última é a do chefe */
   private buildDungeon(): void {
     const fights = this.dungeon.rooms;
-    const n = fights * 2 + 1;
+    const n = fights * 2 + 2;
     const cells: [number, number][] = [[0, 0]];
     const used = new Set(["0,0"]);
     const dirs: [number, number][] = [
@@ -239,6 +249,11 @@ export class Run {
       cells.push(c);
     }
     let mem = 0;
+    let dia = 0;
+    // páginas do diário espalhadas pelos salões, a última na antessala do palco
+    const halls = cells.map((_, i) => i).filter((i) => i !== n - 1 && i % 2 === 0 && i > 0);
+    const D = Math.min(this.diary.length, halls.length);
+    const diaryAt = new Set(Array.from({ length: D }, (_, k) => halls[Math.round(((k + 1) * (halls.length - 1)) / D)]));
     this.rooms = cells.map(([gx, gy], i) => {
       const kind: RoomKind = i === n - 1 ? "boss" : i % 2 === 0 ? "hall" : "fight";
       const r: Room = {
@@ -254,12 +269,17 @@ export class Run {
         props: [],
         chest: null,
         memory: null,
+        scroll: null,
       };
       const prev = i > 0 ? [cells[i - 1][0] - gx, cells[i - 1][1] - gy] : null;
       this.furnish(r, prev as [number, number] | null);
       if (kind === "hall" && mem < this.memories.length && i > 0) {
         const p = this.freeSpot(r, prev as [number, number] | null, 50);
         r.memory = { x: p.x, y: p.y, taken: false, text: this.memories[mem++] };
+      }
+      if (kind === "hall" && dia < D && diaryAt.has(i)) {
+        const p = this.freeSpot(r, prev as [number, number] | null, 40);
+        r.scroll = { x: p.x, y: p.y, taken: false, text: this.diary[dia++] };
       }
       return r;
     });
@@ -333,7 +353,7 @@ export class Run {
 
   /** andar até um ponto do chão (clique / toque) */
   moveTo(x: number, y: number): void {
-    if (this.phase === "transit") return;
+    if (this.phase !== "explore") return;
     this.tito.tx = x;
     this.tito.ty = y;
   }
@@ -342,7 +362,7 @@ export class Run {
   moveDir(sx: number, sy: number): void {
     // tela → mundo isométrico
     const len = Math.hypot(sx, sy);
-    if (len < 0.01) {
+    if (len < 0.01 || this.phase !== "explore") {
       this.tito.dx = this.tito.dy = 0;
       return;
     }
@@ -725,7 +745,7 @@ export class Run {
         const dx = this.tito.x - m.x;
         const dy = this.tito.y - m.y;
         const d = Math.hypot(dx, dy) || 1;
-        this.shots.push({ x: m.x, y: m.y, vx: (dx / d) * 55, vy: (dy / d) * 55, dmg: m.dmg, life: 4 });
+        this.shots.push({ x: m.x, y: m.y, vx: (dx / d) * 55, vy: (dy / d) * 55, dmg: m.dmg, life: 4, kind: "nota", hp: 1, z: 0, hitAt: -9 });
       }
     }
     if (boss && boss.stun <= 0) this.bossBeat(boss);
@@ -747,33 +767,35 @@ export class Run {
         s.ky = Math.sin(a) * 60;
       }
     };
-    const keys = () => {
-      // teclas de piano: faixas que atravessam a sala
-      const alongX = this.rng.next() < 0.5;
-      const offs = [alongX ? T.y : T.x, this.rng.range(0, ROOM), this.rng.range(0, ROOM)];
-      for (const o of offs) {
-        const c = clamp(o - (alongX ? r.y0 : r.x0), 14, ROOM - 14);
-        this.teles.push(alongX ? { kind: "rect", x: r.x0, y: r.y0 + c - 11, w: ROOM, h: 22, r: 0, t: 1.6, max: 1.6, dmg: b.dmg } : { kind: "rect", x: r.x0 + c - 11, y: r.y0, w: 22, h: ROOM, r: 0, t: 1.6, max: 1.6, dmg: b.dmg });
+    const toward = (kind: Shot["kind"], k: number, spread: number, speed: number, hp: number, dmg: number) => {
+      const base = Math.atan2(T.y - b.y, T.x - b.x);
+      for (let i = 0; i < k; i++) {
+        const a = base + (i - (k - 1) / 2) * spread;
+        this.shots.push({ x: b.x, y: b.y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, dmg, life: 7, kind, hp, z: 0, hitAt: -9 });
       }
     };
+    // teclas de piano voando em leque (2 cortes cada)
+    const keys = () => toward("tecla", angry ? 5 : 3, 0.28, 46, 2, b.dmg * 0.6);
     const volley = (k: number) => {
       for (let i = 0; i < k; i++) {
         const a = (i / k) * TAU + n * 0.3;
-        this.shots.push({ x: b.x, y: b.y, vx: Math.cos(a) * 48, vy: Math.sin(a) * 48, dmg: b.dmg * 0.5, life: 5 });
+        this.shots.push({ x: b.x, y: b.y, vx: Math.cos(a) * 44, vy: Math.sin(a) * 44, dmg: b.dmg * 0.4, life: 6, kind: "nota", hp: 1, z: 0, hitAt: -9 });
       }
     };
+    // lustre cai sobre o Tito: corte-o antes de chegar ao chão (3 cortes)
     const drop = (k: number) => {
       for (let i = 0; i < k; i++) {
-        const ox = i === 0 ? 0 : this.rng.range(-50, 50);
-        const oy = i === 0 ? 0 : this.rng.range(-50, 50);
-        this.teles.push({ kind: "circle", x: clamp(T.x + ox, r.x0 + 20, r.x0 + ROOM - 20), y: clamp(T.y + oy, r.y0 + 20, r.y0 + ROOM - 20), w: 0, h: 0, r: 26, t: 1.4, max: 1.4, dmg: b.dmg * 1.2 });
+        const ox = i === 0 ? 0 : this.rng.range(-30, 30);
+        const oy = i === 0 ? 0 : this.rng.range(-30, 30);
+        this.shots.push({ x: clamp(T.x + ox, r.x0 + 20, r.x0 + ROOM - 20), y: clamp(T.y + oy, r.y0 + 20, r.y0 + ROOM - 20), vx: 0, vy: 0, dmg: i === 0 ? b.dmg * 1.2 : 0, life: 99, kind: "lustre", hp: 3, z: 110, hitAt: -9 });
       }
     };
+    const batons = () => toward("batuta", angry ? 3 : 1, 0.35, 70, 1, b.dmg * 0.5);
     if (n % (angry ? 6 : 8) === 0) summon();
     switch (form) {
       case 0:
         if (n % 6 === 0) this.waves.push({ x: b.x, y: b.y, r: b.r, hit: false });
-        if (angry && n % 5 === 0) drop(1);
+        if (n % 3 === 0) batons();
         break;
       case 1:
         if (n % (angry ? 3 : 4) === 0) keys();
@@ -840,11 +862,14 @@ export class Run {
       }
       this.cutProps(c.pu, c.pv, c.u, c.v, W);
       for (const sh of this.shots) {
-        if (sh.life <= 0) continue;
+        if (sh.life <= 0 || this.t - sh.hitAt < 0.2) continue;
         const su = isoU(sh.x, sh.y);
-        const sv = isoV(sh.x, sh.y) - 6;
-        if (segDist(su, sv, c.pu, c.pv, c.u, c.v) < 7 + W) {
-          sh.life = 0;
+        const sv = isoV(sh.x, sh.y) - 6 - sh.z;
+        const rad = sh.kind === "lustre" ? 14 : sh.kind === "tecla" ? 9 : 7;
+        if (segDist(su, sv, c.pu, c.pv, c.u, c.v) < rad + W) {
+          sh.hitAt = this.t;
+          sh.hp--;
+          if (sh.hp <= 0) sh.life = 0;
           this.events.push({ k: "parry", u: su, v: sv });
         }
       }
@@ -960,6 +985,10 @@ export class Run {
     }
     let mx = 0;
     let my = 0;
+    if (this.phase !== "explore") {
+      T.tx = NaN;
+      T.dx = T.dy = 0;
+    }
     if (T.dx || T.dy) {
       mx = T.dx;
       my = T.dy;
@@ -1011,20 +1040,31 @@ export class Run {
       mem.taken = true;
       this.events.push({ k: "memory", text: mem.text });
     }
+    const sc = r.scroll;
+    if (sc && !sc.taken && Math.hypot(T.x - sc.x, T.y - sc.y) < MEM_TAKE) {
+      sc.taken = true;
+      this.events.push({ k: "scroll", text: sc.text });
+    }
     // porta aberta: o Tito segue para a próxima sala
     if (this.phase === "explore" && r.next) {
       const dp = this.doorPoint(r, r.next);
-      if (Math.hypot(T.x - dp.x, T.y - dp.y) < 30) {
-        const nr = this.rooms[this.roomI + 1];
-        T.path = [
-          [dp.x, dp.y],
-          [nr.x0 + ROOM / 2 - r.next[0] * (ROOM / 2 - 40), nr.y0 + ROOM / 2 - r.next[1] * (ROOM / 2 - 40)],
-        ];
-        T.tx = NaN;
-        this.phase = "transit";
-        this.pickups = [];
-      }
+      if (Math.hypot(T.x - dp.x, T.y - dp.y) < 30) this.goNext();
     }
+  }
+
+  /** caminha até a próxima sala: salões param na entrada; nas lutas o Tito vai para o centro e fica parado */
+  private goNext(): void {
+    const r = this.room;
+    const T = this.tito;
+    if (!r.next) return;
+    const dp = this.doorPoint(r, r.next);
+    const nr = this.rooms[this.roomI + 1];
+    const inner: [number, number] = nr.kind === "hall" ? [nr.x0 + ROOM / 2 - r.next[0] * (ROOM / 2 - 40), nr.y0 + ROOM / 2 - r.next[1] * (ROOM / 2 - 40)] : [nr.x0 + ROOM / 2, nr.y0 + ROOM / 2];
+    T.path = [[dp.x, dp.y], inner];
+    T.tx = NaN;
+    T.dx = T.dy = 0;
+    this.phase = "transit";
+    this.pickups = [];
   }
 
   /** ponto da porta de saída da sala atual (para indicar o caminho) */
@@ -1104,6 +1144,16 @@ export class Run {
   private stepShots(dt: number): void {
     const slow = this.slowMul();
     for (const s of this.shots) {
+      if (s.kind === "lustre") {
+        s.z -= 62 * dt * slow;
+        if (s.z <= 0 && s.life > 0) {
+          s.life = 0;
+          const hit = s.dmg > 0 && Math.hypot(s.x - this.tito.x, s.y - this.tito.y) < 26;
+          this.events.push({ k: "strike", u: isoU(s.x, s.y), v: isoV(s.x, s.y), hit });
+          if (hit) this.hurtTito(s.dmg);
+        }
+        continue;
+      }
       s.x += s.vx * dt * slow;
       s.y += s.vy * dt * slow;
       s.life -= dt;
@@ -1137,7 +1187,8 @@ export class Run {
       const dx = T.x - p.x;
       const dy = T.y - p.y;
       const d = Math.hypot(dx, dy);
-      if (d < this.st.magnet) {
+      const mag = this.phase === "explore" && this.room.kind === "fight" ? 999 : this.st.magnet;
+      if (d < mag) {
         const sp = 170 * dt;
         p.x += (dx / (d || 1)) * Math.min(d, sp);
         p.y += (dy / (d || 1)) * Math.min(d, sp);
@@ -1172,7 +1223,13 @@ export class Run {
     if (this.pickups.some((p) => p.age < 0)) this.pickups = this.pickups.filter((p) => p.age >= 0);
   }
 
+  private clearT = 0;
   private stepRoom(dt: number): void {
+    if (this.phase === "explore" && this.room.kind === "fight") {
+      this.clearT -= dt;
+      if (this.clearT <= 0 && this.pickups.length === 0) this.goNext();
+      return;
+    }
     if (this.phase !== "fight") return;
     const r = this.room;
     const cap = 8 + this.fightNo + this.dIdx * 2;
@@ -1195,7 +1252,9 @@ export class Run {
         this.events.push({ k: "won" });
         return;
       }
+      // sala de luta limpa: o Tito segue sozinho para a próxima antessala
       this.phase = "explore";
+      this.clearT = 1.6;
     }
   }
 

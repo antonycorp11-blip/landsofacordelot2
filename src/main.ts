@@ -1,7 +1,8 @@
 import "./styles.css";
 import { Synth } from "./audio/synth";
 import { DUNGEONS, MAJOR, degreeMidi, type SkillId } from "./data/content";
-import { BARKS, CLARA_HINTS, FERMATA_TIPS, PROLOGUE, STORY, type Line } from "./data/story";
+import { BARKS, CLARA_HINTS, DIARY, FERMATA_TIPS, PROLOGUE, STORY, type Line } from "./data/story";
+import { Cutscene, INTRO } from "./render/cutscene";
 import { SAVE_KEY, computeStats, loadProfile, type Profile } from "./game/profile";
 import { Run, type SimEvent } from "./game/sim";
 import { Scene } from "./render/scene";
@@ -116,6 +117,7 @@ class App {
           this.synth.unlock();
           m.forEach((n, i) => setTimeout(() => this.synth.pluck(n, 0.4, 1, 1), i * 80));
         },
+        replayIntro: () => this.playIntro(false),
         talk: () => {
           this.synth.unlock();
           if (this.dialog.open) return;
@@ -139,13 +141,50 @@ class App {
       this.save();
       setTimeout(() => this.dialog.say(lines), 300);
     };
-    if (!p.seen.prologue) return play("prologue", PROLOGUE);
+    if (!p.seen.prologue) return this.playIntro(true);
     for (let d = 0; d < DUNGEONS.length; d++) if (p.cleared[DUNGEONS[d].id] && !p.seen[`after${d}`]) return play(`after${d}`, STORY[d].after);
+  }
+
+  cut: Cutscene | null = null;
+  /** abertura em cenas animadas; depois o diálogo na oficina */
+  playIntro(first: boolean): void {
+    if (this.cut) return;
+    this.synth.unlock();
+    this.hub?.root.classList.add("hidden");
+    const chords = [
+      [0, 4, 7],
+      [5, 9, 12],
+      [-3, 0, 4],
+      [-1, 2, 6],
+      [-5, -1, 2, 5],
+      [0, 4, 7],
+    ];
+    this.cut = new Cutscene(
+      INTRO,
+      document.body,
+      this.touch,
+      () => {
+        this.cut = null;
+        this.hub?.root.classList.remove("hidden");
+        this.synth.drone(null);
+        if (first) {
+          this.profile.seen.prologue = true;
+          this.save();
+          setTimeout(() => this.dialog.say(PROLOGUE.slice(3)), 200);
+        }
+      },
+      (i) => {
+        // trilha das cenas: um acorde por cena (a terceira e a quarta escurecem)
+        const c = chords[i] ?? [0, 4, 7];
+        this.synth.drone(i >= 2 && i <= 4 ? 54 : 60);
+        c.forEach((m, j) => setTimeout(() => this.synth.pluck(60 + m, 0.35, 1.2, 2), j * 140));
+      },
+    );
   }
 
   /** um "blip" curto de voz para cada fala */
   private voice(l: Line): void {
-    const base = { tito: 72, fermata: 64, tritono: 54, clara: 79, narrador: 0 }[l.who];
+    const base = { tito: 72, fermata: 64, tritono: 54, clara: 79, narrador: 0, diario: 0 }[l.who];
     if (!base) return;
     [0, 4, 7].forEach((m, i) => setTimeout(() => this.synth.pluck(base + m + (l.who === "tritono" ? i : 0), 0.12, 1.2, 0.25), i * 70));
   }
@@ -177,7 +216,8 @@ class App {
     document.body.classList.add("in-run");
     this.scene.reset();
     const mems = STORY[dIdx].memories.filter((_, i) => !this.profile.seen[`mem${dIdx}_${i}`]);
-    const run = new Run(computeStats(this.profile), dIdx, (Math.random() * 1e9) | 0, mems);
+    const diary = DIARY[dIdx].filter((_, i) => !this.profile.seen[`dia${dIdx}_${i}`]);
+    const run = new Run(computeStats(this.profile), dIdx, (Math.random() * 1e9) | 0, mems, diary);
     this.scene.trailSkin = this.profile.trail;
     this.run = run;
     this.synth.drone(run.key.root);
@@ -444,6 +484,16 @@ class App {
           setTimeout(() => this.dialog.say([{ who: "narrador", text: "Um eco de memória brilha no chão…" }, { who: "clara", text: e.text }]), 200);
           break;
         }
+        case "scroll": {
+          const d = r.dIdx;
+          const idx = DIARY[d].indexOf(e.text);
+          if (idx >= 0) this.profile.seen[`dia${d}_${idx}`] = true;
+          this.save();
+          const n = DIARY.slice(0, d).reduce((a, b) => a + b.length, 0) + idx + 1;
+          [0, 6, 3, 9].forEach((m, i) => setTimeout(() => s.pluck(key.root + m, 0.25, 0.8, 1.2), i * 160));
+          setTimeout(() => this.dialog.say([{ who: "diario", text: `Página ${n}. ${e.text}` }, { who: "tito", text: pick(["Isso é do diário do Trítono…", "Ele escrevia tudo. Coitado…", "Clara, você sabia disso?", "Vou guardar essa página."]) }]), 200);
+          break;
+        }
         case "prop":
           s.pluck(e.broke ? key.root - 5 : key.root + 7, e.broke ? 0.35 : 0.15, 0.4, 0.3);
           if (e.type === "caixamusica" && e.broke) [0, 4, 7, 12, 16].forEach((m, i) => setTimeout(() => s.pluck(key.root + 12 + m, 0.2, 1.6, 0.5), i * 90));
@@ -501,7 +551,9 @@ class App {
     this.barkCd = Math.max(0, this.barkCd - dt);
     const r = this.run;
     const g = this.cv.getContext("2d")!;
-    if (this.mode === "run" && r && this.hud) {
+    if (this.cut) {
+      this.cut.draw(this.cv, dt);
+    } else if (this.mode === "run" && r && this.hud) {
       const frozen = this.paused || this.ended || this.dialog.open || this.hud.modalOpen;
       if (!frozen) {
         this.acc += dt;

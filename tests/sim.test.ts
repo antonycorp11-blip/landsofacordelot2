@@ -108,10 +108,11 @@ const toFight = (r: Run) => {
 describe("masmorra", () => {
   it("começa num salão de exploração; salões e lutas alternam; chefe no fim", () => {
     const r = mk();
-    expect(r.rooms.length).toBe(11);
+    expect(r.rooms.length).toBe(12);
     expect(r.rooms[0].kind).toBe("hall");
     expect(r.rooms[1].kind).toBe("fight");
-    expect(r.rooms[10].kind).toBe("boss");
+    expect(r.rooms[10].kind).toBe("hall");
+    expect(r.rooms[11].kind).toBe("boss");
     expect(r.phase).toBe("explore");
     expect(r.rooms[0].props.length).toBeGreaterThan(5);
   });
@@ -123,8 +124,34 @@ describe("masmorra", () => {
     r.spawnLeft = 0;
     r.monsters = [];
     r.step(1 / 60);
-    expect(r.phase).toBe("explore");
     expect(r.exp).toBeGreaterThan(0);
+  });
+  it("na sala de luta o Tito fica parado no centro", () => {
+    const r = mk();
+    toFight(r);
+    const R = r.room;
+    expect(Math.hypot(r.tito.x - R.x0 - 130, r.tito.y - R.y0 - 130)).toBeLessThan(2);
+    const x0 = r.tito.x;
+    r.moveTo(r.tito.x + 60, r.tito.y);
+    r.moveDir(1, 0);
+    for (let i = 0; i < 60; i++) r.step(1 / 60);
+    expect(r.tito.x).toBe(x0);
+  });
+  it("limpar a luta leva o Tito sozinho para a próxima antessala", () => {
+    const r = mk();
+    toFight(r);
+    r.spawnLeft = 0;
+    r.monsters = [];
+    for (let i = 0; i < 60 * 8 && r.roomI === 1; i++) r.step(1 / 60);
+    expect(r.roomI).toBe(2);
+    expect(r.room.kind).toBe("hall");
+  });
+  it("páginas do diário ficam nas antessalas", () => {
+    const r = new Run(computeStats(newProfile()), 0, 7, [], ["a", "b", "c", "d"]);
+    const scrolls = r.rooms.filter((x) => x.scroll).map((x) => x.kind);
+    expect(scrolls.length).toBe(4);
+    expect(scrolls.every((k) => k === "hall")).toBe(true);
+    expect(r.rooms[10].scroll?.text).toBe("d");
   });
   it("clicar no chão faz o Tito andar", () => {
     const r = mk();
@@ -183,9 +210,9 @@ describe("masmorra", () => {
   });
   it("vencer o chefe termina a masmorra", () => {
     const r = mk();
-    r.roomI = 10;
-    r.tito.x = r.rooms[10].x0 + 130;
-    r.tito.y = r.rooms[10].y0 + 130;
+    r.roomI = 11;
+    r.tito.x = r.rooms[11].x0 + 130;
+    r.tito.y = r.rooms[11].y0 + 130;
     r.phase = "fight";
     r.spawnLeft = 0;
     r.monsters = [];

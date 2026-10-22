@@ -1,38 +1,36 @@
-import { TAU } from "../core/math";
 import { SPEAKERS, type Line, type Speaker } from "../data/story";
-import { PORTRAITS } from "../render/pixels";
+import { portrait as charPortrait } from "../render/chars";
 
-/** retrato de cada personagem (Clara é uma luz dentro da batuta) */
+/** retrato de cada personagem (Clara aparece como espírito dentro da batuta) */
 function portrait(who: Speaker): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = c.height = 120;
   const g = c.getContext("2d")!;
   g.imageSmoothingEnabled = false;
-  g.fillStyle = who === "tritono" ? "#2a0c14" : who === "fermata" ? "#1e1430" : who === "clara" ? "#0c1a2a" : "#2a1c10";
+  const bg = g.createLinearGradient(0, 0, 0, 120);
+  const cols: Record<string, [string, string]> = { tritono: ["#3a0c18", "#14040a"], fermata: ["#2e1e48", "#140c22"], clara: ["#18305a", "#08101e"], tito: ["#3a2a18", "#160e08"], diario: ["#e8d4a8", "#c8a870"] };
+  const [c1, c2] = cols[who] ?? ["#222", "#111"];
+  bg.addColorStop(0, c1);
+  bg.addColorStop(1, c2);
+  g.fillStyle = bg;
   g.fillRect(0, 0, 120, 120);
-  if (who === "clara") {
-    const gr = g.createRadialGradient(60, 60, 0, 60, 60, 56);
-    gr.addColorStop(0, "#ffffff");
-    gr.addColorStop(0.25, "#b0e0ff");
-    gr.addColorStop(0.6, "rgba(120,160,255,0.35)");
-    gr.addColorStop(1, "rgba(120,160,255,0)");
-    g.fillStyle = gr;
-    g.fillRect(0, 0, 120, 120);
-    g.strokeStyle = "#e8d8b0";
-    g.lineWidth = 5;
-    g.beginPath();
-    g.moveTo(26, 98);
-    g.lineTo(92, 26);
-    g.stroke();
-    g.fillStyle = "#fff";
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * TAU;
-      g.fillRect(60 + Math.cos(a) * 34 - 2, 60 + Math.sin(a) * 34 - 2, 4, 4);
-    }
+  if (who === "diario") {
+    g.fillStyle = "#5a3a20";
+    for (let i = 0; i < 6; i++) g.fillRect(24, 30 + i * 11, 72 - (i % 3) * 10, 2);
+    g.font = "bold 34px Georgia, serif";
+    g.textAlign = "center";
+    g.fillText("✒", 60, 106);
     return c;
   }
-  const p = PORTRAITS[who as "tito" | "fermata" | "tritono"];
-  if (p) g.drawImage(p.img, 0, 120 - p.h * 5.4, p.w * 5.4, p.h * 5.4);
+  if (who === "clara") {
+    const gr = g.createRadialGradient(60, 60, 0, 60, 60, 60);
+    gr.addColorStop(0, "rgba(160,210,255,0.55)");
+    gr.addColorStop(1, "rgba(160,210,255,0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 120, 120);
+  }
+  const pr = charPortrait(who as "tito" | "clara" | "fermata" | "tritono", 60, 0, who === "clara");
+  g.drawImage(pr, 0, 0, 120, 120);
   return c;
 }
 

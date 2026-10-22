@@ -126,8 +126,9 @@ export class Hud {
         else this.feed(`+${e.n} Partitura${e.n > 1 ? "s" : ""}`, "par");
       } else if (e.k === "roomClear") {
         this.feed("Sala afinada!", "ok");
-        this.hint(this.host.touch ? "Toque no chão para andar · siga a seta" : "Clique no chão ou use WASD para andar · siga a seta", 4);
-      } else if (e.k === "enter" && e.kind === "hall" && e.i === 0) this.hint(this.host.touch ? "Toque no chão para o Tito andar · arraste para cortar" : "Clique no chão ou use WASD para o Tito andar · passe o mouse para cortar", 6);
+        this.hint("Sala afinada! O Tito segue para a próxima antessala…", 3);
+      } else if (e.k === "enter" && e.kind === "hall") this.hint(this.host.touch ? "Antessala: toque no chão para o Tito andar · arraste para quebrar e cortar" : "Antessala: clique no chão (ou WASD) para o Tito andar · passe o mouse para quebrar", e.i === 0 ? 6 : 3);
+      else if (e.k === "enter" && e.kind !== "hall") this.hint("O Tito firma os pés e toca o tambor. Proteja-o!", 2.5);
       else if (e.k === "beat") {
         this.root.querySelectorAll(".slot.beat i").forEach((d, i) => d.classList.toggle("on", i === e.n % 4));
       }

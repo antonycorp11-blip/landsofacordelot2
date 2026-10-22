@@ -1,7 +1,7 @@
 import { fmt } from "../core/format";
 import { TAU } from "../core/math";
 import { DUNGEONS, KEYS, MAJOR, TRAILS, TREE, TREE_BRANCH, type Currency, type TrailId, type TreeNode } from "../data/content";
-import { PORTRAITS } from "../render/pixels";
+import { portrait as charPortrait } from "../render/chars";
 import { buyNode, canBuy, level, lvl, nodeCost, nodeVisible, trailsUnlocked, type Profile } from "../game/profile";
 
 export type HubTab = "mapa" | "habilidades";
@@ -16,6 +16,7 @@ export interface HubHost {
   muted(): boolean;
   sound(midi: number[]): void;
   talk(): void;
+  replayIntro(): void;
 }
 
 const CUR_ICON: Record<Currency, string> = { notas: '<i class="cn n">♪</i>', cristais: '<i class="cn c">◆</i>', partituras: '<i class="cn p">▤</i>' };
@@ -319,6 +320,10 @@ export class Hub {
           this.host.save();
         }
         break;
+      case "intro":
+        this.menuOpen = false;
+        this.host.replayIntro();
+        return;
       case "talk":
         this.host.talk();
         return;
@@ -360,6 +365,7 @@ export class Hub {
           const ok = trailsUnlocked(p).includes(t.id);
           return `<button class="${p.trail === t.id ? "on" : ""}" ${ok ? `data-act="trail:${t.id}"` : "disabled"} title="${ok ? "" : t.level ? `Nível ${t.level}` : "Libere na árvore (Rastro)"}">${ok ? t.name : "🔒 " + t.name}</button>`;
         }).join("")}</div>
+        <button data-act="intro">Rever a abertura</button>
         <button data-act="reset" class="red">${this.confirmReset ? "Confirmar: apagar tudo" : "Apagar progresso"}</button></div>`
           : ""
       }`;
@@ -368,7 +374,7 @@ export class Hub {
     ng.imageSmoothingEnabled = false;
     ng.fillStyle = "#1e1430";
     ng.fillRect(0, 0, 60, 60);
-    ng.drawImage(PORTRAITS.fermata.img, 0, 60 - PORTRAITS.fermata.h * 2.7, PORTRAITS.fermata.w * 2.7, PORTRAITS.fermata.h * 2.7);
+    ng.drawImage(charPortrait("fermata", 60), 0, 0);
     const stage = this.root.querySelector(".stage") as HTMLElement;
     if (this.tab === "habilidades") this.tree(stage);
     else this.map(stage);

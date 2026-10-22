@@ -2,8 +2,9 @@ import { fmt } from "../core/format";
 import { TAU, clamp } from "../core/math";
 import { BOSS_FORMS, CHROMA_COLOR, DEGREE_COLORS, MONSTERS, chordName, degreeNote, type TrailId } from "../data/content";
 import { ROOM, isoU, isoV, type Monster, type Room, type Run, type SimEvent } from "../game/sim";
-import { drawBoss, drawCage } from "./boss";
-import { CHEST_SPR, PICK_SPR, PROP_SPR, SPR, monsterFrames, type Sprite } from "./pixels";
+import { drawBoss } from "./boss";
+import { sprite as charSprite } from "./chars";
+import { CHEST_SPR, PICK_SPR, PROP_SPR, monsterFrames, type Sprite } from "./pixels";
 import { WALL, paintRoom, type RoomArt } from "./rooms";
 
 const FONT = '"VT323", "Courier New", monospace';
@@ -447,6 +448,35 @@ export class Scene {
         },
       });
     }
+    if (room.scroll && !room.scroll.taken) {
+      const sc = room.scroll;
+      list.push({
+        z: sc.x + sc.y,
+        f: () => {
+          const x = this.lx(isoU(sc.x, sc.y));
+          const y = this.ly(isoV(sc.x, sc.y)) - 6 + Math.round(Math.sin(this.time * 2 + 1) * 1.5);
+          g.globalCompositeOperation = "lighter";
+          const gr = g.createRadialGradient(x, y, 0, x, y, 14);
+          gr.addColorStop(0, "rgba(255,210,140,0.6)");
+          gr.addColorStop(1, "rgba(255,210,140,0)");
+          g.fillStyle = gr;
+          g.fillRect(x - 14, y - 14, 28, 28);
+          g.globalCompositeOperation = "source-over";
+          g.fillStyle = "#0c0810";
+          g.fillRect(x - 6, y - 5, 12, 9);
+          g.fillStyle = "#ead6a6";
+          g.fillRect(x - 5, y - 4, 10, 7);
+          g.fillStyle = "#b08a50";
+          g.fillRect(x - 6, y - 5, 2, 9);
+          g.fillRect(x + 4, y - 5, 2, 9);
+          g.fillStyle = "#6a4a2a";
+          g.fillRect(x - 3, y - 2, 6, 1);
+          g.fillRect(x - 3, y, 5, 1);
+          g.fillStyle = "#c82a3a";
+          g.fillRect(x - 1, y + 2, 2, 2);
+        },
+      });
+    }
     for (const pk of run.pickups)
       list.push({
         z: pk.x + pk.y,
@@ -462,7 +492,7 @@ export class Scene {
     if (room.boss && run.phase === "fight") {
       const cx = room.x0 + ROOM * 0.18;
       const cy = room.y0 + ROOM * 0.1;
-      list.push({ z: cx + cy, f: () => drawCage(g, this.lx(isoU(cx, cy)), this.ly(isoV(cx, cy)), this.time) });
+      list.push({ z: cx + cy, f: () => this.drawCage(this.lx(isoU(cx, cy)), this.ly(isoV(cx, cy))) });
     }
     for (const s of run.shots)
       list.push({
@@ -470,6 +500,51 @@ export class Scene {
         f: () => {
           const x = this.lx(isoU(s.x, s.y));
           const y = this.ly(isoV(s.x, s.y)) - 6;
+          if (s.kind === "lustre") {
+            // sombra que cresce no chão e o lustre caindo
+            const k = 1 - s.z / 110;
+            g.fillStyle = `rgba(255,40,80,${0.15 + 0.35 * k})`;
+            g.beginPath();
+            g.ellipse(x, y + 6, 10 + 14 * k, 5 + 7 * k, 0, 0, TAU);
+            g.fill();
+            const ly = y - Math.round(s.z);
+            g.fillStyle = "#3a2a20";
+            g.fillRect(x, ly - 40, 1, 30);
+            g.strokeStyle = "#e8c060";
+            g.lineWidth = 2;
+            g.beginPath();
+            g.ellipse(x, ly, 11, 4, 0, 0, TAU);
+            g.stroke();
+            for (let i = 0; i < 6; i++) {
+              g.fillStyle = i < s.hp * 2 ? "#dff0ff" : "#5a5a6a";
+              g.fillRect(x + Math.round(Math.cos(i) * 10) - 1, ly + Math.round(Math.sin(i) * 3) + 1, 2, 4);
+            }
+            return;
+          }
+          if (s.kind === "tecla") {
+            g.save();
+            g.translate(x, y);
+            g.rotate(Math.atan2(isoV(s.vx, s.vy), isoU(s.vx, s.vy)));
+            g.fillStyle = "#0c0810";
+            g.fillRect(-7, -3, 14, 6);
+            g.fillStyle = s.hp > 1 ? "#f4eee4" : "#c8c0b8";
+            g.fillRect(-6, -2, 12, 4);
+            g.fillStyle = "#1a1420";
+            g.fillRect(2, -2, 3, 2);
+            g.restore();
+            return;
+          }
+          if (s.kind === "batuta") {
+            g.save();
+            g.translate(x, y);
+            g.rotate(this.time * 14);
+            g.fillStyle = "#fffaf0";
+            g.fillRect(-6, -1, 12, 2);
+            g.fillStyle = "#8a5a2a";
+            g.fillRect(-6, -1, 3, 2);
+            g.restore();
+            return;
+          }
           g.fillStyle = "#b070ff";
           g.fillRect(x - 2, y - 2, 4, 4);
           g.fillStyle = "#f0d8ff";
@@ -605,17 +680,23 @@ export class Scene {
     const y = this.ly(isoV(T.x, T.y));
     this.shadow(x, y, 6);
     const near = run.monsters[0];
-    const flip = T.moving ? false : near ? isoU(near.x, near.y) < isoU(T.x, T.y) : false;
-    const frame = T.drum > 0 ? SPR.titoDrum : T.moving ? SPR.tito[[0, 1, 0, 2][Math.floor(this.time * 9) % 4]] : SPR.tito[0];
-    this.sprite(frame, x, y + 1, flip, T.flash > 0 && Math.floor(this.time * 30) % 2 === 0);
-    // vida do Tito (barra ciano como no original, acima da cabeça)
+    const flip = T.moving ? T.face < 0 : near ? isoU(near.x, near.y) < isoU(T.x, T.y) : false;
+    const img = charSprite("tito", { walk: T.moving ? (this.time * 1.8) % 1 : -1, act: T.drum > 0 ? 1 : 0, t: this.time }, 1);
+    const g = this.lg;
+    const hurt = T.flash > 0 && Math.floor(this.time * 30) % 2 === 0;
+    g.save();
+    g.translate(x, 0);
+    if (flip) g.scale(-1, 1);
+    if (hurt) g.globalAlpha = 0.5;
+    g.drawImage(img, -Math.floor(img.width / 2), y + 3 - img.height);
+    g.restore();
+    // vida do Tito acima da cabeça
     const w = 16;
     const hp = clamp(T.hp / T.maxHp, 0, 1);
-    const g = this.lg;
     g.fillStyle = "rgba(0,0,0,0.6)";
-    g.fillRect(x - w / 2, y - 27, w, 2);
+    g.fillRect(x - w / 2, y - 37, w, 2);
     g.fillStyle = "#4adcd0";
-    g.fillRect(x - w / 2, y - 27, Math.round(w * hp), 2);
+    g.fillRect(x - w / 2, y - 37, Math.round(w * hp), 2);
   }
 
   private drawMonster(run: Run, m: Monster): void {
@@ -670,6 +751,32 @@ export class Scene {
       g.fillRect(x, my - 1, 1, 1);
     }
     void d;
+  }
+
+  /** gaiola de pautas com a Clara dormindo dentro */
+  private drawCage(x: number, y: number): void {
+    const g = this.lg;
+    const b = Math.round(Math.sin(this.time * 1.6) * 2);
+    const top = y - 50 + b;
+    g.fillStyle = "rgba(0,0,0,0.45)";
+    g.beginPath();
+    g.ellipse(x, y, 14, 5, 0, 0, TAU);
+    g.fill();
+    g.globalCompositeOperation = "lighter";
+    const gr = g.createRadialGradient(x, top + 24, 0, x, top + 24, 30);
+    gr.addColorStop(0, "rgba(140,200,255,0.35)");
+    gr.addColorStop(1, "rgba(140,200,255,0)");
+    g.fillStyle = gr;
+    g.fillRect(x - 30, top - 6, 60, 60);
+    g.globalCompositeOperation = "source-over";
+    const c = charSprite("clara", { walk: -1, act: 0, sleep: true, t: this.time }, 1);
+    g.drawImage(c, x - Math.floor(c.width / 2), top + 44 - c.height + 2);
+    g.fillStyle = "#e8c060";
+    for (let i = 0; i < 5; i++) g.fillRect(x - 15, top + 8 + i * 8, 30, 1);
+    for (let i = -2; i <= 2; i++) g.fillRect(x + i * 7, top + 4, 1, 42);
+    g.fillRect(x - 16, top + 45, 32, 2);
+    g.fillRect(x - 11, top + 2, 22, 2);
+    g.fillRect(x - 1, top - 3, 2, 5);
   }
 
   private drawMaestro(run: Run, m: Monster): void {

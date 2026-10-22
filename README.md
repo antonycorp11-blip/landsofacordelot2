@@ -13,6 +13,8 @@ Cortar uma Dissonância é regê-la de volta à afinação, e por isso cada abat
 - Fantasma da Ópera;
 - Supremo Desafinado.
 
+A história abre com uma **cutscene animada** (cidade à noite, o concerto, o Trítono rasgando a Partitura, a gaiola, a batuta voando para o Tito), toda desenhada por código. Ela pode ser revista no menu da oficina.
+
 O irmão mais novo dela, **Tito**, sai com o seu tambor para recuperar as páginas. A **Dona Fermata** é a velha professora que ensina os dois na oficina. A cada vitória a história avança:
 - cenas com retratos;
 - o passado do Trítono, que já foi aluno dela;
@@ -41,17 +43,19 @@ Os monstros são criaturas musicais:
 
 **Você é o cursor.** Corte os monstros passando o mouse rápido ou arrastando o dedo por cima deles, e proteja o Tito.
 
-- **Exploração:** clique ou toque no chão (ou use WASD) para o Tito andar. Nos **salões** entre as lutas:
+- **Antessalas:** o Tito só anda nas antessalas entre as lutas. Clique ou toque no chão (ou use WASD). Nelas:
   - a Clara quebra caixotes, barris, vasos e caixas de música, que soltam itens (o Tito precisa passar perto para pegar);
   - os **baús musicais** abrem quando você corta as notas do cadeado (um acorde) num traço só;
-  - os **ecos de memória** contam o passado da Clara.
+  - os **ecos de memória** contam o passado da Clara;
+  - os **pergaminhos do Diário de Teodoro** contam quem o Maestro Trítono era antes da máscara e por que ele fez o que fez.
+- **Salas de luta:** o Tito vai para o centro e fica parado tocando o tambor, como num tower defense. Só a batuta o protege. Ao limpar a sala, ele segue sozinho para a próxima antessala.
 - **Habilidades do Tito** (teclas 1 a 4 ou os botões):
   - **Rufar:** todo corte conta como no tempo.
   - **Fortíssimo:** dano dobrado.
   - **Pancada:** atordoa os monstros; atordoados sofrem mais dano.
   - **Metrônomo:** deixa tudo lento.
 - **Rastro:** o rastro da batuta corta e evolui na árvore. Há visuais diferentes: Prata, Ouro, Prisma, Brasa e Poeira estelar.
-- **Chefes:** cada forma tem ataques marcados no chão (teclas de piano, lustres, rajadas de tubos). Mova o Tito para desviar.
+- **Chefes:** cada forma ataca de um jeito (notas, teclas de piano, batutas, lustres que caem, ondas que drenam o vigor). Corte os projéteis antes que cheguem no Tito.
 
 ## Na masmorra
 
@@ -76,7 +80,7 @@ Os monstros são criaturas musicais:
   - Ópera em Ruínas (Lá)
   - Coliseu dos Ecos (Mi)
 
-Todo o visual é desenhado por código (sprites em texto) e todo o som é sintetizado em WebAudio: cada corte toca a nota do monstro.
+Todo o visual é desenhado por código (personagens em formas vetoriais pixelizadas, cenários e cutscenes) e todo o som é sintetizado em WebAudio: cada corte toca a nota do monstro.
 
 ## Desenvolvimento
 

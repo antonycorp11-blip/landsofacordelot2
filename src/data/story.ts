@@ -1,6 +1,6 @@
 /** História: "A Última Nota". Falas com retrato; Clara é a irmã presa na batuta (você). */
 
-export type Speaker = "tito" | "fermata" | "tritono" | "clara" | "narrador";
+export type Speaker = "tito" | "fermata" | "tritono" | "clara" | "narrador" | "diario";
 
 export interface Line {
   who: Speaker;
@@ -13,6 +13,7 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
   tritono: { name: "MAESTRO TRÍTONO", color: "#ff5a6a" },
   clara: { name: "CLARA", color: "#b0e0ff" },
   narrador: { name: "", color: "#e8e2d4" },
+  diario: { name: "DIÁRIO DE TEODORO", color: "#5a3a20" },
 };
 
 const L = (who: Speaker, text: string): Line => ({ who, text });
@@ -257,4 +258,38 @@ export const FERMATA_TIPS = [
   "As partituras que o Trítono deixa cair valem mais que ouro. Guarde para as lições mais difíceis.",
   "Quando estiver sem fôlego, pare. Até o maior maestro respira entre os compassos.",
   "Cada lugar novo tem um sustenido a mais. Leia o nome das notas antes de cortar.",
+];
+
+/** páginas do diário do maestro (Teodoro Valente, o Trítono), espalhadas pelas antessalas */
+export const DIARY: string[][] = [
+  [
+    "Hoje faço nove anos. A Dona Fermata me achou dormindo na escada do teatro, me deu pão e um canto no porão. Ela diz que eu tenho ouvido de lobo.",
+    "Descobri um som que ninguém toca: Fá e Si juntos. Treme como um trovão preso numa caixa. A Dona Fermata franziu a testa: 'O trítono, Teodoro. Ele pede para resolver.'",
+    "Os meninos do coral me chamam de Desafinado. Só porque eu gosto dos sons de que eles têm medo.",
+    "Toquei meu trítono para o porão vazio. Os ratos não fugiram. Pelo menos alguém me escuta.",
+  ],
+  [
+    "Entrei no Conservatório! Turma de piano. A sala tem mais teclas do que eu tenho amigos.",
+    "Compus minha primeira peça: 'Noturno para o que Ninguém Ouve'. O professor rasgou na minha frente. 'Harmonia não é lugar para dissonâncias.'",
+    "Uma menininha da regência, de laço lilás, entrou escondida e tocou a minha peça inteira. Errou tudo. E sorriu. Ninguém nunca tinha tocado algo meu.",
+    "Fui expulso. O Conselho de Harmonia proibiu o trítono em toda a cidade. Chamaram de 'o diabo na música'. Então é isso que eu sou.",
+  ],
+  [
+    "Moro na torre do órgão agora. O sacristão deixa, desde que eu não toque nada triste. Eu toco baixinho, à noite.",
+    "Mamãe morreu esta semana. Toquei no enterro e ninguém ouviu: a cidade inteira estava na festa da pequena regente prodígio. A menina do laço lilás.",
+    "Não tenho raiva da menina. Tenho raiva de uma cidade que só sabe aplaudir o que é bonito.",
+    "Escrevi uma sinfonia inteira feita de trítonos: a 'Sinfonia do Silêncio'. Se a cidade não quer ouvir, vai ouvir à força.",
+  ],
+  [
+    "Aluguei a Ópera com tudo o que eu tinha. Cartazes pela cidade toda: 'Estreia do jovem maestro'.",
+    "Ninguém veio. Ninguém. Toquei até o amanhecer para mil cadeiras vazias. O faxineiro me pediu para sair.",
+    "Achei uma máscara velha no camarim. Com ela ninguém vê meu rosto chorando. Com ela, sou só o Trítono.",
+    "A Partitura Primordial mantém a cidade afinada. Se eu a rasgar, as notas ficam livres. Livres para desafinar comigo.",
+  ],
+  [
+    "Preciso de uma regente. Só uma pessoa já tocou minha música sem medo: a menina do laço lilás. A Clara.",
+    "Ela cresceu. Rege como quem abraça. Se ela reger a Sinfonia do Silêncio, a cidade vai finalmente me ouvir.",
+    "Eu não queria a gaiola. Mas ela não viria por vontade própria. Ninguém nunca vem por vontade própria.",
+    "Se você está lendo isto, menino do tambor… talvez alguém esteja me ouvindo, afinal.",
+  ],
 ];
