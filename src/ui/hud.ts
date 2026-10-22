@@ -1,6 +1,6 @@
 import { fmt } from "../core/format";
 import { TAU } from "../core/math";
-import { DEGREE_COLORS, degreeNote } from "../data/content";
+import { DEGREE_COLORS, SKILLS, degreeNote } from "../data/content";
 import { level, type Profile } from "../game/profile";
 import type { Run, SimEvent } from "../game/sim";
 import type { Line } from "../data/story";
@@ -14,6 +14,7 @@ export interface HudHost {
   toggleMute(): void;
   muted(): boolean;
   abandon(): void;
+  useSkill(id: string): void;
   readonly dialog: Dialog;
 }
 
@@ -50,6 +51,8 @@ export class Hud {
         </div>
         <div class="money"><span><i class="cn n">♪</i><b class="mn"></b></span><span><i class="cn c">◆</i><b class="mc"></b></span><span class="sp"><i class="cn p">▤</i><b class="mp"></b></span></div>
       </div>
+      <div class="skills">${SKILLS.map((k) => `<button class="sk sk-${k.id}" data-act="skill:${k.id}" title="${k.name}: ${k.desc}"><i class="ski ${k.id}"></i><b>${host.touch ? "" : k.key}</b><s></s><span>${k.name}</span></button>`).join("")}</div>
+      <div class="hint hidden"></div>
       <div class="segs"></div>
       <div class="modal hidden"></div>`;
     parent.appendChild(el);
@@ -70,6 +73,7 @@ export class Hud {
   }
 
   act(a: string): void {
+    if (a.startsWith("skill:")) return this.host.useSkill(a.slice(6));
     switch (a) {
       case "pause":
         if (this.modalOpen) return;
@@ -117,19 +121,32 @@ export class Hud {
         if (e.what === "vigor") this.feed(`+${e.n} de Vigor`, "vig");
         else if (e.what === "exp") this.feed(`+${fmt(e.n)} EXP`, "exp");
         else if (e.what === "cristais") this.feed(`+${e.n} ${e.n > 1 ? "Cristais" : "Cristal"}`, "cri");
+        else if (e.what === "notas") this.feed(`+${e.n} ♪`, "not");
+        else if (e.what === "vida") this.feed(`+${e.n} de vida do Tito`, "ok");
         else this.feed(`+${e.n} Partitura${e.n > 1 ? "s" : ""}`, "par");
-      } else if (e.k === "roomClear") this.feed("Sala afinada!", "ok");
+      } else if (e.k === "roomClear") {
+        this.feed("Sala afinada!", "ok");
+        this.hint(this.host.touch ? "Toque no chão para andar · siga a seta" : "Clique no chão ou use WASD para andar · siga a seta", 4);
+      } else if (e.k === "enter" && e.kind === "hall" && e.i === 0) this.hint(this.host.touch ? "Toque no chão para o Tito andar · arraste para cortar" : "Clique no chão ou use WASD para o Tito andar · passe o mouse para cortar", 6);
       else if (e.k === "beat") {
         this.root.querySelectorAll(".slot.beat i").forEach((d, i) => d.classList.toggle("on", i === e.n % 4));
       }
     }
   }
 
+  private hintT = 0;
+  hint(text: string, t: number): void {
+    const h = this.q(".hint");
+    h.textContent = text;
+    h.classList.remove("hidden");
+    this.hintT = t;
+  }
+
   // ------------------------------------------------------------ por quadro
   update(dt: number): void {
     const run = this.host.run;
     const p = this.host.profile;
-    this.q(".place").innerHTML = `${run.dungeon.name} <span>|</span> <em>Ensaio ${p.day}</em>`;
+    this.q(".place").innerHTML = `${run.dungeon.name} <span>|</span> <em>${run.room.kind === "hall" ? "Salão" : run.room.boss ? "Palco do Trítono" : `Sala ${run.fightNo}`} · Ensaio ${p.day}</em>`;
     (this.q(".room i") as HTMLElement).style.width = `${run.roomProgress() * 100}%`;
     (this.q(".hp i") as HTMLElement).style.width = `${Math.max(0, (run.tito.hp / run.tito.maxHp) * 100)}%`;
     this.q(".lv").textContent = String(level(p.exp + run.exp).lvl);
@@ -144,6 +161,19 @@ export class Hud {
       s.classList.toggle("done", run.rooms[i].cleared);
       s.classList.toggle("cur", i === run.roomI);
     });
+    for (const k of SKILLS) {
+      const b = this.q(`.sk-${k.id}`);
+      const has = run.st.skills.includes(k.id);
+      b.classList.toggle("hidden", !has);
+      const full = k.id === "rufar" ? run.st.rufarCd : k.cd;
+      (b.querySelector("s") as HTMLElement).style.height = `${(run.skillCd[k.id] / full) * 100}%`;
+      b.classList.toggle("on", run.skillT[k.id] > 0);
+      b.classList.toggle("ready", run.skillCd[k.id] <= 0);
+    }
+    if (this.hintT > 0) {
+      this.hintT -= dt;
+      if (this.hintT <= 0) this.q(".hint").classList.add("hidden");
+    }
     this.drawOrb(run);
     this.drawMini(run);
     this.chordBox(run);

@@ -1,8 +1,8 @@
 import { fmt } from "../core/format";
 import { TAU } from "../core/math";
-import { DUNGEONS, KEYS, MAJOR, TREE, type Currency, type TreeNode } from "../data/content";
+import { DUNGEONS, KEYS, MAJOR, TRAILS, TREE, TREE_BRANCH, type Currency, type TrailId, type TreeNode } from "../data/content";
 import { PORTRAITS } from "../render/pixels";
-import { buyNode, canBuy, level, lvl, nodeCost, nodeVisible, type Profile } from "../game/profile";
+import { buyNode, canBuy, level, lvl, nodeCost, nodeVisible, trailsUnlocked, type Profile } from "../game/profile";
 
 export type HubTab = "mapa" | "habilidades";
 
@@ -313,6 +313,12 @@ export class Hub {
           this.host.sound([72 + (TREE.findIndex((n) => n.id === arg) % 7) * 2, 79]);
         }
         break;
+      case "trail":
+        if (trailsUnlocked(p).includes(arg as TrailId)) {
+          p.trail = arg as TrailId;
+          this.host.save();
+        }
+        break;
       case "talk":
         this.host.talk();
         return;
@@ -347,7 +353,16 @@ export class Hub {
       </div>
       <div class="stage"></div>
       <div class="bottom">${this.tab === "habilidades" ? `<span class="avail">${avail ? `${avail} ${avail > 1 ? "lições" : "lição"} disponíve${avail > 1 ? "is" : "l"}` : ""}</span>` : ""}<button class="enter" data-act="enter">COMEÇAR O ENSAIO ▶</button></div>
-      ${this.menuOpen ? `<div class="dropdown"><button data-act="mute">Som: ${this.host.muted() ? "desligado" : "ligado"}</button><button data-act="reset" class="red">${this.confirmReset ? "Confirmar: apagar tudo" : "Apagar progresso"}</button></div>` : ""}`;
+      ${
+        this.menuOpen
+          ? `<div class="dropdown"><button data-act="mute">Som: ${this.host.muted() ? "desligado" : "ligado"}</button>
+        <small class="dh">Rastro da batuta</small><div class="trailpick">${TRAILS.map((t) => {
+          const ok = trailsUnlocked(p).includes(t.id);
+          return `<button class="${p.trail === t.id ? "on" : ""}" ${ok ? `data-act="trail:${t.id}"` : "disabled"} title="${ok ? "" : t.level ? `Nível ${t.level}` : "Libere na árvore (Rastro)"}">${ok ? t.name : "🔒 " + t.name}</button>`;
+        }).join("")}</div>
+        <button data-act="reset" class="red">${this.confirmReset ? "Confirmar: apagar tudo" : "Apagar progresso"}</button></div>`
+          : ""
+      }`;
     const npc = this.root.querySelector(".npc canvas") as HTMLCanvasElement;
     const ng = npc.getContext("2d")!;
     ng.imageSmoothingEnabled = false;
@@ -391,7 +406,7 @@ export class Hub {
       <div class="hints"><span><i class="k">${this.host.touch ? "toque" : "clique"}</i>Comprar</span><span><i class="k">${this.host.touch ? "pinça" : "roda"}</i>Zoom</span><span><i class="k">arraste</i>Mover</span></div>
       <div class="tip">${
         vis
-          ? `<h4>${n.name.toUpperCase()}</h4><small>NVL. ${l} / ${n.max}</small><p>${n.desc}</p>
+          ? `<h4>${n.name.toUpperCase()}</h4><small>${n.branch === "root" ? "" : TREE_BRANCH[n.branch].name.toUpperCase() + " · "}NVL. ${l} / ${n.max}</small><p>${n.desc}</p>
         ${maxed ? '<div class="cost done">COMPLETO</div>' : `<button class="cost ${have >= cost ? "ok" : ""}" data-act="buy:${n.id}">${CUR_ICON[n.cur]} ${fmt(Math.floor(have))} / ${fmt(cost)}</button>`}`
           : `<h4>???</h4><p>Compre uma habilidade vizinha para revelar.</p>`
       }</div>`;
@@ -537,7 +552,8 @@ export class Hub {
       g.fill();
       g.shadowBlur = 0;
       g.lineWidth = n.id === this.sel ? 3 : 2;
-      g.strokeStyle = n.id === this.sel ? "#ffffff" : l >= n.max ? "#6ad86a" : l ? "#4aa86a" : afford ? "#e8a050" : "#6a6470";
+      const bc = n.branch === "root" ? "#ffffff" : TREE_BRANCH[n.branch].color;
+      g.strokeStyle = n.id === this.sel ? "#ffffff" : l >= n.max ? bc : l ? bc : afford ? "#e8a050" : "#6a6470";
       g.stroke();
       g.restore();
       if (n.max > 1 && l > 0) {

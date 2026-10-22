@@ -595,6 +595,11 @@ button {
 .dropdown button:hover {
   background: #24222a;
 }
+.dropdown .dh {
+  padding: 6px 18px 0;
+  color: var(--muted);
+  font-size: 16px;
+}
 .dropdown .red {
   color: #ff8a8a;
 }
@@ -1088,5 +1093,142 @@ button {
   }
   .hints {
     display: none;
+  }
+}
+
+/* ===================================================== habilidades do Tito e dicas */
+.skills {
+  position: absolute;
+  right: calc(14px + var(--sr));
+  bottom: calc(18px + var(--sb));
+  display: flex;
+  gap: 6px;
+}
+.sk {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  background: #1a1420;
+  border: 2px solid #4a3e56;
+  box-shadow: 0 0 0 2px #050406;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+.sk.ready {
+  border-color: #c8a060;
+}
+.sk.on {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #050406, 0 0 16px #ffd27a;
+}
+.sk s {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+.sk b {
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  font-weight: normal;
+  font-size: 16px;
+  color: #b8a8c8;
+}
+.sk span {
+  position: absolute;
+  bottom: 1px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 13px;
+  color: #d8d0e0;
+}
+.ski {
+  display: block;
+  width: 26px;
+  height: 22px;
+  margin-bottom: 8px;
+}
+.ski.rufar {
+  border-radius: 50% / 30%;
+  background: radial-gradient(ellipse at 50% 30%, #f4eee4 30%, #c83a3a 32%);
+  border: 2px solid #e8c050;
+}
+.ski.forte {
+  background: none;
+  font: 24px Georgia, serif;
+}
+.ski.forte::before {
+  content: "ff";
+  color: #ff6a5a;
+  font-style: italic;
+  font-weight: bold;
+}
+.ski.pancada {
+  border-radius: 50%;
+  border: 3px solid #ffd27a;
+  box-shadow: 0 0 0 4px rgba(255, 210, 122, 0.3);
+}
+.ski.metro {
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-bottom: 22px solid #a8743e;
+}
+.hud .hint {
+  position: absolute;
+  left: 50%;
+  top: calc(60px + var(--st));
+  transform: translateX(-50%);
+  background: rgba(14, 10, 20, 0.88);
+  border: 1px solid #4a3e56;
+  padding: 4px 14px;
+  font-size: 22px;
+  color: #ffe9b0;
+  pointer-events: none !important;
+  white-space: nowrap;
+}
+.feed .not {
+  color: #f0ead8;
+}
+.trailpick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px 10px;
+}
+.trailpick button {
+  border: 2px solid #3c3048;
+  padding: 3px 8px;
+  font-size: 18px;
+  background: #18121e;
+}
+.trailpick button.on {
+  border-color: #ffd27a;
+  color: #ffd27a;
+}
+.trailpick button:disabled {
+  opacity: 0.35;
+}
+@media (max-height: 500px) {
+  .sk {
+    width: 48px;
+    height: 48px;
+  }
+  .sk span {
+    display: none;
+  }
+  .ski {
+    margin-bottom: 0;
+  }
+  .hud .hint {
+    font-size: 17px;
+    top: calc(50px + var(--st));
   }
 }

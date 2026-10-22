@@ -1,4 +1,4 @@
-import { CHORDS, DUNGEONS, TREE, type ChordDef, type Currency } from "../data/content";
+import { CHORDS, DUNGEONS, SKILLS, TRAILS, TREE, type ChordDef, type Currency, type SkillId, type TrailId } from "../data/content";
 
 export interface Profile {
   version: number;
@@ -17,12 +17,13 @@ export interface Profile {
   seen: Record<string, boolean>;
   introDone: boolean;
   muted: boolean;
+  trail: TrailId;
 }
 
-export const SAVE_KEY = "dissonancia-v2";
+export const SAVE_KEY = "dissonancia-v3";
 
 export function newProfile(): Profile {
-  return { version: 2, notas: 0, cristais: 0, partituras: 0, exp: 0, nodes: { corte: 1 }, unlocked: 0, cleared: {}, day: 0, kills: 0, chords: 0, seen: {}, introDone: false, muted: false };
+  return { version: 2, notas: 0, cristais: 0, partituras: 0, exp: 0, nodes: { corte: 1 }, unlocked: 0, cleared: {}, day: 0, kills: 0, chords: 0, seen: {}, introDone: false, muted: false, trail: "prata" };
 }
 
 export function loadProfile(raw: string | null): Profile {
@@ -96,6 +97,7 @@ export interface Stats {
   markChance: number;
   flow: boolean;
   gliss: number;
+  width: number;
   vigor: number;
   vigorRegen: number;
   hitCost: number;
@@ -108,8 +110,18 @@ export interface Stats {
   chordMul: number;
   scales: boolean;
   titoHp: number;
-  batuque: boolean;
   titoRegen: number;
+  titoSpeed: number;
+  rufarDur: number;
+  rufarCd: number;
+  skills: SkillId[];
+  trailTime: number;
+  trailDmg: number;
+  prisma: boolean;
+  brasa: boolean;
+  estelar: boolean;
+  magnet: number;
+  lootMul: number;
   notasMul: number;
   cristaisMul: number;
   expMul: number;
@@ -128,6 +140,7 @@ export function computeStats(p: Profile): Stats {
     markChance: 0.06 + 0.05 * L("marcados"),
     flow: L("fluxo") > 0,
     gliss: 0.4 * L("gliss"),
+    width: 1 + 0.2 * L("largo"),
     vigor: 100 + 15 * L("vigor"),
     vigorRegen: 1 + 0.15 * L("folego"),
     hitCost: Math.pow(0.93, L("leveza")),
@@ -140,12 +153,27 @@ export function computeStats(p: Profile): Stats {
     chordMul: 1 + 0.25 * L("acorde"),
     scales: L("escala") > 0,
     titoHp: 100 * (1 + 0.2 * L("tambor")),
-    batuque: L("batuque") > 0,
     titoRegen: 0.6 * L("cura"),
+    titoSpeed: 1 + 0.12 * L("passo"),
+    rufarDur: 5 + L("rufar2"),
+    rufarCd: 16 - L("rufar2"),
+    skills: SKILLS.filter((k) => !k.node || L(k.node) > 0).map((k) => k.id),
+    trailTime: 0.1 + 0.05 * L("rastro"),
+    trailDmg: L("rastro") ? 0.15 + 0.07 * L("rastro") : 0,
+    prisma: L("prisma") > 0,
+    brasa: L("brasa") > 0,
+    estelar: L("estelar") > 0,
+    magnet: 26 + 14 * L("bolso"),
+    lootMul: 1 + 0.5 * L("bau"),
     notasMul: 1 + 0.12 * L("gorjeta"),
     cristaisMul: 1 + 0.2 * L("afinacao"),
     expMul: 1 + 0.15 * L("estudo"),
     spawnMul: 1 + 0.15 * L("plateia"),
     chords: CHORDS.filter((c) => !c.node || L(c.node) > 0),
   };
+}
+
+/** rastros visuais liberados */
+export function trailsUnlocked(p: Profile): TrailId[] {
+  return TRAILS.filter((t) => (!t.node || lvl(p, t.node) > 0) && (!t.level || level(p.exp).lvl >= t.level)).map((t) => t.id);
 }

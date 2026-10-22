@@ -345,10 +345,8 @@ export function paintRoom(run: Run, r: Room): RoomArt {
   // ------------------------------------------------------------ objetos nos cantos do fundo
   const spots: Pt[] = [
     [22, 22],
-    [70, 14],
-    [14, 70],
-    [130, 12],
-    [12, 140],
+    [14, 90],
+    [100, 12],
   ];
   spots.forEach(([lx, ly], k) => {
     if (H(k, 7) < 0.25) return;

@@ -1,6 +1,6 @@
 import "./styles.css";
 import { Synth } from "./audio/synth";
-import { DUNGEONS, MAJOR, degreeMidi } from "./data/content";
+import { DUNGEONS, MAJOR, degreeMidi, type SkillId } from "./data/content";
 import { BARKS, CLARA_HINTS, FERMATA_TIPS, PROLOGUE, STORY, type Line } from "./data/story";
 import { SAVE_KEY, computeStats, loadProfile, type Profile } from "./game/profile";
 import { Run, type SimEvent } from "./game/sim";
@@ -176,7 +176,9 @@ class App {
     this.save();
     document.body.classList.add("in-run");
     this.scene.reset();
-    const run = new Run(computeStats(this.profile), dIdx, (Math.random() * 1e9) | 0);
+    const mems = STORY[dIdx].memories.filter((_, i) => !this.profile.seen[`mem${dIdx}_${i}`]);
+    const run = new Run(computeStats(this.profile), dIdx, (Math.random() * 1e9) | 0, mems);
+    this.scene.trailSkin = this.profile.trail;
     this.run = run;
     this.synth.drone(run.key.root);
     this.hud?.destroy();
@@ -189,6 +191,7 @@ class App {
         toggleMute: () => this.toggleMute(),
         muted: () => this.synth.muted,
         abandon: () => this.endRun(),
+        useSkill: (id) => this.useSkill(id as SkillId),
         dialog: this.dialog,
       },
       this.ui,
@@ -200,6 +203,20 @@ class App {
       this.save();
       this.dialog.say(STORY[dIdx].intro);
     } else setTimeout(() => this.scene.say(pick(BARKS.start)), 600);
+  }
+
+  private useSkill(id: SkillId): void {
+    const r = this.run;
+    if (!r || this.paused || this.dialog.open || this.ended) return;
+    if (r.useSkill(id)) {
+      this.scene.say(BARKS.skill[id]);
+      this.barkCd = 3;
+      const k = r.key.root;
+      if (id === "rufar") for (let i = 0; i < 8; i++) setTimeout(() => this.synth.tick(i % 4 === 0), i * 45);
+      else if (id === "pancada") this.synth.kick();
+      else if (id === "forte") this.synth.chord([0, 7, 12].map((m) => k + m), 0.6);
+      else this.synth.pluck(k + 12, 0.4, 0.6, 1.4);
+    }
   }
 
   private endRun(): void {
@@ -241,14 +258,28 @@ class App {
     window.addEventListener("keydown", () => this.synth.unlock(), { capture: true });
     cv.addEventListener("contextmenu", (e) => e.preventDefault());
     const iso = (e: PointerEvent) => this.scene.toIso(e.clientX, e.clientY);
+    /** clique/toque no chão: o Tito anda até lá */
+    const walk = (e: PointerEvent) => {
+      if (!this.run || this.dialog.open || this.paused) return;
+      const w = iso(e);
+      // o ponto clicado está no chão: desfaz a projeção
+      const x = w.v + w.u / 2;
+      const y = w.v - w.u / 2;
+      this.run.moveTo(x, y);
+      this.scene.markDest(w.u, w.v);
+    };
+    let down: { x: number; y: number; t: number } | null = null;
     cv.addEventListener("pointerdown", (e) => {
       if (!this.run) return;
-      if (e.pointerType !== "mouse") {
-        this.touchId = e.pointerId;
-        cv.setPointerCapture(e.pointerId);
-        const w = iso(e);
-        this.run.setCursor(w.u, w.v, true);
+      if (e.pointerType === "mouse") {
+        if (e.button === 0 || e.button === 2) walk(e);
+        return;
       }
+      this.touchId = e.pointerId;
+      down = { x: e.clientX, y: e.clientY, t: performance.now() };
+      cv.setPointerCapture(e.pointerId);
+      const w = iso(e);
+      this.run.setCursor(w.u, w.v, true);
     });
     cv.addEventListener("pointermove", (e) => {
       if (!this.run) return;
@@ -262,6 +293,9 @@ class App {
       if (this.run && e.pointerType !== "mouse" && e.pointerId === this.touchId) {
         this.touchId = -1;
         this.run.setCursor(this.run.cursor.u, this.run.cursor.v, false);
+        // toque curto e parado = andar
+        if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 14 && performance.now() - down.t < 320) walk(e);
+        down = null;
       }
     };
     cv.addEventListener("pointerup", up);
@@ -272,16 +306,39 @@ class App {
         this.run.setCursor(this.run.cursor.u, this.run.cursor.v, false);
       }
     });
+    const keys = new Set<string>();
+    const updateDir = () => {
+      if (!this.run) return;
+      const sx = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
+      const sy = (keys.has("s") || keys.has("arrowdown") ? 1 : 0) - (keys.has("w") || keys.has("arrowup") ? 1 : 0);
+      this.run.moveDir(sx, sy);
+    };
     window.addEventListener("keydown", (e) => {
       if (this.mode !== "run" || this.ended || !this.hud) return;
       const k = e.key.toLowerCase();
       if (this.dialog.open && (k === " " || k === "enter")) {
         e.preventDefault();
         this.dialog.next();
-      } else if (k === "escape" || k === "p") {
+        return;
+      }
+      if (k === "escape" || k === "p") {
         if (this.paused) this.hud.act("resume");
         else this.hud.act("pause");
       } else if (k === "m") this.toggleMute();
+      else if (["1", "2", "3", "4"].includes(k)) this.useSkill((["rufar", "forte", "pancada", "metro"] as SkillId[])[Number(k) - 1]);
+      else if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) {
+        e.preventDefault();
+        keys.add(k);
+        updateDir();
+      }
+    });
+    window.addEventListener("keyup", (e) => {
+      keys.delete(e.key.toLowerCase());
+      updateDir();
+    });
+    window.addEventListener("blur", () => {
+      keys.clear();
+      updateDir();
     });
   }
 
@@ -346,6 +403,64 @@ class App {
         case "parry":
           s.pluck(key.root + 31, 0.2, 1.5, 0.3);
           break;
+        case "enter": {
+          const p = this.profile;
+          const d = r.dIdx;
+          if (e.kind === "boss") {
+            s.drone(key.root + 6);
+            const first = !p.seen[`boss${d}`];
+            p.seen[`boss${d}`] = true;
+            this.save();
+            setTimeout(() => this.dialog.say(first ? STORY[d].boss : STORY[d].bossAgain), 500);
+          } else if (e.kind === "fight" && e.fightNo === 2 && !p.seen[`mid${d}`]) {
+            p.seen[`mid${d}`] = true;
+            this.save();
+            setTimeout(() => this.dialog.say(STORY[d].mid), 300);
+          } else if (e.kind === "hall" && r.room.chest && !p.seen.chestHelp) {
+            p.seen.chestHelp = true;
+            this.save();
+            setTimeout(
+              () =>
+                this.dialog.say([
+                  { who: "tito", text: "Olha ali, um baú musical! Tem três cadeados em forma de nota." },
+                  { who: "clara", text: "É um acorde, Tito. Se eu cortar as três notas do cadeado num traço só, ele abre." },
+                ]),
+              400,
+            );
+          } else if (e.kind === "hall" && e.i > 0) this.barkOf(BARKS.door, 0.6);
+          if (d === 0 && e.kind === "fight" && e.fightNo <= CLARA_HINTS.length && !p.seen[`hint${e.fightNo}`] && e.fightNo !== 2) {
+            p.seen[`hint${e.fightNo}`] = true;
+            this.save();
+            setTimeout(() => this.dialog.say([{ who: "clara", text: CLARA_HINTS[e.fightNo - 1] }]), 300);
+          }
+          break;
+        }
+        case "memory": {
+          const d = r.dIdx;
+          const idx = STORY[d].memories.indexOf(e.text);
+          if (idx >= 0) this.profile.seen[`mem${d}_${idx}`] = true;
+          this.save();
+          [0, 4, 7, 11].forEach((m, i) => setTimeout(() => s.pluck(key.root + 12 + m, 0.25, 1.4, 1), i * 120));
+          setTimeout(() => this.dialog.say([{ who: "narrador", text: "Um eco de memória brilha no chão…" }, { who: "clara", text: e.text }]), 200);
+          break;
+        }
+        case "prop":
+          s.pluck(e.broke ? key.root - 5 : key.root + 7, e.broke ? 0.35 : 0.15, 0.4, 0.3);
+          if (e.type === "caixamusica" && e.broke) [0, 4, 7, 12, 16].forEach((m, i) => setTimeout(() => s.pluck(key.root + 12 + m, 0.2, 1.6, 0.5), i * 90));
+          break;
+        case "lock":
+          s.pluck(degreeMidi(key, e.deg, 1), 0.45, 1.3, 0.9);
+          break;
+        case "chest":
+          this.barkOf(BARKS.chestOk, 1);
+          [0, 4, 7, 12, 16, 19].forEach((m, i) => setTimeout(() => s.pluck(key.root + 12 + m, 0.3, 1.5, 0.7), i * 70));
+          break;
+        case "strike":
+          if (e.hit) s.sour(key.root - 12, 0.4);
+          else s.pluck(key.root - 17, 0.3, 0.3, 0.4);
+          break;
+        case "skill":
+          break;
         case "roomClear":
           this.barkOf(BARKS.clear, 0.8);
           [
@@ -356,36 +471,14 @@ class App {
           ].forEach((c, i) => setTimeout(() => s.chord(c.map((m) => key.root + m), 0.45), i * 240));
           break;
         case "first": {
-          if (e.what === "boss") {
-            s.drone(key.root + 6);
-            break;
-          }
           const p = this.profile;
           if (p.seen[e.what]) break;
           p.seen[e.what] = true;
           this.save();
           if (e.what === "armor") this.scene.say(BARKS.armor[0]);
           else if (e.what === "marked") this.scene.say(BARKS.markedFirst[0]);
+          else if (e.what === "props") this.scene.say(BARKS.breakIt[1]);
           this.barkCd = 4;
-          break;
-        }
-        case "enter": {
-          const p = this.profile;
-          const d = r.dIdx;
-          if (e.boss) {
-            const first = !p.seen[`boss${d}`];
-            p.seen[`boss${d}`] = true;
-            this.save();
-            setTimeout(() => this.dialog.say(first ? STORY[d].boss : STORY[d].bossAgain), 500);
-          } else if (e.i === 2 && !p.seen[`mid${d}`]) {
-            p.seen[`mid${d}`] = true;
-            this.save();
-            setTimeout(() => this.dialog.say(STORY[d].mid), 300);
-          } else if (d === 0 && e.i >= 1 && e.i <= CLARA_HINTS.length && !p.seen[`hint${e.i}`]) {
-            p.seen[`hint${e.i}`] = true;
-            this.save();
-            setTimeout(() => this.dialog.say([{ who: "clara", text: CLARA_HINTS[e.i - 1] }]), 300);
-          }
           break;
         }
         case "won":
@@ -421,12 +514,17 @@ class App {
         if (n === 5) this.acc = 0;
       }
       if (r.events.length) {
+        const mn = document.querySelector(".money .mn");
+        if (mn) {
+          const b = mn.getBoundingClientRect();
+          this.scene.home = { x: b.left + 8, y: b.top + b.height / 2 };
+        }
         this.scene.consume(r, r.events);
         this.hud.onEvents(r.events);
         this.react(r.events);
         const done = r.events.some((e) => e.k === "over" || e.k === "won");
         r.events.length = 0;
-        if (done) setTimeout(() => this.endRun(), 800);
+        if (done) setTimeout(() => this.run === r && this.endRun(), 800);
       }
       this.hud.update(frozen ? 0 : dt);
       const shown = this.touch ? this.touchId >= 0 : this.pointerIn;

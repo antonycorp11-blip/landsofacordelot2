@@ -89,10 +89,10 @@ export interface MonsterDef {
 export const MONSTERS: Record<MonsterId, MonsterDef> = {
   desafinado: { id: "desafinado", name: "Desafinado", hp: 16, armor: 0, r: 6, speed: 28, dmg: 3, notes: 2, exp: 5, fromRoom: 1, fromDungeon: 0, weight: 10, body: 7 },
   tamborim: { id: "tamborim", name: "Tamborim", hp: 9, armor: 0, r: 5, speed: 46, dmg: 3, notes: 1, exp: 4, fromRoom: 2, fromDungeon: 0, weight: 6, body: 5 },
-  cavaleiro: { id: "cavaleiro", name: "Cavaleiro Metrônomo", hp: 34, armor: 40, r: 7, speed: 20, dmg: 8, notes: 5, exp: 10, fromRoom: 2, fromDungeon: 0, weight: 5, body: 9 },
+  cavaleiro: { id: "cavaleiro", name: "Metrônomo Blindado", hp: 34, armor: 40, r: 7, speed: 20, dmg: 8, notes: 5, exp: 10, fromRoom: 2, fromDungeon: 0, weight: 5, body: 9 },
   corista: { id: "corista", name: "Corista Fantasma", hp: 22, armor: 0, r: 6, speed: 30, dmg: 5, notes: 3, exp: 8, fromRoom: 3, fromDungeon: 1, weight: 4, body: 8 },
-  gaiteiro: { id: "gaiteiro", name: "Gaiteiro", hp: 20, armor: 0, r: 6, speed: 28, dmg: 5, notes: 4, exp: 8, fromRoom: 3, fromDungeon: 0, weight: 3, body: 8 },
-  maestro: { id: "maestro", name: "Maestro Trítono", hp: 520, armor: 220, r: 14, speed: 12, dmg: 20, notes: 80, exp: 200, fromRoom: 99, fromDungeon: 0, weight: 0, body: 18 },
+  gaiteiro: { id: "gaiteiro", name: "Sanfona Rabugenta", hp: 20, armor: 0, r: 6, speed: 28, dmg: 5, notes: 4, exp: 8, fromRoom: 3, fromDungeon: 0, weight: 3, body: 8 },
+  maestro: { id: "maestro", name: "Maestro Trítono", hp: 700, armor: 260, r: 15, speed: 12, dmg: 20, notes: 80, exp: 200, fromRoom: 99, fromDungeon: 0, weight: 0, body: 30 },
 };
 
 // ------------------------------------------------------------------ masmorras (prestígio)
@@ -117,10 +117,74 @@ export const DUNGEONS: DungeonDef[] = [
   { id: "coliseu", name: "Coliseu dos Ecos", key: 4, rooms: 9, style: "coliseu", dark: [4, 18, 20], light: "#8affe0" },
 ];
 
-export const dungeonPower = (i: number) => Math.pow(2.2, i);
+export const dungeonPower = (i: number) => Math.pow(3.2, i);
+
+// ------------------------------------------------------------------ formas do chefe
+export interface BossForm {
+  name: string;
+  title: string;
+  hp: number;
+  armor: number;
+}
+
+export const BOSS_FORMS: BossForm[] = [
+  { name: "Trítono", title: "o Regente Mascarado", hp: 700, armor: 260 },
+  { name: "Trítono", title: "o Pianista de Ébano", hp: 820, armor: 320 },
+  { name: "Trítono", title: "o Organista Sombrio", hp: 950, armor: 380 },
+  { name: "Trítono", title: "o Fantasma da Ópera", hp: 1050, armor: 420 },
+  { name: "Trítono", title: "o Supremo Desafinado", hp: 1300, armor: 520 },
+];
+
+// ------------------------------------------------------------------ objetos quebráveis
+export type PropId = "caixote" | "barril" | "vaso" | "caixamusica" | "partituras";
+export const PROPS: Record<PropId, { hp: number; loot: number; r: number }> = {
+  caixote: { hp: 2, loot: 3, r: 7 },
+  barril: { hp: 2, loot: 3, r: 6 },
+  vaso: { hp: 1, loot: 2, r: 5 },
+  caixamusica: { hp: 3, loot: 7, r: 6 },
+  partituras: { hp: 1, loot: 2, r: 6 },
+};
+
+// ------------------------------------------------------------------ habilidades do Tito
+export type SkillId = "rufar" | "forte" | "pancada" | "metro";
+export interface SkillDef {
+  id: SkillId;
+  name: string;
+  desc: string;
+  cd: number;
+  dur: number;
+  key: string;
+  node?: string;
+}
+export const SKILLS: SkillDef[] = [
+  { id: "rufar", name: "Rufar", desc: "Rufar de tambor: todos os cortes contam como no tempo.", cd: 16, dur: 5, key: "1" },
+  { id: "forte", name: "Fortíssimo", desc: "Os cortes causam o dobro de dano e o rastro fica largo.", cd: 24, dur: 6, key: "2", node: "forte" },
+  { id: "pancada", name: "Pancada", desc: "Bate forte no tambor: atordoa e empurra os monstros perto do Tito. Atordoados sofrem mais dano.", cd: 14, dur: 0, key: "3", node: "pancada" },
+  { id: "metro", name: "Metrônomo", desc: "Desacelera o tempo: monstros e tiros ficam muito lentos.", cd: 28, dur: 5, key: "4", node: "metro" },
+];
+
+// ------------------------------------------------------------------ rastros da batuta (visual)
+export type TrailId = "prata" | "ouro" | "prisma" | "brasa" | "estrelas";
+export const TRAILS: { id: TrailId; name: string; node?: string; level?: number }[] = [
+  { id: "prata", name: "Prata" },
+  { id: "ouro", name: "Ouro", level: 3 },
+  { id: "prisma", name: "Prisma (cores das notas)", node: "prisma" },
+  { id: "brasa", name: "Brasa", node: "brasa" },
+  { id: "estrelas", name: "Poeira estelar", node: "estelar" },
+];
 
 // ------------------------------------------------------------------ árvore de habilidades
 export type Currency = "notas" | "cristais" | "partituras";
+export type TreeBranch = "root" | "dano" | "vigor" | "rastro" | "ritmo" | "tito" | "busca";
+
+export const TREE_BRANCH: Record<Exclude<TreeBranch, "root">, { angle: number; color: string; name: string }> = {
+  dano: { angle: -150, color: "#ff8a7a", name: "Corte" },
+  busca: { angle: -90, color: "#ffd27a", name: "Exploração" },
+  vigor: { angle: -30, color: "#f2d860", name: "Vigor" },
+  tito: { angle: 30, color: "#7affb0", name: "Tito" },
+  ritmo: { angle: 90, color: "#7ab8ff", name: "Ritmo e Harmonia" },
+  rastro: { angle: 150, color: "#d8a0ff", name: "Rastro" },
+};
 
 export interface TreeNode {
   id: string;
@@ -132,59 +196,67 @@ export interface TreeNode {
   growth: number;
   /** vizinho necessário (a árvore se revela a partir dos nós comprados) */
   from: string | null;
+  branch: TreeBranch;
   x: number;
   y: number;
   icon: string;
-  dungeon?: number;
 }
 
-const T = (id: string, name: string, desc: string, from: string | null, x: number, y: number, icon: string, max: number, cost: number, cur: Currency = "notas", extra: Partial<TreeNode> = {}): TreeNode => ({
-  id,
-  name,
-  desc,
-  max,
-  cost,
-  cur,
-  growth: max === 1 ? 1 : 1.45,
-  from,
-  x,
-  y,
-  icon,
-  ...extra,
-});
+const T = (id: string, branch: TreeBranch, name: string, desc: string, from: string | null, depth: number, lat: number, icon: string, max: number, cost: number, cur: Currency = "notas"): TreeNode => {
+  let x = 0;
+  let y = 0;
+  if (branch !== "root") {
+    const a = (TREE_BRANCH[branch].angle * Math.PI) / 180;
+    const d = depth * 1.05 + 0.2;
+    x = Math.cos(a) * d - Math.sin(a) * lat * 0.62;
+    y = Math.sin(a) * d + Math.cos(a) * lat * 0.62;
+  }
+  return { id, name, desc, max, cost, cur, growth: max === 1 ? 1 : 1.55, from, branch, x, y, icon };
+};
 
 export const TREE: TreeNode[] = [
-  T("corte", "Corte", "Sua batuta corta tudo que atravessa. +20% de dano de corte.", null, 0, 0, "lua", 1, 0),
-  // dano
-  T("fio", "Fio da Batuta", "+15% de dano de corte.", "corte", -1.1, -0.9, "lamina", 20, 4),
-  T("acertos", "Acertos em Série", "Cada inimigo extra no mesmo corte dá +8% de dano ao corte todo.", "fio", -2.2, -1.5, "multi", 5, 12),
-  T("quebra", "Quebra-Tom", "+30% de dano contra armadura.", "fio", -1.3, -2.1, "escudo", 8, 10),
-  T("execucao", "Execução", "Cortes executam inimigos com menos de 8% de vida (+3% por nível).", "quebra", -2.0, -3.0, "caveira", 5, 1, "cristais"),
-  T("marcados", "Olho Clínico", "+5% de chance de aparecerem monstros marcados.", "acertos", -3.3, -1.9, "marca", 5, 18),
-  T("fluxo", "Estado de Fluxo", "Abater monstros marcados concede um multiplicador de dano de corte (+10% por abate, na sala).", "marcados", -4.1, -1.0, "fluxo", 1, 1, "cristais"),
-  T("gliss", "Glissando", "Cortes longos (atravessando boa parte da tela) causam +40% de dano.", "acertos", -3.0, -0.5, "gliss", 3, 25),
+  T("corte", "root", "Corte", "A batuta da Clara corta tudo que atravessa. +20% de dano de corte.", null, 0, 0, "lua", 1, 0),
+  // corte
+  T("fio", "dano", "Fio da Batuta", "+15% de dano de corte.", "corte", 1, 0, "lamina", 20, 6),
+  T("acertos", "dano", "Acertos em Série", "Cada inimigo extra no mesmo corte dá +8% de dano ao corte todo.", "fio", 2, -0.8, "multi", 5, 20),
+  T("quebra", "dano", "Quebra-Tom", "+30% de dano contra armadura.", "fio", 2, 0.8, "escudo", 8, 16),
+  T("execucao", "dano", "Execução", "Cortes executam inimigos com menos de 8% de vida (+3% por nível).", "quebra", 3, 1.3, "caveira", 5, 2, "cristais"),
+  T("marcados", "dano", "Olho Clínico", "+5% de chance de monstros marcados.", "acertos", 3, -1.3, "marca", 5, 30),
+  T("fluxo", "dano", "Estado de Fluxo", "Abater monstros marcados concede um multiplicador de dano de corte (+10% por abate, na sala).", "marcados", 4, -1.6, "fluxo", 1, 3, "cristais"),
+  T("gliss", "dano", "Glissando", "Cortes longos causam +40% de dano.", "acertos", 3, 0, "gliss", 3, 45),
+  // exploração
+  T("gorjeta", "busca", "Gorjeta", "+12% de notas ♪.", "corte", 1, 0, "moeda", 15, 8),
+  T("bolso", "busca", "Bolso Fundo", "O Tito atrai os itens do chão de mais longe.", "gorjeta", 2, -0.8, "ima", 3, 25),
+  T("bau", "busca", "Ouvido para Baús", "Baús musicais e objetos quebrados soltam +50% de saque.", "gorjeta", 2, 0.8, "bau", 3, 2, "cristais"),
+  T("afinacao", "busca", "Afinação", "+20% de cristais.", "bolso", 3, -1.2, "cristal", 5, 40),
+  T("estudo", "busca", "Estudo", "+15% de EXP.", "bau", 3, 1.2, "livro", 5, 35),
+  T("plateia", "busca", "Plateia", "+15% de monstros por sala (mais perigo, mais saque).", "estudo", 4, 1.4, "plateia", 5, 80),
   // vigor
-  T("vigor", "Vigor", "+15 de vigor máximo.", "corte", 1.1, -0.9, "orbe", 10, 5),
-  T("folego", "Fôlego", "+15% de recuperação do vigor.", "vigor", 2.2, -1.4, "vento", 10, 8),
-  T("leveza", "Mão Leve", "−7% de vigor gasto por acerto.", "vigor", 1.4, -2.1, "pena", 5, 14),
-  T("segundo", "Segundo Fôlego", "Abates devolvem 2 de vigor.", "folego", 3.2, -2.0, "coracao", 5, 20),
-  T("ciclo", "Ciclo das Quintas", "Habilidade: desenhe um círculo em volta dos monstros para golpear todos dentro dele.", "leveza", 2.0, -3.1, "circulo", 1, 2, "cristais"),
-  T("ciclo2", "Quintas Justas", "+40% de dano do Ciclo e −1s de recarga.", "ciclo", 3.0, -3.7, "circulo", 5, 2, "cristais"),
-  // ritmo e harmonia
-  T("tempo", "No Tempo", "Cortes na batida do tambor do Tito causam +20% de dano.", "corte", 0, 1.2, "nota", 8, 6),
-  T("ouvido", "Ouvido Absoluto", "Janela da batida 20% maior.", "tempo", -0.9, 2.1, "ouvido", 3, 16),
-  T("acorde", "Harmonia", "Acordes (as 3 notas num corte só) causam +25% de dano extra.", "tempo", 0.9, 2.1, "acorde", 10, 10),
-  T("menores", "Tríades Menores", "Libera os acordes menores ii, iii e vi.", "acorde", 1.6, 3.0, "acorde", 1, 1, "cristais"),
-  T("setima", "Dominante com Sétima", "Libera o V7: quatro notas, explosão muito maior.", "menores", 2.4, 3.8, "acorde", 1, 1, "partituras"),
-  T("escala", "Escalas", "Três notas em ordem (Dó-Ré-Mi…) num corte devolvem 15 de vigor.", "ouvido", -1.7, 3.0, "escada", 1, 30),
+  T("vigor", "vigor", "Vigor", "+15 de vigor máximo.", "corte", 1, 0, "orbe", 10, 7),
+  T("folego", "vigor", "Fôlego", "+15% de recuperação do vigor.", "vigor", 2, -0.8, "vento", 10, 12),
+  T("leveza", "vigor", "Mão Leve", "−7% de vigor gasto por acerto.", "vigor", 2, 0.8, "pena", 5, 22),
+  T("segundo", "vigor", "Segundo Fôlego", "Abates devolvem 2 de vigor.", "folego", 3, -1.2, "coracao", 5, 35),
+  T("ciclo", "vigor", "Ciclo das Quintas", "Desenhe um círculo em volta dos monstros para golpear todos dentro dele.", "leveza", 3, 1.2, "circulo", 1, 3, "cristais"),
+  T("ciclo2", "vigor", "Quintas Justas", "+40% de dano do Ciclo e −1s de recarga.", "ciclo", 4, 1.5, "circulo", 5, 3, "cristais"),
   // Tito
-  T("tambor", "Tambor Firme", "+20% de vida do Tito.", "corte", 0, -1.3, "tambor", 10, 6),
-  T("batuque", "Batuque", "A cada 8 batidas, o tambor do Tito empurra os monstros próximos.", "tambor", 0.4, -2.4, "onda", 1, 40),
-  T("cura", "Canção de Cura", "Tito recupera 0,6 de vida por segundo.", "tambor", -0.5, -2.6, "cura", 5, 25),
-  // economia
-  T("gorjeta", "Gorjeta", "+12% de notas ♪.", "tempo", 0, 2.6, "moeda", 15, 8),
-  T("afinacao", "Afinação", "+20% de cristais.", "gorjeta", -0.7, 3.6, "cristal", 5, 30),
-  T("estudo", "Estudo", "+15% de EXP.", "gorjeta", 0.7, 3.6, "livro", 5, 20),
-  T("plateia", "Plateia", "+15% de monstros por sala (mais perigo, mais saque).", "estudo", 0.9, 4.6, "plateia", 5, 40),
+  T("tambor", "tito", "Tambor Firme", "+20% de vida do Tito.", "corte", 1, 0, "tambor", 10, 7),
+  T("rufar2", "tito", "Rufar Longo", "Rufar dura +1s e recarrega 1s mais rápido.", "tambor", 2, -0.8, "onda", 5, 25),
+  T("cura", "tito", "Canção de Cura", "Tito recupera 0,6 de vida por segundo.", "tambor", 2, 0.8, "cura", 5, 30),
+  T("forte", "tito", "Fortíssimo", "Habilidade do Tito: por 6s os cortes causam o dobro de dano.", "rufar2", 3, -1.3, "forte", 1, 3, "cristais"),
+  T("pancada", "tito", "Pancada", "Habilidade do Tito: atordoa e empurra os monstros por perto.", "cura", 3, 1.3, "pancada", 1, 90),
+  T("metro", "tito", "Metrônomo", "Habilidade do Tito: desacelera os monstros e os tiros por 5s.", "pancada", 4, 1.5, "metro", 1, 1, "partituras"),
+  T("passo", "tito", "Passo Ligeiro", "+12% de velocidade do Tito.", "forte", 4, -1.5, "passo", 3, 60),
+  // ritmo e harmonia
+  T("tempo", "ritmo", "No Tempo", "Cortes na batida do tambor causam +20% de dano.", "corte", 1, 0, "nota", 8, 8),
+  T("ouvido", "ritmo", "Ouvido Absoluto", "Janela da batida 20% maior.", "tempo", 2, -0.8, "ouvido", 3, 25),
+  T("acorde", "ritmo", "Harmonia", "Acordes (as notas num corte só) causam +25% de dano extra.", "tempo", 2, 0.8, "acorde", 10, 14),
+  T("menores", "ritmo", "Tríades Menores", "Libera os acordes menores ii, iii e vi.", "acorde", 3, 1.2, "acorde", 1, 2, "cristais"),
+  T("setima", "ritmo", "Dominante com Sétima", "Libera o V7: quatro notas, explosão muito maior.", "menores", 4, 1.5, "acorde", 1, 1, "partituras"),
+  T("escala", "ritmo", "Escalas", "Três notas em ordem (Dó-Ré-Mi…) num corte devolvem 15 de vigor.", "ouvido", 3, -1.2, "escada", 1, 45),
+  // rastro
+  T("rastro", "rastro", "Rastro Cortante", "O rastro da batuta continua cortando por um instante (+tempo e dano por nível).", "corte", 1, 0, "gliss", 8, 10),
+  T("largo", "rastro", "Rastro Largo", "+20% de largura do corte e do rastro.", "rastro", 2, -0.8, "multi", 5, 22),
+  T("prisma", "rastro", "Prisma", "Rastro nas cores das notas. Acordes deixam o rastro 50% mais forte por 2s.", "rastro", 2, 0.8, "prisma", 1, 2, "cristais"),
+  T("brasa", "rastro", "Brasa", "Rastro em chamas: deixa brasas que queimam os monstros.", "largo", 3, -1.2, "brasa", 1, 4, "cristais"),
+  T("estelar", "rastro", "Poeira Estelar", "Rastro de estrelas: acertos do rastro devolvem vigor.", "prisma", 3, 1.2, "estrela", 1, 1, "partituras"),
 ];
-

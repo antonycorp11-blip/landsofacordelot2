@@ -18,16 +18,19 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
 const L = (who: Speaker, text: string): Line => ({ who, text });
 
 export const PROLOGUE: Line[] = [
-  L("narrador", "A cidade de Harmonia sempre amanheceu cantando. Até a noite em que o Maestro Trítono subiu ao palco do Grande Teatro."),
-  L("narrador", "Ele rasgou a Partitura Primordial em cinco páginas. A música sumiu, e no lugar dela nasceram as Dissonâncias."),
-  L("fermata", "Acorda, menino. Faz três dias que ninguém nesta cidade consegue cantarolar uma nota sequer."),
-  L("tito", "Dona Fermata… a Clara não voltou do concerto. Só achei isso no palco. A batuta dela."),
-  L("fermata", "Olha como ela brilha, Tito. A sua irmã não sumiu. A alma dela ficou presa na batuta, junto com a última nota que ela regeu."),
-  L("clara", "…Tito? Tá escuro aqui. Mas eu ouço o seu tambor."),
-  L("tito", "CLARA! É você?! Eu… eu vou te tirar daí, juro!"),
-  L("fermata", "Para libertá-la, vocês precisam juntar as cinco páginas da Partitura. Cada uma está escondida num lugar, numa tonalidade."),
-  L("fermata", "Ela corta as Dissonâncias, você marca o ritmo. Volte aqui na minha oficina sempre que precisar. Eu ensino o que sei."),
-  L("tito", "Então é um dueto. Bora, mana. Primeiro, o Porão do Teatro."),
+  L("narrador", "A cidade de Harmonia sempre amanheceu cantando. Até a noite do Grande Concerto."),
+  L("narrador", "No meio da apresentação da jovem regente Clara, o Maestro Trítono invadiu o palco. Rasgou a Partitura Primordial em cinco páginas… e levou a Clara presa numa gaiola feita de pautas."),
+  L("narrador", "As notas que se soltaram da Partitura azedaram. Viraram Dissonâncias: notas vivas que odeiam qualquer som afinado."),
+  L("fermata", "Tito. Acorda, menino. O teatro está vazio. Levaram a sua irmã."),
+  L("tito", "Eu vi tudo, Dona Fermata! Antes de sumir, a Clara jogou a batuta pra mim."),
+  L("fermata", "Ela não jogou só a batuta. Olhe como brilha. A Clara colocou a própria alma aí dentro, para não ser levada inteira."),
+  L("clara", "Tito… consegue me ouvir? O meu corpo está com ele, mas eu estou aqui. Na batuta. Do seu lado."),
+  L("tito", "CLARA! Para onde ele te levou?!"),
+  L("clara", "Eu sinto o meu corpo longe… num lugar de madeira velha e cortinas. Ele quer me obrigar a reger a sinfonia desafinada dele."),
+  L("fermata", "Escutem bem. O tambor do Tito é o último som afinado desta cidade. É por isso que as Dissonâncias vão atrás dele."),
+  L("fermata", "E você, Clara: quando corta uma Dissonância com a batuta, você a rege de volta à afinação. Ela vira uma nota limpa. Juntem essas notas e tragam para mim: com elas eu ensino lições novas."),
+  L("fermata", "Cada página da Partitura que vocês recuperarem enfraquece o Trítono. Mas cuidado: sem as páginas, ele se agarra aos instrumentos de cada lugar e muda de forma."),
+  L("tito", "Então é assim: eu ando e bato o tambor, você corta e quebra tudo pelo caminho. Aguenta firme, mana. Eu vou te buscar."),
 ];
 
 export interface DungeonStory {
@@ -37,69 +40,87 @@ export interface DungeonStory {
   bossAgain: Line[];
   win: Line[];
   after: Line[];
+  memories: string[];
 }
 
 export const STORY: DungeonStory[] = [
   {
     intro: [
-      L("tito", "O Porão do Teatro… era aqui que a Clara ensaiava antes dos concertos."),
-      L("clara", "Eu lembro desse cheiro de madeira velha. Tito, cuidado: as Dissonâncias estão por toda parte."),
-      L("tito", "Pode deixar. Eu bato o tambor, você corta. Se cortar junto com a batida, dói mais neles!"),
+      L("tito", "O Porão do Teatro… tem marcas de rodinha no chão. Ele passou por aqui arrastando a gaiola!"),
+      L("clara", "Eu sinto o meu corpo perto, Tito. Lá no fundo. Vá andando, eu quebro tudo que estiver no caminho."),
+      L("tito", "E se aparecer Dissonância, você corta. Se cortar junto com a batida do meu tambor, dói mais!"),
       L("clara", "E se eu cortar Dó, Mi e Sol de uma vez só… vira um acorde. Igual a mamãe ensinou."),
     ],
     mid: [
-      L("tito", "Clara, olha essas folhas no chão. São pedaços de partitura… tudo rabiscado com trítonos."),
-      L("clara", "Ele quer que a cidade inteira desafine junto com ele. Vamos mais fundo."),
+      L("tito", "Olha, um pedaço da sua fita de cabelo, Clara! Estamos no caminho certo."),
+      L("clara", "Ele está nervoso. Ouço ele ensaiando lá no fundo… e errando todas as notas."),
     ],
     boss: [
-      L("tritono", "Ora, ora. Um menino com um tamborzinho e uma batuta falante. Que dueto patético."),
-      L("tito", "Devolve a música da cidade! E devolve a minha irmã!"),
-      L("tritono", "A sua irmã regia bonito demais. Bonito o bastante para eu querer guardar para mim. Venham, vamos ver se vocês sabem afinar."),
+      L("narrador", "No palco do porão, ao lado de uma gaiola de pautas onde Clara dorme, um homem alto de máscara branca ergue a batuta."),
+      L("tritono", "Um menino com um tamborzinho e uma batuta falante. Que dueto patético."),
+      L("tito", "Solta a minha irmã!"),
+      L("tritono", "A sua irmã rege bonito demais para uma cidade que não merece. Ela vai reger para MIM. Venham, vamos ver se vocês sabem afinar."),
     ],
-    bossAgain: [L("tritono", "De volta? Vocês desafinam com tanta persistência que quase me comovem.")],
+    bossAgain: [L("tritono", "De volta? A gaiola continua trancada, crianças.")],
     win: [
-      L("tritono", "Isso… foi só o primeiro movimento. A sinfonia é longa, crianças."),
-      L("narrador", "O Maestro se desfaz numa nuvem de notas tortas. No chão, brilha uma página dourada."),
-      L("tito", "A primeira página! Clara, você brilhou mais forte agora!"),
-      L("clara", "Eu consigo ouvir melhor, Tito. É como se alguém tivesse aberto uma janela."),
+      L("narrador", "O Trítono cai de joelhos. A primeira página dourada escapa do casaco dele."),
+      L("tritono", "Uma página… Não importa! Eu ainda tenho a regente!"),
+      L("narrador", "Num redemoinho de notas tortas, ele some levando a gaiola."),
+      L("tito", "NÃO! Ele fugiu com você, Clara!"),
+      L("clara", "Calma, Tito. Eu ouvi para onde ele foi: o Conservatório. Ele quer o piano velho de lá."),
     ],
     after: [
-      L("fermata", "Dó maior. Nenhum sustenido, nenhum bemol. O começo de tudo, e vocês o recuperaram."),
-      L("fermata", "Subindo uma quinta chegamos a Sol maior. Dizem que a segunda página foi levada para o Conservatório abandonado."),
-      L("tito", "Onde a Clara estudou! Ela conhece cada corredor de lá."),
+      L("fermata", "A primeira página. Dó maior, sem sustenido nem bemol: o começo de tudo."),
+      L("fermata", "Se ele foi para o Conservatório, vai se agarrar ao grande piano de cauda. Ele vai mudar de forma, Tito. Esteja pronto."),
+      L("tito", "O Conservatório… onde a Clara estudou. Ela conhece cada corredor de lá."),
+    ],
+    memories: [
+      "Eu lembro desse porão. Eu me escondia aqui antes de cada concerto, morrendo de medo.",
+      "Você vinha atrás de mim batendo nesse tambor velho, Tito. Dizia que era pra espantar o medo.",
+      "Foi aqui que eu regi pela primeira vez. Só você na plateia, de pijama.",
+      "Esse cheiro de madeira e poeira… é o cheiro de antes de tudo dar errado.",
     ],
   },
   {
     intro: [
-      L("clara", "O Conservatório… Ainda dá para ouvir os pianos tocando sozinhos, todos meio tom abaixo."),
-      L("tito", "Eles estão chorando, Clara. Os alunos sumiram, só ficaram os instrumentos."),
+      L("clara", "O Conservatório… Os pianos estão tocando sozinhos, todos meio tom abaixo. Ele passou por aqui."),
+      L("tito", "Clara, olha! Rodinhas de novo. E pegadas enormes, como se ele tivesse crescido."),
       L("clara", "Aqui as notas têm um sustenido: o Fá virou Fá sustenido. Presta atenção nos nomes."),
     ],
     mid: [
-      L("tito", "Esse corredor tem o seu nome gravado na parede! 'Clara, turma de regência'."),
-      L("clara", "Eu era a pior da turma no primeiro ano, sabia? A Dona Fermata nunca desistiu de mim."),
+      L("tito", "Esse corredor tem o seu nome na parede! 'Clara, turma de regência'."),
+      L("clara", "E logo ao lado… 'Trítono, turma de piano'. Ele estudou aqui também, Tito."),
     ],
     boss: [
-      L("tritono", "Sol maior. Um sustenido só e vocês já tropeçam."),
-      L("clara", "Por que você está fazendo isso? Você já foi aluno daqui. Eu vi o seu retrato no salão."),
-      L("tritono", "Fui o melhor aluno daqui! E sabe o que recebi? Silêncio. Agora todos vão ouvir só a mim."),
+      L("narrador", "No salão de concertos, o Trítono se fundiu ao piano de cauda. Teclas de ébano cobrem o corpo dele como uma armadura."),
+      L("tritono", "Sol maior. Um sustenido só e vocês já tropeçam. Ouçam o meu novo instrumento!"),
+      L("clara", "Você estudou aqui. Eu vi o seu nome no corredor."),
+      L("tritono", "Eu fui o melhor aluno deste salão! E sabe o que recebi? Silêncio. Cuidado com as teclas, menino!"),
     ],
-    bossAgain: [L("tritono", "Este salão já me vaiou uma vez. Vocês não vão conseguir o mesmo.")],
+    bossAgain: [L("tritono", "As teclas lembram dos seus passos, menino. Pule se puder!")],
     win: [
-      L("narrador", "A segunda página se ilumina. Por um instante, todos os pianos do Conservatório tocam o mesmo acorde."),
+      L("narrador", "As teclas se partem. A segunda página dourada voa do peito do Trítono."),
+      L("tritono", "Mais uma… Vocês vão pagar por cada nota!"),
+      L("narrador", "Ele arrasta a gaiola por uma janela e some na noite, rumo aos sinos da catedral."),
       L("clara", "Tito… ele estudou com a Dona Fermata. Ela nunca contou isso pra gente."),
       L("tito", "Então a gente pergunta. Hoje mesmo."),
     ],
     after: [
-      L("fermata", "Então vocês descobriram. Sim, o Trítono foi meu aluno. O mais talentoso que eu já tive."),
+      L("fermata", "Vocês descobriram. Sim, o Trítono foi meu aluno. O mais talentoso que eu já tive."),
       L("fermata", "Mas ele queria aplausos mais do que queria música. Quando não vieram, ele azedou por dentro."),
-      L("fermata", "A terceira página está na Catedral do Órgão, em Ré maior. Dois sustenidos: Fá e Dó. Cuidado, ali o som ecoa muito."),
+      L("fermata", "Na Catedral ele vai se fundir ao grande órgão. Três páginas para ele perder… Ré maior, dois sustenidos: Fá e Dó."),
+    ],
+    memories: [
+      "Foi nesse corredor que eu reprovei na primeira prova de regência. Chorei na escada.",
+      "A Dona Fermata me achou chorando e disse: 'até o silêncio faz parte da música'.",
+      "Eu lembro de um rapaz que tocava piano sozinho até de madrugada. Nunca soube o nome dele.",
+      "Tito, você me trouxe pão de queijo aqui uma vez, escondido do porteiro. Lembra?",
     ],
   },
   {
     intro: [
       L("tito", "Uau… olha o tamanho desse órgão. Cada cano é maior que a nossa casa!"),
-      L("clara", "Quando ele toca, o chão inteiro vibra. As Dissonâncias daqui são mais fortes, Tito."),
+      L("clara", "O meu corpo está perto. Eu sinto o frio da gaiola. Corre, Tito!"),
     ],
     mid: [
       L("clara", "Tito… às vezes eu esqueço como é ter mãos. Só lembro do som."),
@@ -107,19 +128,26 @@ export const STORY: DungeonStory[] = [
       L("clara", "Eu NÃO rejo com a língua pra fora!"),
     ],
     boss: [
-      L("tritono", "Bem-vindos à minha catedral. Aqui cada nota que vocês tocam volta três vezes mais desafinada."),
+      L("narrador", "Os tubos do órgão saem das costas do Trítono como asas de metal. A gaiola balança no alto, presa a um sino."),
+      L("tritono", "Bem-vindos à minha catedral. Cada nota que vocês tocam aqui volta três vezes mais desafinada!"),
       L("tito", "A Dona Fermata contou tudo. Você só queria ser ouvido."),
-      L("tritono", "…Não fale do que você não entende, menino. TOQUEM!"),
+      L("tritono", "…Não fale do que você não entende. TOQUEM!"),
     ],
     bossAgain: [L("tritono", "O eco ainda guarda os gritos da última vez. Querem mais?")],
     win: [
-      L("narrador", "O grande órgão solta um acorde maior tão forte que os vitrais se acendem em sete cores."),
-      L("clara", "Tito! Eu… eu senti o vento. Por um segundo eu senti o vento no rosto!"),
-      L("tito", "Faltam só duas páginas. Aguenta firme, mana."),
+      L("narrador", "O órgão solta um acorde maior tão forte que os vitrais se acendem em sete cores. A terceira página cai aos pés do Tito."),
+      L("clara", "Tito! Eu… eu senti o vento. A gaiola está enfraquecendo!"),
+      L("narrador", "Ferido, o Trítono foge com a gaiola para a velha Ópera."),
     ],
     after: [
-      L("fermata", "Três páginas. A batuta está quente, Tito. Ela está voltando, pouco a pouco."),
-      L("fermata", "A quarta página está na velha Ópera, em Lá maior. Foi lá que o Trítono fez seu último concerto antes de sumir."),
+      L("fermata", "Três páginas. A batuta está quente, Tito. A Clara está voltando pouco a pouco."),
+      L("fermata", "A Ópera… Foi lá que o Trítono fez o último concerto antes de sumir. Ninguém foi assistir."),
+    ],
+    memories: [
+      "A mamãe cantava aqui no coral. Eu ficava sentada no último banco, contando os tubos do órgão.",
+      "Cento e vinte e oito tubos. Eu contei três vezes para ter certeza.",
+      "Foi aqui que eu decidi ser regente: quando vi o órgão fazer o chão inteiro tremer.",
+      "Os vitrais… cada cor é uma nota. A mamãe dizia que o Dó era vermelho.",
     ],
   },
   {
@@ -132,31 +160,40 @@ export const STORY: DungeonStory[] = [
       L("clara", "Esgotados… Ele mentiu para si mesmo. Que coisa triste."),
     ],
     boss: [
+      L("narrador", "Envolto numa capa vermelha, com metade do rosto escondida, o Trítono flutua sob um lustre gigante."),
       L("tritono", "Este era o meu palco. Eu toquei a noite inteira para cadeiras vazias."),
       L("clara", "Eu teria vindo. Eu teria aplaudido de pé."),
-      L("tritono", "MENTIRA! Ninguém nunca vem. Ninguém nunca escuta!"),
+      L("tritono", "MENTIRA! Ninguém nunca vem! Cuidado com o lustre, menino…"),
     ],
     bossAgain: [L("tritono", "A plateia vazia de novo… e só vocês dois na primeira fila.")],
     win: [
       L("narrador", "As cortinas rasgadas tremem. Nas cadeiras vazias, por um instante, parece haver gente aplaudindo."),
       L("tritono", "Vocês… ouviram até o fim. Por quê?"),
-      L("tito", "Porque música é feita pra ser ouvida junto. Até a sua."),
+      L("tito", "Porque música é feita pra ser ouvida junto. Até a sua. Agora devolve a minha irmã!"),
+      L("narrador", "Ele hesita. Depois foge, levando a gaiola para o Coliseu dos Ecos."),
     ],
     after: [
-      L("fermata", "A última página está no Coliseu dos Ecos, em Mi maior. Quatro sustenidos, a tonalidade mais difícil até agora."),
-      L("fermata", "Tito, Clara: lá ele vai usar tudo o que tem. Mas lembrem-se: um trítono só é feio quando não resolve."),
+      L("fermata", "A última página está no Coliseu dos Ecos, em Mi maior. Quatro sustenidos."),
+      L("fermata", "Lá ele vai usar tudo o que tem. Mas lembrem: um trítono só soa feio quando não resolve."),
+    ],
+    memories: [
+      "A primeira ópera que eu vi foi aqui. Eu tinha seis anos e dormi no segundo ato.",
+      "Você acordou todo mundo batendo palma no lugar errado, Tito. Que vergonha!",
+      "Tem um camarote com o nome do papai riscado na madeira. Ele trabalhava aqui.",
+      "Eu queria reger aqui um dia. Com a casa cheia. Com você na primeira fila.",
     ],
   },
   {
     intro: [
       L("clara", "O Coliseu dos Ecos. Cada passo que você dá volta mil vezes."),
-      L("tito", "Então todo mundo vai ouvir a gente chegando. Ótimo."),
+      L("tito", "Então todo mundo vai ouvir a gente chegando. Ótimo. Hoje eu te levo pra casa."),
     ],
     mid: [
-      L("clara", "Tito, se eu voltar… você me ensina a tocar tambor?"),
+      L("clara", "Tito, quando eu voltar… você me ensina a tocar tambor?"),
       L("tito", "Se você voltar eu te ensino até a fazer café. Mas primeiro, corta esses bichos!"),
     ],
     boss: [
+      L("narrador", "No centro da arena, o Trítono se fundiu a todos os instrumentos que roubou. Ele já não parece um homem."),
       L("tritono", "A última página. Se vocês a levarem, eu volto a ser só um maestro esquecido."),
       L("clara", "Você nunca foi esquecido. A Dona Fermata guarda o seu retrato até hoje."),
       L("tritono", "…Então provem. Provem que alguém ainda me escuta!"),
@@ -164,22 +201,33 @@ export const STORY: DungeonStory[] = [
     bossAgain: [L("tritono", "O eco não esquece nada. Nem as derrotas de vocês.")],
     win: [
       L("narrador", "O trítono final se resolve num acorde maior. O som atravessa o Coliseu, a cidade, o céu."),
-      L("narrador", "A batuta se acende como um sol pequeno. E, de dentro da luz, uma mão segura a do Tito."),
+      L("narrador", "A gaiola de pautas se desfaz em notas douradas. A luz da batuta voa até o corpo adormecido da Clara."),
       L("clara", "…Oi, maninho. Você cresceu, ou fui eu que encolhi?"),
       L("tito", "CLARA!!!"),
-      L("tritono", "…Bravo. Bravo, de verdade."),
-      L("narrador", "Harmonia volta a amanhecer cantando. Mas as Dissonâncias ainda ecoam pelos lugares antigos, e a dupla continua os ensaios."),
+      L("tritono", "…Bravo. Bravo, de verdade. Desculpem."),
+      L("narrador", "Harmonia volta a amanhecer cantando. Mas as Dissonâncias ainda ecoam nos lugares antigos, e os irmãos continuam os ensaios."),
     ],
     after: [
       L("fermata", "As cinco páginas estão juntas. A Partitura Primordial está inteira de novo."),
       L("clara", "E o Trítono pediu para voltar a estudar. Aqui, com a senhora."),
-      L("fermata", "Todo aluno merece uma segunda chance. Até os desafinados. Agora vão, os lugares ainda guardam ecos para vocês afinarem."),
+      L("fermata", "Todo aluno merece uma segunda chance. Até os desafinados. Agora vão: os lugares ainda guardam ecos para vocês afinarem."),
+    ],
+    memories: [
+      "Eu nunca vim aqui… mas sinto que já ouvi esse eco em algum sonho.",
+      "Tito, se der errado, eu quero que você saiba: o seu tambor sempre me trouxe de volta.",
+      "Eu ouço o Trítono chorando lá no fundo. Ele está tão sozinho quanto eu estava.",
+      "Falta pouco. Eu já quase sinto as minhas mãos.",
     ],
   },
 ];
 
 /** falas soltas do Tito durante a luta (balão sobre a cabeça, sem pausar) */
 export const BARKS = {
+  skill: { rufar: "Rufaaar!", forte: "FORTÍSSIMO!", pancada: "Toma essa pancada!", metro: "Mais devagar… um… dois…" } as Record<string, string>,
+  breakIt: ["Quebra isso, Clara!", "Tem coisa brilhando ali dentro!", "Ó, um baú!"],
+  chestOk: ["Acorde certo! O baú abriu!", "Uau, quanta coisa!"],
+  door: ["A porta abriu! Vamos atrás dela.", "Por aqui, Clara!", "Ela tá mais perto, eu sinto."],
+  fled: ["Ele fugiu com ela de novo!"],
   start: ["Bora, mana! Um, dois, três, quatro!", "Ouvi um coral desafinado lá na frente.", "Segura o tempo comigo!", "Hoje a gente afina tudo!", "Clara, tá pronta?"],
   clear: ["Mais uma sala afinada!", "Ouviu esse silêncio bonito?", "Próxima!", "Isso, Clara!", "Tá ficando bom!"],
   chord: ["Que acorde lindo!", "Harmonia!", "Isso soou incrível!", "A mamãe ia adorar esse acorde!"],

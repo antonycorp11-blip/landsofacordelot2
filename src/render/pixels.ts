@@ -1,7 +1,8 @@
 /** Sprites em pixel art definidos como texto: cada caractere é uma cor da paleta. "Z" é a cor da nota. */
 
 const PAL: Record<string, string> = {
-  h: "#6a3a1e",
+  h: "#5a2e16",
+  J: "#c8844a",
   H: "#9a5a30",
   S: "#f0c8a0",
   s: "#c89a78",
@@ -79,39 +80,61 @@ export function build(rows: string[], over: Record<string, string> = {}): Sprite
   return { img: mk(false), white: mk(true), w: W, h: H };
 }
 
-// ------------------------------------------------------------------ Tito: cachos castanhos, cachecol verde, macacão azul e caixa-clara
+// ------------------------------------------------------------------ Tito: estilo chibi, cachos, cachecol verde, macacão e caixa-clara
 const titoHead = [
-  "....hHhhh.....",
-  "..hhHhhHhh....",
-  ".hhhhhhhhhh...",
-  ".hhSSSSSShh...",
-  ".hSSKSSSKSh...",
-  "..SfSSSSSfS...",
-  "..SSSSppSSS...",
-  "...SSSSSSS....",
-  "..GGGGGGGGG...",
-  ".WWGgGGGWWW...",
+  "......hhhhh.....",
+  "....hhHJJHhhh...",
+  "...hhHJhhhHHhh..",
+  "..hhhhhhhhhhhhh.",
+  "..hhSSSSSSSSShh.",
+  ".hhSSSSSSSSSSSh.",
+  ".hSSWKSSSSWKSSh.",
+  ".hSSKKSSSSKKSSh.",
+  "..SpSSSSSSSSpS..",
+  "..SSSSSsSSSSSS..",
+  "...SSSSmmSSSS...",
+  "....SSSSSSSS....",
+  "...GGGGGGGGGG...",
+  "..GGGgGGGGGgGG..",
 ];
-const titoBody = [".SWWWWWWWWS...", ".SWBBBBBBBWDDD", "..WBBBBBBDWWWD", "...BBBBBBDwwwD", "...bBBBBbDDDD.", "...BBBBBB.dd.."];
+const titoBody = ["..SWWBWWWWBWWS..", "..SWBBBBBBBByyy.", "...WBBBBBBByWWWy", "...BBBBbbBByDDDy", "...BBBBBBBB.yyy."];
 const legs = [
-  ["...BBB.BBB....", "...BB...BB....", "..NNN...NNN..."],
-  ["...BBB.BB.....", "..BBB...BB....", "..NN....NNN..."],
-  ["....BBBBB.....", "...BB..BB.....", "..NNN.NNN....."],
+  ["...BBB..BBB.....", "...BB....BB.....", "..NNN....NNN...."],
+  ["...BBB..BB......", "..BBB....BB.....", "..NN.....NNN...."],
+  ["....BBBBBB......", "....BB..BB......", "...NNN.NNN......"],
 ];
-
 const tito = legs.map((l) => build([...titoHead, ...titoBody, ...l]));
 const titoDrum = build([
-  ...titoHead.slice(0, 8),
-  "..GGGGGGGGG.k.",
-  ".WWGgGGGWWWk..",
-  ".SWWWWWWWWSk..",
-  ".SWBBBBBBBWDDD",
-  "..WBBBBBBDWWWD",
-  "...BBBBBBDwwwD",
-  "...bBBBBbDDDD.",
-  "...BBBBBB.dd..",
+  ...titoHead.slice(0, 12),
+  "...GGGGGGGGGGk..",
+  "..GGGgGGGGGgkG..",
+  "..SWWBWWWWBWkS..",
+  "..SWBBBBBBBByyy.",
+  "...WBBBBBBByWWWy",
+  "...BBBBbbBByDDDy",
+  "...BBBBBBBB.yyy.",
   ...legs[0],
 ]);
+
+// ------------------------------------------------------------------ objetos quebráveis, itens e baú
+export const PROP_SPR = {
+  caixote: build(["OOOOOOOOOO", "OoaoooooaO", "OaoOOOOoaO", "OoOaOOaOoO", "OoOOaaOOoO", "OoOaOOaOoO", "OaoOOOOoaO", "OoaoooooaO", "OOOOOOOOOO"]),
+  barril: build(["..oooooo..", ".OOOOOOOO.", "oyyyyyyyyo", "OOOOOOOOOO", "OoOOOOOOoO", "OoOOOOOOoO", "oyyyyyyyyo", "OOOOOOOOOO", ".oooooooo."]),
+  vaso: build(["..WWWW..", "...ww...", "..qPPq..", ".qPPPPq.", "qPPqqPPq", "qPPPPPPq", ".qPPPPq.", "..qqqq.."]),
+  caixamusica: build(["..yyyyyyyy..", ".yOOOOOOOOy.", "yOOOOyyOOOOy", "yyyyyyyyyyyy", "yOWKWKWKWOOy", "yOOOOOOOOOOy", "yOOOOyyOOOOy", ".yyyyyyyyyy."]),
+  partituras: build(["....WWWWW...", "..WWWwwWWW..", ".WwWWWWWwWW.", "WWWKWKWWWWW.", ".WWWWWKWwWWW", "WwWWWWWWWWw.", ".WWWwWWWW..."]),
+};
+export const PICK_SPR = {
+  nota: build(["..WW", "..WK", "..W.", "WWW.", "WWW."]),
+  cristal: build([".O.", "OyO", "OOO", ".O."], { O: "#ff9a3a", y: "#ffd8a0" }),
+  coracao: build(["DD.DD", "DDDDD", ".DDD.", "..D.."]),
+  vigor: build([".yy.", "yWyy", "yyyy", ".yy."]),
+  partitura: build(["WWWWW", "WKWKW", "WWWWW", "WKWWW", "WWWWW"], { W: "#ffe8b0" }),
+};
+export const CHEST_SPR = {
+  shut: build(["..oooooooooo..", ".oOOOOyyOOOOo.", "oOOOOOyyOOOOOo", "yyyyyyyyyyyyyy", "oOOOOOyKOOOOOo", "oOOOOOyyOOOOOo", "oOOOOOOOOOOOOo", "oooooooooooooo"]),
+  open: build(["..oooooooooo..", ".oaaaaaaaaaao.", "oaLLLLLLLLLLao", "yyyyyyyyyyyyyy", "oOOOOOyyOOOOOo", "oOOOOOyyOOOOOo", "oOOOOOOOOOOOOo", "oooooooooooooo"]),
+};
 
 // ------------------------------------------------------------------ monstros
 /** nota viva: cabeça de nota (cor da nota), haste e bandeirola, perninhas */

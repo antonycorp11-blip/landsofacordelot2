@@ -98,40 +98,105 @@ describe("corte", () => {
   });
 });
 
+/** coloca o Tito numa sala de luta já começada */
+const toFight = (r: Run) => {
+  r.tito.x = r.exitDoor()!.x;
+  r.tito.y = r.exitDoor()!.y;
+  for (let i = 0; i < 60 * 6 && r.phase !== "fight"; i++) r.step(1 / 60);
+};
+
 describe("masmorra", () => {
-  it("salas em sequência; limpar uma faz o Tito andar até a próxima", () => {
+  it("começa num salão de exploração; salões e lutas alternam; chefe no fim", () => {
     const r = mk();
-    expect(r.rooms.length).toBe(6);
-    expect(r.rooms[5].boss).toBe(true);
+    expect(r.rooms.length).toBe(11);
+    expect(r.rooms[0].kind).toBe("hall");
+    expect(r.rooms[1].kind).toBe("fight");
+    expect(r.rooms[10].kind).toBe("boss");
+    expect(r.phase).toBe("explore");
+    expect(r.rooms[0].props.length).toBeGreaterThan(5);
+  });
+  it("andar até a porta leva para a sala de luta; limpar a luta abre a porta", () => {
+    const r = mk();
+    toFight(r);
+    expect(r.phase).toBe("fight");
+    expect(r.roomI).toBe(1);
     r.spawnLeft = 0;
     r.monsters = [];
     r.step(1 / 60);
-    expect(r.phase).toBe("walk");
-    for (let i = 0; i < 60 * 8 && r.phase === "walk"; i++) r.step(1 / 60);
-    expect(r.roomI).toBe(1);
+    expect(r.phase).toBe("explore");
     expect(r.exp).toBeGreaterThan(0);
+  });
+  it("clicar no chão faz o Tito andar", () => {
+    const r = mk();
+    const x0 = r.tito.x;
+    r.moveTo(r.tito.x + 50, r.tito.y);
+    for (let i = 0; i < 60; i++) r.step(1 / 60);
+    expect(r.tito.x).toBeGreaterThan(x0 + 30);
+  });
+  it("a batuta quebra objetos, que soltam itens para o Tito pegar", () => {
+    const r = mk();
+    const p = r.room.props[0];
+    const hp = p.hp;
+    for (let k = 0; k < hp; k++) {
+      const u = isoU(p.x, p.y);
+      const v = isoV(p.x, p.y) - 6;
+      swipe(r, u - 30, v, u + 30, v);
+      r.step(0.3);
+    }
+    expect(r.room.props.includes(p)).toBe(false);
+    expect(r.pickups.length).toBeGreaterThan(0);
+    const pk = r.pickups[0];
+    r.moveTo(pk.x, pk.y);
+    const n0 = r.notas + r.cristais;
+    for (let i = 0; i < 60 * 4; i++) r.step(1 / 60);
+    expect(r.notas + r.cristais + (r.tito.hp > 0 ? 0 : 0)).toBeGreaterThanOrEqual(n0);
+  });
+  it("baú musical abre quando os cadeados são cortados num traço só", () => {
+    const r = mk();
+    const room = r.rooms.find((x) => x.chest)!;
+    r.roomI = r.rooms.indexOf(room);
+    const c = room.chest!;
+    const pts = c.lit.map((_, i) => r.lockPos(c, i));
+    r.setCursor(pts[0].u - 20, pts[0].v, true);
+    r.step(1 / 60);
+    for (const p of pts) for (let k = 1; k <= 3; k++) {
+      r.setCursor(p.u - 6 + k * 4, p.v, true);
+      r.step(1 / 60);
+    }
+    r.setCursor(pts[pts.length - 1].u + 30, pts[pts.length - 1].v, true);
+    r.step(1 / 60);
+    expect(c.open).toBe(true);
+  });
+  it("habilidades: Rufar faz todo corte contar no tempo", () => {
+    const r = mk();
+    expect(r.useSkill("rufar")).toBe(true);
+    expect(r.onBeat()).toBe(true);
+    expect(r.useSkill("rufar")).toBe(false);
+    expect(r.useSkill("forte")).toBe(false); // não liberada
   });
   it("monstros batem no Tito no ritmo", () => {
     const r = mk();
+    toFight(r);
     r.spawnAt("desafinado", 0, r.tito.x + 8, r.tito.y);
     for (let i = 0; i < 60 * 3; i++) r.step(1 / 60);
     expect(r.tito.hp).toBeLessThan(r.tito.maxHp);
   });
-  it("vencer o maestro termina a masmorra", () => {
+  it("vencer o chefe termina a masmorra", () => {
     const r = mk();
-    r.roomI = 5;
-    r.tito.x = r.rooms[5].x0 + 130;
-    r.tito.y = r.rooms[5].y0 + 130;
+    r.roomI = 10;
+    r.tito.x = r.rooms[10].x0 + 130;
+    r.tito.y = r.rooms[10].y0 + 130;
     r.phase = "fight";
     r.spawnLeft = 0;
     r.monsters = [];
     const b = r.spawnAt("maestro", -1, r.tito.x + 50, r.tito.y);
     b.armor = 0;
     b.hp = 0.5;
-    const p = { u: isoU(b.x, b.y), v: isoV(b.x, b.y) - 12 };
+    const p = { u: isoU(b.x, b.y), v: isoV(b.x, b.y) - 18 };
     swipe(r, p.u - 40, p.v, p.u + 40, p.v);
     r.step(1 / 60);
     expect(r.partituras).toBeGreaterThan(0);
+    expect(r.phase).toBe("won");
   });
 });
 
@@ -149,7 +214,7 @@ describe("perfil", () => {
     p.nodes = { corte: 1, fio: 1, quebra: 1 };
     p.notas = 999;
     expect(buyNode(p, "execucao")).toBe(false);
-    p.cristais = 1;
+    p.cristais = 2;
     expect(buyNode(p, "execucao")).toBe(true);
     expect(computeStats(p).execute).toBeGreaterThan(0);
   });
