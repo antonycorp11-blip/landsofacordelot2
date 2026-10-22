@@ -1,56 +1,38 @@
-# Poço Gravitacional
+# Dissonância
 
-Tower defense incremental em que **você é um buraco negro**. O buraco segue o mouse (ou o dedo) e puxa as naves inimigas com a gravidade. O objetivo é arremessá-las umas contra as outras, contra asteroides e contra os satélites que orbitam o planeta-núcleo.
+Roguelike incremental com tema de teoria musical. Você é a **batuta do maestro**. Notas-monstro desafinadas avançam de todos os lados no ritmo da música para calar a **Lyra**, a cantora no centro do palco. Corte as notas passando o mouse ou arrastando o dedo por cima delas.
 
 ## Como jogar
 
-| Ação | Computador | Celular |
-| --- | --- | --- |
-| Mover o buraco negro | mover o mouse | arrastar o dedo em qualquer lugar |
-| Gravidade forte (gasta energia) | segurar o clique / Shift | segurar **Gravidade** ou encostar um 2º dedo |
-| Pulso de repulsão | clique direito / Espaço | botão **Pulso** |
-| Modo construção (para o tempo) | B ou **Construir** | **Construir** |
-| Girar o anel escolhido | Q / E (1, 2, 3 escolhem o anel) | ⟲ ⟳ |
-| Pausa | Esc / P | ❚❚ |
-
-### Dano e recompensas
-
-- **Impactos:** colisões em alta velocidade causam dano proporcional à velocidade e à massa do outro corpo. Inimigos esmagados valem 1,5× fragmentos.
-- **Horizonte de eventos:** inimigos dentro dele se desfazem aos poucos.
-- **Fragmentos ◆** compram e melhoram satélites durante a partida. Abates em sequência formam combo, até ×5.
-- **Matéria escura** fica de uma partida para a outra e é gasta na árvore de **Evolução**, que tem três ramos: Singularidade, Órbita e Núcleo.
-
-### Satélites
-
-- **Laser:** dispara um raio contínuo.
-- **Mina orbital:** explode quando algo passa perto e se rearma sozinha.
-- **Canhão de massa:** os projéteis fazem curva na gravidade do buraco.
-- **Defletor:** rebate inimigos e causa dano de impacto.
-- **Estase:** deixa os inimigos lentos.
-- **Coletor:** gera fragmentos.
+- **Cortar:** passe o mouse ou arraste o dedo sobre as notas. Cada corte toca a nota do monstro e gasta **fôlego**.
+- **No tempo:** golpes na batida do metrônomo causam mais dano. A batida aparece no anel dourado e nos pontos da HUD.
+- **Acordes:** corte as 3 notas de um acorde num traço só (por exemplo Dó, Mi e Sol para o acorde I) e solte uma explosão harmônica.
+- **Escala:** 3 notas seguidas em ordem (Dó, Ré, Mi…) devolvem fôlego.
+- **Concerto:** são 5 movimentos. O último traz o chefe **Trítono**.
+- **Motivos:** cortar notas enche a inspiração. A cada nível você escolhe 1 de 3 motivos, melhorias que valem só para aquele concerto.
+- **Evolução:** as notas ♪ ficam com você para a árvore, que tem 6 ramos: Melodia, Fôlego, Ritmo, Harmonia, Lyra e Partitura. A árvore libera novos acordes (ii, vi, iii, V7) e coloca novos motivos no sorteio.
+- **Ciclo das quintas:** vencer um concerto libera a próxima tonalidade (Dó → Sol → Ré…). Cada uma é mais difícil e mais rica. Os chefes dão **partituras**, que pagam os nós especiais da árvore.
 
 ### Inimigos
 
-- Errante
-- Enxame
-- Couraçado (pesado)
-- Cometa (rápido)
-- Fissor (se divide)
-- Antimatéria (é repelida pelo buraco)
-- Leviatã (chefe a cada 10 ondas)
+- **Semínima**, **Colcheia**, **Mínima** e **Semibreve:** as figuras musicais.
+- **Pausa:** só pode ser cortada entre os tempos.
+- **Sustenido:** nota fora da tonalidade, que não forma acordes.
+- **Bemol:** fica longe e atira notas desafinadas na Lyra.
+- **Trítono:** o chefe.
+
+Todo o visual é desenhado por código e todo o som é sintetizado na hora com WebAudio, sem imagens nem arquivos de áudio.
 
 ## Desenvolvimento
 
 ```bash
 npm install
 npm run dev        # http://localhost:5180
-npm test           # física, economia, perfil e bot de equilíbrio
-npm run typecheck
-npm run build      # gera dist/
+npm test           # regras, teoria, perfil e bot de equilíbrio
+npm run build
 ```
 
-O projeto usa TypeScript, Vite e Canvas 2D, sem nenhuma imagem: todo o visual é gerado por código. Isso inclui a nebulosa, a lente gravitacional, a grade do espaço-tempo, o planeta projetado numa esfera, os asteroides e o disco de acreção.
-
 - `src/game/sim.ts`: simulação em passo fixo, sem DOM.
-- `src/render/`: desenho da partida.
-- `src/ui/`: HUD, tutorial e menu.
+- `src/audio/synth.ts`: sintetizador.
+- `src/render/scene.ts`: desenho.
+- `src/ui/`: HUD, tutorial, motivos e camarim (menu).

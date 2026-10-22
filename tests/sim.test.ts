@@ -1,206 +1,162 @@
 import { describe, expect, it } from "vitest";
-import { BAL } from "../src/data/content";
+import { CHORDS, KEYS, chordName, degreeMidi, degreeNote } from "../src/data/content";
 import { buyNode, computeStats, loadProfile, newProfile, nodeCost } from "../src/game/profile";
-import { Run, waveBudget, waveHp } from "../src/game/sim";
+import { Run, segDist } from "../src/game/sim";
 
-const view = { hw: 480, hh: 270 };
-const mk = (tut = true) => new Run(computeStats(newProfile()), 42, view, tut);
+const mk = (tut = true, p = newProfile()) => {
+  const r = new Run(computeStats(p), 0, 42, tut);
+  r.setView(480, 300);
+  return r;
+};
 const steps = (r: Run, sec: number) => {
   for (let i = 0; i < Math.round(sec * 60); i++) r.step(1 / 60);
 };
+/** arrasta a batuta de (x1,y1) até (x2,y2) em n passos */
+const swipe = (r: Run, x1: number, y1: number, x2: number, y2: number, n = 6) => {
+  r.setCursor(x1, y1, true);
+  r.step(1 / 60);
+  for (let i = 1; i <= n; i++) {
+    r.setCursor(x1 + ((x2 - x1) * i) / n, y1 + ((y2 - y1) * i) / n, true);
+    r.step(1 / 60);
+  }
+  r.setCursor(x2, y2, false);
+};
 
-describe("gravidade", () => {
-  it("puxa inimigos em direção ao buraco", () => {
-    const r = mk();
-    r.hole.x = r.hole.tx = 200;
-    r.hole.y = r.hole.ty = 0;
-    r.setStrong(true);
-    const e = r.spawn("wanderer", 260, 0);
-    steps(r, 0.5);
-    expect(e.x).toBeLessThan(260);
-    expect(Math.abs(e.x - 200)).toBeLessThan(60);
+describe("teoria", () => {
+  it("nomes e alturas das notas", () => {
+    expect(degreeNote(KEYS[0], 0)).toBe("Dó");
+    expect(degreeNote(KEYS[0], 4)).toBe("Sol");
+    expect(degreeNote(KEYS[1], 6)).toBe("Fá♯");
+    expect(degreeMidi(KEYS[0], 2)).toBe(64);
+    expect(chordName(KEYS[0], CHORDS[2])).toBe("Sol maior");
+    expect(chordName(KEYS[0], CHORDS.find((c) => c.id === "vi")!)).toBe("Lá menor");
   });
-  it("antimatéria é repelida", () => {
-    const r = mk();
-    r.hole.x = r.hole.tx = 200;
-    r.hole.y = r.hole.ty = 100;
-    r.setStrong(true);
-    const e = r.spawn("antimatter", 200, 60);
-    e.speed = 0;
-    steps(r, 0.4);
-    expect(e.y).toBeLessThan(60);
-  });
-  it("gravidade forte gasta energia e recarrega quando solta", () => {
-    const r = mk();
-    r.setStrong(true);
-    steps(r, 1);
-    const low = r.hole.energy;
-    expect(low).toBeLessThan(r.st.energyMax);
-    r.setStrong(false);
-    steps(r, 1);
-    expect(r.hole.energy).toBeGreaterThan(low);
-  });
-  it("horizonte destrói inimigos capturados", () => {
-    const r = mk();
-    r.hole.x = r.hole.tx = 200;
-    r.hole.y = r.hole.ty = 0;
-    r.setStrong(true);
-    r.spawn("wanderer", 200, 0);
-    steps(r, 2);
-    expect(r.kills).toBe(1);
-    expect(r.frags.length + r.collected).toBeGreaterThan(0);
+  it("distância ponto-segmento", () => {
+    expect(segDist(0, 5, -10, 0, 10, 0)).toBeCloseTo(5);
+    expect(segDist(20, 0, -10, 0, 10, 0)).toBeCloseTo(10);
   });
 });
 
-describe("colisões", () => {
-  it("batida rápida causa dano de impacto", () => {
+describe("batuta", () => {
+  it("corta inimigos no caminho e gasta fôlego", () => {
     const r = mk();
-    r.hole.x = r.hole.tx = -400;
-    const a = r.spawn("wanderer", 200, 0);
-    const b = r.spawn("wanderer", 240, 0);
-    a.vx = 300;
-    b.vx = -300;
-    a.steer = b.steer = 0;
-    steps(r, 0.1);
-    expect(r.kills).toBe(2);
-    expect(r.impactKills).toBe(2);
-  });
-  it("batida lenta não causa dano", () => {
-    const r = mk();
-    r.hole.x = r.hole.tx = -400;
-    const a = r.spawn("armored", 200, 0);
-    const b = r.spawn("armored", 228, 0);
-    a.vx = 10;
-    b.vx = -10;
-    steps(r, 0.2);
-    expect(a.hp).toBe(a.maxHp);
-    expect(b.hp).toBe(b.maxHp);
-  });
-  it("asteroide machuca quem bate nele", () => {
-    const r = mk();
-    r.hole.x = r.hole.tx = -400;
-    const s = r.asteroids[0];
-    const e = r.spawn("armored", s.x - 60, s.y);
-    e.vx = 400;
-    e.vy = 0;
-    e.steer = 0;
-    steps(r, 0.3);
+    const e = r.spawn("seminima", 0, 100, 0);
+    const before = r.stamina;
+    swipe(r, 100, -60, 100, 60);
     expect(e.hp).toBeLessThan(e.maxHp);
+    expect(r.stamina).toBeLessThan(before);
   });
-  it("inimigo que chega ao núcleo causa dano", () => {
+  it("sem fôlego não corta", () => {
     const r = mk();
-    r.hole.x = r.hole.tx = -400;
-    r.hole.y = r.hole.ty = 260;
-    r.spawn("wanderer", 60, 0);
-    steps(r, 2);
-    expect(r.core.hp).toBeLessThan(r.core.maxHp);
+    const e = r.spawn("semibreve", 0, 150, 0);
+    r.stamina = 1;
+    swipe(r, 150, -60, 150, 60);
+    expect(e.hp).toBe(e.maxHp);
+    expect(r.tired).toBe(true);
+  });
+  it("cortar Dó, Mi e Sol num traço forma o acorde I", () => {
+    const r = mk();
+    for (const [i, d] of [0, 2, 4].entries()) r.spawn("semibreve", d, 100 + i * 40, 100);
+    swipe(r, 60, 100, 220, 100, 8);
+    expect(r.chords).toBe(1);
+  });
+  it("notas espalhadas em traços separados não formam acorde", () => {
+    const r = mk();
+    r.spawn("semibreve", 0, 100, 100);
+    r.spawn("semibreve", 2, -100, -100);
+    swipe(r, 60, 100, 140, 100);
+    steps(r, 1);
+    swipe(r, -140, -100, -60, -100);
+    expect(r.chords).toBe(0);
+  });
+  it("a pausa só pode ser cortada entre os tempos", () => {
+    const r = mk();
+    const e = r.spawn("pausa", 0, 150, 0);
+    r.beatT = 0.01;
+    expect(r.intangible(e)).toBe(true);
+    r.beatT = r.period * 0.7;
+    expect(r.intangible(e)).toBe(false);
   });
 });
 
-describe("satélites e economia", () => {
-  it("comprar, melhorar e vender", () => {
-    const r = mk();
-    r.fragments = 500;
-    expect(r.buy(0, 0, "laser")).toBe(true);
-    expect(r.buy(0, 0, "laser")).toBe(false);
-    expect(r.buy(0, 1, "collector")).toBe(false); // bloqueado
-    const before = r.fragments;
-    expect(r.upgrade(0, 0)).toBe(true);
-    expect(r.rings[0].slots[0]!.lvl).toBe(2);
-    expect(r.fragments).toBeLessThan(before);
-    const v = r.sellValue(r.rings[0].slots[0]!);
-    const f = r.fragments;
-    expect(r.sell(0, 0)).toBe(true);
-    expect(r.fragments).toBe(f + v);
-    expect(r.buy(2, 0, "laser")).toBe(false); // anel 3 fechado
-  });
-  it("laser mata quem passa por perto", () => {
-    const r = mk();
-    r.hole.x = r.hole.tx = -400;
-    r.hole.y = r.hole.ty = 260;
-    r.fragments = 100;
-    r.buy(0, 0, "laser");
-    const p = r.slotPos(0, 0);
-    r.spawn("drone", p.x * 1.6, p.y * 1.6);
-    steps(r, 3);
-    expect(r.kills).toBe(1);
-  });
-  it("mina explode e rearma", () => {
-    const r = mk();
-    r.hole.x = r.hole.tx = -400;
-    r.hole.y = r.hole.ty = 260;
-    r.fragments = 100;
-    r.buy(1, 0, "mine");
-    r.rings[1].spin = 0;
-    const p = r.slotPos(1, 0);
-    steps(r, 0.6);
-    const e = r.spawn("wanderer", p.x, p.y);
-    e.speed = 0;
-    steps(r, 0.1);
-    expect(e.dead).toBe(true);
-    expect(r.rings[1].slots[0]!.cd).toBeGreaterThan(0);
-  });
-  it("combo aumenta o multiplicador", () => {
-    const r = mk();
-    r.hole.x = r.hole.tx = -400;
-    for (let i = 0; i < 4; i++) {
-      const e = r.spawn("drone", 200, i * 40 - 60);
-      r.hurt(e, 999, "sat", false);
-    }
-    expect(r.combo).toBe(4);
-    expect(r.comboMult()).toBeGreaterThan(1.5);
-  });
-});
-
-describe("ondas", () => {
-  it("orçamento e vida crescem", () => {
-    expect(waveBudget(10)).toBeGreaterThan(waveBudget(1));
-    expect(waveHp(20)).toBeGreaterThan(waveHp(5));
-  });
-  it("onda começa sozinha após o intervalo e termina quando todos morrem", () => {
+describe("partida", () => {
+  it("inimigos chegam à Lyra e causam dano no ritmo", () => {
     const r = mk(false);
-    steps(r, 3.2);
-    expect(r.phase).toBe("wave");
-    expect(r.wave).toBe(1);
-    for (let i = 0; i < 60 * 60 && r.phase === "wave"; i++) {
-      for (const e of r.enemies) r.hurt(e, 9999, "sat", false);
+    r.phase = "fight";
+    r.spawnQ = [];
+    r.spawn("seminima", 0, 40, 0);
+    steps(r, 4);
+    expect(r.lyra.hp).toBeLessThan(r.lyra.maxHp);
+  });
+  it("movimento acaba quando todos morrem e o próximo começa", () => {
+    const r = mk(false);
+    for (let i = 0; i < 60 * 80 && r.room === 1; i++) {
+      r.enemies.forEach((e) => (e.hp = 0.0001));
+      r.stamina = r.staminaMax;
+      for (const e of [...r.enemies]) swipe(r, e.x, e.y - 40, e.x, e.y + 40, 2);
       r.step(1 / 60);
+      r.lyra.hp = r.lyra.maxHp;
     }
-    expect(r.phase).toBe("break");
-    expect(r.matter).toBeGreaterThan(0);
+    expect(r.room).toBe(2);
+    expect(r.notes).toBeGreaterThan(0);
   });
-  it("leviatã aparece na onda 10", () => {
+  it("subir de nível oferece motivos e aplica a escolha", () => {
     const r = mk(false);
-    r.wave = 9;
-    steps(r, 7);
-    expect(r.enemies.some((e) => e.type === "leviathan")).toBe(true);
+    r.gainXp(r.xpNext);
+    expect(r.pendingLevels).toBe(1);
+    const o = r.openOffer();
+    expect(o.length).toBe(3);
+    r.choose(o[0]);
+    expect(r.pendingLevels).toBe(0);
+    expect(r.m(o[0])).toBe(1);
+  });
+  it("motivos de repertório só aparecem depois de liberados", () => {
+    const st = computeStats(newProfile());
+    expect(st.motifPool).not.toContain("staccato");
+    const p = newProfile();
+    p.nodes = { root: 1, r_mul: 1, r_window: 1, r_stacc: 1 };
+    expect(computeStats(p).motifPool).toContain("staccato");
+  });
+  it("matar o trítono vence o concerto", () => {
+    const r = mk(false);
+    r.room = 5;
+    r.phase = "fight";
+    r.spawnQ = [];
+    const b = r.spawn("tritono", -1, 200, 0);
+    r.spawn("seminima", 1, -200, 0);
+    b.hp = 1;
+    swipe(r, 200, -80, 200, 80, 4);
+    steps(r, 0.1);
+    expect(r.phase).toBe("won");
+    expect(r.scores).toBeGreaterThan(0);
   });
 });
 
 describe("perfil", () => {
-  it("compra nós com pré-requisito", () => {
+  it("compra nós em ordem e cobra notas", () => {
     const p = newProfile();
-    p.matter = 1000;
-    expect(buyNode(p, "mass")).toBe(false);
+    p.notes = 1000;
+    expect(buyNode(p, "m_dmg")).toBe(false);
     expect(buyNode(p, "root")).toBe(true);
-    expect(buyNode(p, "mass")).toBe(true);
-    expect(p.matter).toBe(1000 - nodeCost("root", 0) - nodeCost("mass", 0));
-    const st = computeStats(p);
-    expect(st.grav).toBeGreaterThan(1.2);
+    expect(buyNode(p, "m_dmg")).toBe(true);
+    expect(p.notes).toBe(1000 - nodeCost("root", 0) - nodeCost("m_dmg", 0));
   });
-  it("carrega saves inválidos sem quebrar", () => {
-    expect(loadProfile("lixo").matter).toBe(0);
-    const p = loadProfile(JSON.stringify({ matter: 50, nodes: { root: 5, inexistente: 3 } }));
-    expect(p.matter).toBe(50);
-    expect(p.nodes.root).toBe(1);
-    expect(p.nodes.inexistente).toBeUndefined();
-  });
-  it("terceiro anel e encaixes extras", () => {
+  it("nós de partitura e de tonalidade", () => {
     const p = newProfile();
-    p.nodes = { root: 1, discount: 1, startFrag: 1, ring3: 1, slots: 2 };
-    const st = computeStats(p);
-    expect(st.rings).toBe(3);
-    const r = new Run(st, 1, view, true);
-    expect(r.rings[0].slots.length).toBe(BAL.ringSlots[0] + 2);
+    p.notes = 9999;
+    p.nodes = { root: 1, h_dmg: 1, h_radius: 1, h_coral: 1 };
+    expect(buyNode(p, "h_v7")).toBe(false); // exige Sol maior
+    p.keyUnlocked = 1;
+    expect(buyNode(p, "h_v7")).toBe(false); // exige partituras
+    p.scores = 5;
+    expect(buyNode(p, "h_v7")).toBe(true);
+    expect(computeStats(p).chords.some((c) => c.id === "V7")).toBe(true);
+  });
+  it("carrega saves inválidos", () => {
+    expect(loadProfile("{lixo").notes).toBe(0);
+    const p = loadProfile(JSON.stringify({ notes: 30, nodes: { root: 9, nada: 1 }, keyUnlocked: 99 }));
+    expect(p.nodes.root).toBe(1);
+    expect(p.nodes.nada).toBeUndefined();
+    expect(p.keyUnlocked).toBe(KEYS.length - 1);
   });
 });
